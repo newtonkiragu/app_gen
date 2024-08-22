@@ -9,19 +9,51 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="beef659a-f4de-45e7-80c5-ef056e8b7ba6" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/n_src/codegen.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/db_utils.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/gen/apis.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/gen/models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/gen/newmodels.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/gen/xmodels.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/gen_models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/gen_modelsx.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/old/enhanced-gen-models-with-additional-features.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/old/gen_models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/old/improved-association-table-gen.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/old/new-gen_models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/old/old_gen_models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/old/updated-gen-models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/utils.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/gen-models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/py_templates/datagrid_test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/appgen.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/appgen.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/src/Makefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/codegen.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/codegen.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/db_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/db_utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/headers.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/headers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/py_templates/DataSource.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/py_templates/DataSource.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/py_templates/apis.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/py_templates/apis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/py_templates/gql.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/py_templates/gql.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/views.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="CodyActiveAccount">
+    <option name="activeAccountId" value="VXNlcjozMDQ4NTY=" />
+  </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Python Script" />
         <option value="HTML File" />
+        <option value="Python Script" />
       </list>
     </option>
   </component>
@@ -50,13 +82,17 @@
     &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
     &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;RunOnceActivity.CodyAccountHistoryMigration&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.CodyConvertUrlToCodebaseName&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.CodyHistoryLlmMigration&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.CodyProjectSettingsMigration&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;last_opened_file_path&quot;: &quot;/Users/nyimbiodero/src/pjs/appgen&quot;,
     &quot;run.code.analysis.last.selected.profile&quot;: &quot;aDefault&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;project.propVCSSupport.DirectoryMappings&quot;
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
   }
 }</component>
   <component name="RecentsManager">
@@ -141,7 +177,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/models.py</url>
-          <line>1222</line>
+          <line>3363</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
       </breakpoints>

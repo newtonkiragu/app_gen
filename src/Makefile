@@ -34,4 +34,9 @@ cpl:
 	scp apis.py gql.py models.py views.py view_mixins.py model_mixins.py sec.py sec_forms.py sec_views.py __init__.py nyimbi@139.162.203.216:/home/nyimbi/terra/src/terra/app
 	scp config.py nyimbi@139.162.203.216:/home/nyimbi/terra/src/terra/
 
+cpb:
+	cp py_templates/apis.py py_templates/gql.py models.py views.py  py_templates/view_mixins.py py_templates/model_mixins.py py_templates/sec.py py_templates/sec_forms.py py_templates/sec_views.py __init__.py  /Users/nyimbiodero/src/pjs/bubetech/src/bubetech/app
+
+
+
 all: db_drop code cpf  # test  # Uncomment if you want to include testing

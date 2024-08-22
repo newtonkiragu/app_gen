@@ -7,7 +7,17 @@
  
 
 import calendar
+from flask import redirect, flash, url_for, Markup, g
 from flask import render_template
+from flask_appbuilder.models.sqla.interface import SQLAInterface
+from flask_appbuilder.views import ModelView, BaseView, MasterDetailView, MultipleView, RestCRUDView, CompactCRUDMixin
+from flask_appbuilder import ModelView, ModelRestApi, CompactCRUDMixin, aggregate_count, action, expose, BaseView, has_access
+from flask_appbuilder.charts.views import ChartView, TimeChartView, GroupByChartView
+from flask_appbuilder.models.group import aggregate_count
+from flask_appbuilder.widgets import ListThumbnail, ListWidget
+from flask_appbuilder.widgets import FormVerticalWidget, FormInlineWidget, FormHorizontalWidget, ShowBlockWidget
+from flask_appbuilder.models.sqla.filters import FilterStartsWith, FilterEqualFunction as FA
+from flask_appbuilder.api import ModelRestApi
 # from flask_mail import Message, Mail
 # from flask.ext.babel import lazy_gettext as _
 from flask import g
@@ -15,8 +25,11 @@ from flask import g
 # If you want to enable search
 # from elasticsearch import Elasticsearch
 
+from . import appbuilder, db
+
+from .models import *
 # from .view_mixins import *
-from py_templates.apis import *
+from .apis import *
 
 ##########
 # Various Utilities
@@ -49,109 +62,72 @@ from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_appbuilder.views import MasterDetailView, MultipleView
 from .models import *
 
-class AgentTierModelView(ModelView):
-    datamodel = SQLAInterface(AgentTier)
-    list_title = 'List Agent Tier'
-    show_title = 'Show Agent Tier'
-    edit_title = 'Edit Agent Tier'
-    add_title  = 'Add Agent Tier'
+class TechParametersModelView(ModelView):
+    datamodel = SQLAInterface(TechParameters)
+    list_title = 'List Tech Parameters'
+    show_title = 'Show Tech Parameters'
+    edit_title = 'Edit Tech Parameters'
+    add_title  = 'Add Tech Parameters'
  
-    list_columns = ['name', 'notes']
-    # show_columns = ['name', 'notes']
-    # edit_columns = ['name', 'notes']
-    add_columns = ['name', 'notes']
-    # search_columns = ['name', 'notes']
+    list_columns = ['key', 'value', 'enabled', 'notes']
+    # show_columns = ['key', 'value', 'enabled', 'notes']
+    # edit_columns = ['key', 'value', 'enabled', 'notes']
+    add_columns = ['key', 'value', 'enabled', 'notes']
+    # search_columns = ['key', 'value', 'enabled', 'notes']
     description_columns = {
-        'id' : 'Identity column - Unique identifier for the agent tier.',
-        'name' : 'Name of the agent tier - Descriptive name or title of the agent tier.',
-        'notes' : 'Additional notes or remarks about the agent tier, if necessary.',
+        'key' : 'None',
+        'value' : 'None',
+        'enabled' : 'None',
+        'notes' : 'None',
     }
-    # list_exclude_columns = ['name', 'notes']
-    # show_exclude_columns = ['name', 'notes']
-    # edit_exclude_columns = ['name', 'notes']
-    # add_exclude_columns = ['name', 'notes']
-    # search_exclude_columns = ['name', 'notes']
-    # order_columns = ['name', 'notes']
-    # add_columns = ['name', 'notes']
-    # add_columns = ['name', 'notes']
-    # add_columns = ['name', 'notes']
+    # list_exclude_columns = ['key', 'value', 'enabled', 'notes']
+    # show_exclude_columns = ['key', 'value', 'enabled', 'notes']
+    # edit_exclude_columns = ['key', 'value', 'enabled', 'notes']
+    # add_exclude_columns = ['key', 'value', 'enabled', 'notes']
+    # search_exclude_columns = ['key', 'value', 'enabled', 'notes']
+    # order_columns = ['key', 'value', 'enabled', 'notes']
+    # add_columns = ['key', 'value', 'enabled', 'notes']
+    # add_columns = ['key', 'value', 'enabled', 'notes']
+    # add_columns = ['key', 'value', 'enabled', 'notes']
     
-    label_columns = {'name':'Name', 'notes':'Notes'}
+    label_columns = {'key':'Key', 'value':'Value', 'enabled':'Enabled', 'notes':'Notes'}
     # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
     # base_order = ("name", "asc")
     # page_size = 100 
-#    list_columns = ['name', 'notes']
-class BankModelView(ModelView):
-    datamodel = SQLAInterface(Bank)
-    list_title = 'List Bank'
-    show_title = 'Show Bank'
-    edit_title = 'Edit Bank'
-    add_title  = 'Add Bank'
+#    list_columns = ['key', 'value', 'enabled', 'notes']
+class BadgeModelView(ModelView):
+    datamodel = SQLAInterface(Badge)
+    list_title = 'List Badge'
+    show_title = 'Show Badge'
+    edit_title = 'Edit Badge'
+    add_title  = 'Add Badge'
  
-    list_columns = ['code', 'name', 'category', 'swift_code', 'sort_code', 'iban', 'cust_care_phone', 'cust_care_email', 'escalation_contact']
-    # show_columns = ['code', 'name', 'category', 'swift_code', 'sort_code', 'iban', 'cust_care_phone', 'cust_care_email', 'escalation_contact']
-    # edit_columns = ['code', 'name', 'category', 'swift_code', 'sort_code', 'iban', 'cust_care_phone', 'cust_care_email', 'escalation_contact']
-    add_columns = ['code', 'name', 'category', 'swift_code', 'sort_code', 'iban', 'cust_care_phone', 'cust_care_email', 'escalation_contact']
-    # search_columns = ['code', 'name', 'category', 'swift_code', 'sort_code', 'iban', 'cust_care_phone', 'cust_care_email', 'escalation_contact']
+    list_columns = ['name', 'description', 'icon_url']
+    # show_columns = ['name', 'description', 'icon_url']
+    # edit_columns = ['name', 'description', 'icon_url']
+    add_columns = ['name', 'description', 'icon_url']
+    # search_columns = ['name', 'description', 'icon_url']
     description_columns = {
-        'id' : 'Unique identifier for the bank.',
-        'code' : 'NIBSS institutionCode, a unique code identifying the bank.',
-        'name' : 'Name of the Bank.',
-        'category' : 'Bank Category, representing the category of the bank.',
-        'swift_code' : 'SWIFT Code, a unique international bank identifier.',
-        'sort_code' : 'SORT Code, a unique bank sorting code.',
-        'iban' : 'IBAN Code, a unique international bank account number.',
-        'cust_care_phone' : 'Contact phone number for customer care.',
-        'cust_care_email' : 'Contact email for customer care.',
-        'escalation_contact' : 'Contact information for escalation purposes.',
+        'id' : 'None',
+        'name' : 'None',
+        'description' : 'None',
+        'icon_url' : 'Link to badge icon/image',
     }
-    # list_exclude_columns = ['code', 'name', 'category', 'swift_code', 'sort_code', 'iban', 'cust_care_phone', 'cust_care_email', 'escalation_contact']
-    # show_exclude_columns = ['code', 'name', 'category', 'swift_code', 'sort_code', 'iban', 'cust_care_phone', 'cust_care_email', 'escalation_contact']
-    # edit_exclude_columns = ['code', 'name', 'category', 'swift_code', 'sort_code', 'iban', 'cust_care_phone', 'cust_care_email', 'escalation_contact']
-    # add_exclude_columns = ['code', 'name', 'category', 'swift_code', 'sort_code', 'iban', 'cust_care_phone', 'cust_care_email', 'escalation_contact']
-    # search_exclude_columns = ['code', 'name', 'category', 'swift_code', 'sort_code', 'iban', 'cust_care_phone', 'cust_care_email', 'escalation_contact']
-    # order_columns = ['code', 'name', 'category', 'swift_code', 'sort_code', 'iban', 'cust_care_phone', 'cust_care_email', 'escalation_contact']
-    # add_columns = ['code', 'name', 'category', 'swift_code', 'sort_code', 'iban', 'cust_care_phone', 'cust_care_email', 'escalation_contact']
-    # add_columns = ['code', 'name', 'category', 'swift_code', 'sort_code', 'iban', 'cust_care_phone', 'cust_care_email', 'escalation_contact']
-    # add_columns = ['code', 'name', 'category', 'swift_code', 'sort_code', 'iban', 'cust_care_phone', 'cust_care_email', 'escalation_contact']
+    # list_exclude_columns = ['name', 'description', 'icon_url']
+    # show_exclude_columns = ['name', 'description', 'icon_url']
+    # edit_exclude_columns = ['name', 'description', 'icon_url']
+    # add_exclude_columns = ['name', 'description', 'icon_url']
+    # search_exclude_columns = ['name', 'description', 'icon_url']
+    # order_columns = ['name', 'description', 'icon_url']
+    # add_columns = ['name', 'description', 'icon_url']
+    # add_columns = ['name', 'description', 'icon_url']
+    # add_columns = ['name', 'description', 'icon_url']
     
-    label_columns = {'code':'Code', 'name':'Name', 'category':'Category', 'swift_code':'Swift Code', 'sort_code':'Sort Code', 'iban':'Iban', 'cust_care_phone':'Cust Care Phone', 'cust_care_email':'Cust Care Email', 'escalation_contact':'Escalation Contact'}
+    label_columns = {'name':'Name', 'description':'Description', 'icon_url':'Icon Url'}
     # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
     # base_order = ("name", "asc")
     # page_size = 100 
-#    list_columns = ['code', 'name', 'category', 'swift_code', 'sort_code', 'iban', 'cust_care_phone', 'cust_care_email', 'escalation_contact']
-class BillerCategoryModelView(ModelView):
-    datamodel = SQLAInterface(BillerCategory)
-    list_title = 'List Biller Category'
-    show_title = 'Show Biller Category'
-    edit_title = 'Edit Biller Category'
-    add_title  = 'Add Biller Category'
- 
-    list_columns = ['name', 'notes']
-    # show_columns = ['name', 'notes']
-    # edit_columns = ['name', 'notes']
-    add_columns = ['name', 'notes']
-    # search_columns = ['name', 'notes']
-    description_columns = {
-        'id' : 'Unique identifier for the biller category.',
-        'name' : 'Name or title of the biller category.',
-        'notes' : 'Additional notes or remarks about the biller category.',
-    }
-    # list_exclude_columns = ['name', 'notes']
-    # show_exclude_columns = ['name', 'notes']
-    # edit_exclude_columns = ['name', 'notes']
-    # add_exclude_columns = ['name', 'notes']
-    # search_exclude_columns = ['name', 'notes']
-    # order_columns = ['name', 'notes']
-    # add_columns = ['name', 'notes']
-    # add_columns = ['name', 'notes']
-    # add_columns = ['name', 'notes']
-    
-    label_columns = {'name':'Name', 'notes':'Notes'}
-    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
-    # base_order = ("name", "asc")
-    # page_size = 100 
-#    list_columns = ['name', 'notes']
+#    list_columns = ['name', 'description', 'icon_url']
 class ContactTypeModelView(ModelView):
     datamodel = SQLAInterface(ContactType)
     list_title = 'List Contact Type'
@@ -190,88 +166,67 @@ class ContactTypeModelView(ModelView):
     # base_order = ("name", "asc")
     # page_size = 100 
 #    list_columns = ['name', 'description', 'is_digital', 'requires_verification', 'max_length', 'icon_url', 'created_at', 'updated_at']
-class CountryModelView(ModelView):
-    datamodel = SQLAInterface(Country)
-    list_title = 'List Country'
-    show_title = 'Show Country'
-    edit_title = 'Edit Country'
-    add_title  = 'Add Country'
+class CropModelView(ModelView):
+    datamodel = SQLAInterface(Crop)
+    list_title = 'List Crop'
+    show_title = 'Show Crop'
+    edit_title = 'Edit Crop'
+    add_title  = 'Add Crop'
  
-    list_columns = ['name', 'code', 'phone_code']
-    # show_columns = ['name', 'code', 'phone_code']
-    # edit_columns = ['name', 'code', 'phone_code']
-    add_columns = ['name', 'code', 'phone_code']
-    # search_columns = ['name', 'code', 'phone_code']
+    list_columns = ['crop_name', 'scientific_name', 'family_name', 'genus', 'variety', 'lifecycle_enum', 'growth_habit', 'optimal_soil_texture', 'optimal_season', 'germination_days', 'maturity_days', 'optimal_soil_ph_min', 'optimal_soil_ph_max', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temp_min', 'optimal_temp_max', 'frost_tolerance', 'drought_tolerance', 'drought_tolerance_notes', 'water_requirement_mm', 'sun_exposure', 'spacing_cm', 'planting_depth_mm', 'harvest_indicator', 'typical_yield_per_sq_m', 'pests', 'diseases', 'nutritional_content', 'market_value']
+    # show_columns = ['crop_name', 'scientific_name', 'family_name', 'genus', 'variety', 'lifecycle_enum', 'growth_habit', 'optimal_soil_texture', 'optimal_season', 'germination_days', 'maturity_days', 'optimal_soil_ph_min', 'optimal_soil_ph_max', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temp_min', 'optimal_temp_max', 'frost_tolerance', 'drought_tolerance', 'drought_tolerance_notes', 'water_requirement_mm', 'sun_exposure', 'spacing_cm', 'planting_depth_mm', 'harvest_indicator', 'typical_yield_per_sq_m', 'pests', 'diseases', 'nutritional_content', 'market_value']
+    # edit_columns = ['crop_name', 'scientific_name', 'family_name', 'genus', 'variety', 'lifecycle_enum', 'growth_habit', 'optimal_soil_texture', 'optimal_season', 'germination_days', 'maturity_days', 'optimal_soil_ph_min', 'optimal_soil_ph_max', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temp_min', 'optimal_temp_max', 'frost_tolerance', 'drought_tolerance', 'drought_tolerance_notes', 'water_requirement_mm', 'sun_exposure', 'spacing_cm', 'planting_depth_mm', 'harvest_indicator', 'typical_yield_per_sq_m', 'pests', 'diseases', 'nutritional_content', 'market_value']
+    add_columns = ['crop_name', 'scientific_name', 'family_name', 'genus', 'variety', 'lifecycle_enum', 'growth_habit', 'optimal_soil_texture', 'optimal_season', 'germination_days', 'maturity_days', 'optimal_soil_ph_min', 'optimal_soil_ph_max', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temp_min', 'optimal_temp_max', 'frost_tolerance', 'drought_tolerance', 'drought_tolerance_notes', 'water_requirement_mm', 'sun_exposure', 'spacing_cm', 'planting_depth_mm', 'harvest_indicator', 'typical_yield_per_sq_m', 'pests', 'diseases', 'nutritional_content', 'market_value']
+    # search_columns = ['crop_name', 'scientific_name', 'family_name', 'genus', 'variety', 'lifecycle_enum', 'growth_habit', 'optimal_soil_texture', 'optimal_season', 'germination_days', 'maturity_days', 'optimal_soil_ph_min', 'optimal_soil_ph_max', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temp_min', 'optimal_temp_max', 'frost_tolerance', 'drought_tolerance', 'drought_tolerance_notes', 'water_requirement_mm', 'sun_exposure', 'spacing_cm', 'planting_depth_mm', 'harvest_indicator', 'typical_yield_per_sq_m', 'pests', 'diseases', 'nutritional_content', 'market_value']
     description_columns = {
         'id' : 'None',
-        'name' : ' Country Name',
-        'code' : 'Country Code',
-        'phone_code' : 'Dialling prefix of the country e.g +234 for Nigeria',
+        'crop_name' : 'Common name of the crop',
+        'scientific_name' : 'Scientific name of the crop',
+        'family_name' : 'Taxonomic family the crop belongs to',
+        'genus' : 'Genus of the crop',
+        'variety' : 'Specific variety or cultivar',
+        'lifecycle_enum' : 'Annual, Biennial, or Perennial',
+        'growth_habit' : 'Growth habit (e.g., bushy, vine, etc.)',
+        'optimal_soil_texture' : 'Optimal soil texture for this crop',
+        'optimal_season' : 'Optimal season for planting',
+        'germination_days' : 'Days required for seed germination',
+        'maturity_days' : 'Days to reach maturity',
+        'optimal_soil_ph_min' : 'Minimum optimal soil pH',
+        'optimal_soil_ph_max' : 'Maximum optimal soil pH',
+        'optimal_nitrogen_level' : 'Optimal Nitrogen level in soil',
+        'optimal_phosphorus_level' : 'Optimal Phosphorus level in soil',
+        'optimal_potassium_level' : 'Optimal Potassium level in soil',
+        'optimal_temp_min' : 'Minimum optimal temperature (°C)',
+        'optimal_temp_max' : 'Maximum optimal temperature (°C)',
+        'frost_tolerance' : 'Frost tolerance level',
+        'drought_tolerance' : 'Drought tolerance level',
+        'drought_tolerance_notes' : 'None',
+        'water_requirement_mm' : 'Water requirement in mm per season',
+        'sun_exposure' : 'Amount of sun exposure needed',
+        'spacing_cm' : 'Recommended plant spacing in cm',
+        'planting_depth_mm' : 'Recommended planting depth in mm',
+        'harvest_indicator' : 'Signs that the crop is ready for harvest',
+        'typical_yield_per_sq_m' : 'Typical yield per square meter',
+        'pests' : 'Common pests affecting the crop',
+        'diseases' : 'Common diseases affecting the crop',
+        'nutritional_content' : 'Nutritional content description',
+        'market_value' : 'Average market value per unit mass or volume',
     }
-    # list_exclude_columns = ['name', 'code', 'phone_code']
-    # show_exclude_columns = ['name', 'code', 'phone_code']
-    # edit_exclude_columns = ['name', 'code', 'phone_code']
-    # add_exclude_columns = ['name', 'code', 'phone_code']
-    # search_exclude_columns = ['name', 'code', 'phone_code']
-    # order_columns = ['name', 'code', 'phone_code']
-    # add_columns = ['name', 'code', 'phone_code']
-    # add_columns = ['name', 'code', 'phone_code']
-    # add_columns = ['name', 'code', 'phone_code']
+    # list_exclude_columns = ['crop_name', 'scientific_name', 'family_name', 'genus', 'variety', 'lifecycle_enum', 'growth_habit', 'optimal_soil_texture', 'optimal_season', 'germination_days', 'maturity_days', 'optimal_soil_ph_min', 'optimal_soil_ph_max', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temp_min', 'optimal_temp_max', 'frost_tolerance', 'drought_tolerance', 'drought_tolerance_notes', 'water_requirement_mm', 'sun_exposure', 'spacing_cm', 'planting_depth_mm', 'harvest_indicator', 'typical_yield_per_sq_m', 'pests', 'diseases', 'nutritional_content', 'market_value']
+    # show_exclude_columns = ['crop_name', 'scientific_name', 'family_name', 'genus', 'variety', 'lifecycle_enum', 'growth_habit', 'optimal_soil_texture', 'optimal_season', 'germination_days', 'maturity_days', 'optimal_soil_ph_min', 'optimal_soil_ph_max', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temp_min', 'optimal_temp_max', 'frost_tolerance', 'drought_tolerance', 'drought_tolerance_notes', 'water_requirement_mm', 'sun_exposure', 'spacing_cm', 'planting_depth_mm', 'harvest_indicator', 'typical_yield_per_sq_m', 'pests', 'diseases', 'nutritional_content', 'market_value']
+    # edit_exclude_columns = ['crop_name', 'scientific_name', 'family_name', 'genus', 'variety', 'lifecycle_enum', 'growth_habit', 'optimal_soil_texture', 'optimal_season', 'germination_days', 'maturity_days', 'optimal_soil_ph_min', 'optimal_soil_ph_max', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temp_min', 'optimal_temp_max', 'frost_tolerance', 'drought_tolerance', 'drought_tolerance_notes', 'water_requirement_mm', 'sun_exposure', 'spacing_cm', 'planting_depth_mm', 'harvest_indicator', 'typical_yield_per_sq_m', 'pests', 'diseases', 'nutritional_content', 'market_value']
+    # add_exclude_columns = ['crop_name', 'scientific_name', 'family_name', 'genus', 'variety', 'lifecycle_enum', 'growth_habit', 'optimal_soil_texture', 'optimal_season', 'germination_days', 'maturity_days', 'optimal_soil_ph_min', 'optimal_soil_ph_max', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temp_min', 'optimal_temp_max', 'frost_tolerance', 'drought_tolerance', 'drought_tolerance_notes', 'water_requirement_mm', 'sun_exposure', 'spacing_cm', 'planting_depth_mm', 'harvest_indicator', 'typical_yield_per_sq_m', 'pests', 'diseases', 'nutritional_content', 'market_value']
+    # search_exclude_columns = ['crop_name', 'scientific_name', 'family_name', 'genus', 'variety', 'lifecycle_enum', 'growth_habit', 'optimal_soil_texture', 'optimal_season', 'germination_days', 'maturity_days', 'optimal_soil_ph_min', 'optimal_soil_ph_max', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temp_min', 'optimal_temp_max', 'frost_tolerance', 'drought_tolerance', 'drought_tolerance_notes', 'water_requirement_mm', 'sun_exposure', 'spacing_cm', 'planting_depth_mm', 'harvest_indicator', 'typical_yield_per_sq_m', 'pests', 'diseases', 'nutritional_content', 'market_value']
+    # order_columns = ['crop_name', 'scientific_name', 'family_name', 'genus', 'variety', 'lifecycle_enum', 'growth_habit', 'optimal_soil_texture', 'optimal_season', 'germination_days', 'maturity_days', 'optimal_soil_ph_min', 'optimal_soil_ph_max', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temp_min', 'optimal_temp_max', 'frost_tolerance', 'drought_tolerance', 'drought_tolerance_notes', 'water_requirement_mm', 'sun_exposure', 'spacing_cm', 'planting_depth_mm', 'harvest_indicator', 'typical_yield_per_sq_m', 'pests', 'diseases', 'nutritional_content', 'market_value']
+    # add_columns = ['crop_name', 'scientific_name', 'family_name', 'genus', 'variety', 'lifecycle_enum', 'growth_habit', 'optimal_soil_texture', 'optimal_season', 'germination_days', 'maturity_days', 'optimal_soil_ph_min', 'optimal_soil_ph_max', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temp_min', 'optimal_temp_max', 'frost_tolerance', 'drought_tolerance', 'drought_tolerance_notes', 'water_requirement_mm', 'sun_exposure', 'spacing_cm', 'planting_depth_mm', 'harvest_indicator', 'typical_yield_per_sq_m', 'pests', 'diseases', 'nutritional_content', 'market_value']
+    # add_columns = ['crop_name', 'scientific_name', 'family_name', 'genus', 'variety', 'lifecycle_enum', 'growth_habit', 'optimal_soil_texture', 'optimal_season', 'germination_days', 'maturity_days', 'optimal_soil_ph_min', 'optimal_soil_ph_max', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temp_min', 'optimal_temp_max', 'frost_tolerance', 'drought_tolerance', 'drought_tolerance_notes', 'water_requirement_mm', 'sun_exposure', 'spacing_cm', 'planting_depth_mm', 'harvest_indicator', 'typical_yield_per_sq_m', 'pests', 'diseases', 'nutritional_content', 'market_value']
+    # add_columns = ['crop_name', 'scientific_name', 'family_name', 'genus', 'variety', 'lifecycle_enum', 'growth_habit', 'optimal_soil_texture', 'optimal_season', 'germination_days', 'maturity_days', 'optimal_soil_ph_min', 'optimal_soil_ph_max', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temp_min', 'optimal_temp_max', 'frost_tolerance', 'drought_tolerance', 'drought_tolerance_notes', 'water_requirement_mm', 'sun_exposure', 'spacing_cm', 'planting_depth_mm', 'harvest_indicator', 'typical_yield_per_sq_m', 'pests', 'diseases', 'nutritional_content', 'market_value']
     
-    label_columns = {'name':'Name', 'code':'Code', 'phone_code':'Phone Code'}
+    label_columns = {'crop_name':'Crop Name', 'scientific_name':'Scientific Name', 'family_name':'Family Name', 'genus':'Genus', 'variety':'Variety', 'lifecycle_enum':'Lifecycle Enum', 'growth_habit':'Growth Habit', 'optimal_soil_texture':'Optimal Soil Texture', 'optimal_season':'Optimal Season', 'germination_days':'Germination Days', 'maturity_days':'Maturity Days', 'optimal_soil_ph_min':'Optimal Soil Ph Min', 'optimal_soil_ph_max':'Optimal Soil Ph Max', 'optimal_nitrogen_level':'Optimal Nitrogen Level', 'optimal_phosphorus_level':'Optimal Phosphorus Level', 'optimal_potassium_level':'Optimal Potassium Level', 'optimal_temp_min':'Optimal Temp Min', 'optimal_temp_max':'Optimal Temp Max', 'frost_tolerance':'Frost Tolerance', 'drought_tolerance':'Drought Tolerance', 'drought_tolerance_notes':'Drought Tolerance Notes', 'water_requirement_mm':'Water Requirement Mm', 'sun_exposure':'Sun Exposure', 'spacing_cm':'Spacing Cm', 'planting_depth_mm':'Planting Depth Mm', 'harvest_indicator':'Harvest Indicator', 'typical_yield_per_sq_m':'Typical Yield Per Sq M', 'pests':'Pests', 'diseases':'Diseases', 'nutritional_content':'Nutritional Content', 'market_value':'Market Value'}
     # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
     # base_order = ("name", "asc")
     # page_size = 100 
-#    list_columns = ['name', 'code', 'phone_code']
-class CouponModelView(ModelView):
-    datamodel = SQLAInterface(Coupon)
-    list_title = 'List Coupon'
-    show_title = 'Show Coupon'
-    edit_title = 'Edit Coupon'
-    add_title  = 'Add Coupon'
- 
-    list_columns = ['value', 'serial_no', 'active', 'used', 'used_date', 'primary_scan_code_label', 'is_return_coupon', 'expiration_date', 'generation_date', 'activation_date', 'secondary_scan_code_label', 'scan_code_img', 'coupon_code', 'return_coupon_reason', 'is_valid', 'coupon_status', 'discount_percentage', 'coupon_count', 'payment_method_status']
-    # show_columns = ['value', 'serial_no', 'active', 'used', 'used_date', 'primary_scan_code_label', 'is_return_coupon', 'expiration_date', 'generation_date', 'activation_date', 'secondary_scan_code_label', 'scan_code_img', 'coupon_code', 'return_coupon_reason', 'is_valid', 'coupon_status', 'discount_percentage', 'coupon_count', 'payment_method_status']
-    # edit_columns = ['value', 'serial_no', 'active', 'used', 'used_date', 'primary_scan_code_label', 'is_return_coupon', 'expiration_date', 'generation_date', 'activation_date', 'secondary_scan_code_label', 'scan_code_img', 'coupon_code', 'return_coupon_reason', 'is_valid', 'coupon_status', 'discount_percentage', 'coupon_count', 'payment_method_status']
-    add_columns = ['value', 'serial_no', 'active', 'used', 'used_date', 'primary_scan_code_label', 'is_return_coupon', 'expiration_date', 'generation_date', 'activation_date', 'secondary_scan_code_label', 'scan_code_img', 'coupon_code', 'return_coupon_reason', 'is_valid', 'coupon_status', 'discount_percentage', 'coupon_count', 'payment_method_status']
-    # search_columns = ['value', 'serial_no', 'active', 'used', 'used_date', 'primary_scan_code_label', 'is_return_coupon', 'expiration_date', 'generation_date', 'activation_date', 'secondary_scan_code_label', 'scan_code_img', 'coupon_code', 'return_coupon_reason', 'is_valid', 'coupon_status', 'discount_percentage', 'coupon_count', 'payment_method_status']
-    description_columns = {
-        'id' : 'Unique identifier for the coupon.',
-        'value' : 'The monetary value of the coupon.',
-        'serial_no' : 'Serial number or code associated with the coupon.',
-        'active' : 'Indicates whether the coupon is active.',
-        'used' : 'Indicates whether the coupon has been used.',
-        'used_date' : 'Date and time when the coupon was used.',
-        'primary_scan_code_label' : 'Primary scan code label associated with the coupon.',
-        'is_return_coupon' : 'Indicates whether the coupon is a return coupon.',
-        'expiration_date' : 'Date when the coupon expires.',
-        'generation_date' : 'Date and time when the coupon was generated.',
-        'activation_date' : 'Date and time when the coupon was activated.',
-        'secondary_scan_code_label' : 'Secondary scan code label associated with the coupon.',
-        'scan_code_img' : 'Image or code used for scanning the coupon.',
-        'coupon_code' : 'Code associated with the coupon.',
-        'return_coupon_reason' : 'Reason for returning the coupon.',
-        'is_valid' : 'Indicates whether the coupon is valid.',
-        'coupon_status' : 'Status of the coupon.',
-        'discount_percentage' : 'Percentage discount offered by the coupon.',
-        'coupon_count' : 'Number of coupons available.',
-        'payment_method_status' : 'Status of the payment method associated with the coupon.',
-    }
-    # list_exclude_columns = ['value', 'serial_no', 'active', 'used', 'used_date', 'primary_scan_code_label', 'is_return_coupon', 'expiration_date', 'generation_date', 'activation_date', 'secondary_scan_code_label', 'scan_code_img', 'coupon_code', 'return_coupon_reason', 'is_valid', 'coupon_status', 'discount_percentage', 'coupon_count', 'payment_method_status']
-    # show_exclude_columns = ['value', 'serial_no', 'active', 'used', 'used_date', 'primary_scan_code_label', 'is_return_coupon', 'expiration_date', 'generation_date', 'activation_date', 'secondary_scan_code_label', 'scan_code_img', 'coupon_code', 'return_coupon_reason', 'is_valid', 'coupon_status', 'discount_percentage', 'coupon_count', 'payment_method_status']
-    # edit_exclude_columns = ['value', 'serial_no', 'active', 'used', 'used_date', 'primary_scan_code_label', 'is_return_coupon', 'expiration_date', 'generation_date', 'activation_date', 'secondary_scan_code_label', 'scan_code_img', 'coupon_code', 'return_coupon_reason', 'is_valid', 'coupon_status', 'discount_percentage', 'coupon_count', 'payment_method_status']
-    # add_exclude_columns = ['value', 'serial_no', 'active', 'used', 'used_date', 'primary_scan_code_label', 'is_return_coupon', 'expiration_date', 'generation_date', 'activation_date', 'secondary_scan_code_label', 'scan_code_img', 'coupon_code', 'return_coupon_reason', 'is_valid', 'coupon_status', 'discount_percentage', 'coupon_count', 'payment_method_status']
-    # search_exclude_columns = ['value', 'serial_no', 'active', 'used', 'used_date', 'primary_scan_code_label', 'is_return_coupon', 'expiration_date', 'generation_date', 'activation_date', 'secondary_scan_code_label', 'scan_code_img', 'coupon_code', 'return_coupon_reason', 'is_valid', 'coupon_status', 'discount_percentage', 'coupon_count', 'payment_method_status']
-    # order_columns = ['value', 'serial_no', 'active', 'used', 'used_date', 'primary_scan_code_label', 'is_return_coupon', 'expiration_date', 'generation_date', 'activation_date', 'secondary_scan_code_label', 'scan_code_img', 'coupon_code', 'return_coupon_reason', 'is_valid', 'coupon_status', 'discount_percentage', 'coupon_count', 'payment_method_status']
-    # add_columns = ['value', 'serial_no', 'active', 'used', 'used_date', 'primary_scan_code_label', 'is_return_coupon', 'expiration_date', 'generation_date', 'activation_date', 'secondary_scan_code_label', 'scan_code_img', 'coupon_code', 'return_coupon_reason', 'is_valid', 'coupon_status', 'discount_percentage', 'coupon_count', 'payment_method_status']
-    # add_columns = ['value', 'serial_no', 'active', 'used', 'used_date', 'primary_scan_code_label', 'is_return_coupon', 'expiration_date', 'generation_date', 'activation_date', 'secondary_scan_code_label', 'scan_code_img', 'coupon_code', 'return_coupon_reason', 'is_valid', 'coupon_status', 'discount_percentage', 'coupon_count', 'payment_method_status']
-    # add_columns = ['value', 'serial_no', 'active', 'used', 'used_date', 'primary_scan_code_label', 'is_return_coupon', 'expiration_date', 'generation_date', 'activation_date', 'secondary_scan_code_label', 'scan_code_img', 'coupon_code', 'return_coupon_reason', 'is_valid', 'coupon_status', 'discount_percentage', 'coupon_count', 'payment_method_status']
-    
-    label_columns = {'value':'Value', 'serial_no':'Serial No', 'active':'Active', 'used':'Used', 'used_date':'Used Date', 'primary_scan_code_label':'Primary Scan Code Label', 'is_return_coupon':'Is Return Coupon', 'expiration_date':'Expiration Date', 'generation_date':'Generation Date', 'activation_date':'Activation Date', 'secondary_scan_code_label':'Secondary Scan Code Label', 'scan_code_img':'Scan Code Img', 'coupon_code':'Coupon Code', 'return_coupon_reason':'Return Coupon Reason', 'is_valid':'Is Valid', 'coupon_status':'Coupon Status', 'discount_percentage':'Discount Percentage', 'coupon_count':'Coupon Count', 'payment_method_status':'Payment Method Status'}
-    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
-    # base_order = ("name", "asc")
-    # page_size = 100 
-#    list_columns = ['value', 'serial_no', 'active', 'used', 'used_date', 'primary_scan_code_label', 'is_return_coupon', 'expiration_date', 'generation_date', 'activation_date', 'secondary_scan_code_label', 'scan_code_img', 'coupon_code', 'return_coupon_reason', 'is_valid', 'coupon_status', 'discount_percentage', 'coupon_count', 'payment_method_status']
+#    list_columns = ['crop_name', 'scientific_name', 'family_name', 'genus', 'variety', 'lifecycle_enum', 'growth_habit', 'optimal_soil_texture', 'optimal_season', 'germination_days', 'maturity_days', 'optimal_soil_ph_min', 'optimal_soil_ph_max', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temp_min', 'optimal_temp_max', 'frost_tolerance', 'drought_tolerance', 'drought_tolerance_notes', 'water_requirement_mm', 'sun_exposure', 'spacing_cm', 'planting_depth_mm', 'harvest_indicator', 'typical_yield_per_sq_m', 'pests', 'diseases', 'nutritional_content', 'market_value']
 class CurrencyModelView(ModelView):
     datamodel = SQLAInterface(Currency)
     list_title = 'List Currency'
@@ -279,67 +234,78 @@ class CurrencyModelView(ModelView):
     edit_title = 'Edit Currency'
     add_title  = 'Add Currency'
  
-    list_columns = ['name', 'symbol', 'numeric_code', 'full_name', 'decimal_places', 'internationalized_name_code']
-    # show_columns = ['name', 'symbol', 'numeric_code', 'full_name', 'decimal_places', 'internationalized_name_code']
-    # edit_columns = ['name', 'symbol', 'numeric_code', 'full_name', 'decimal_places', 'internationalized_name_code']
-    add_columns = ['name', 'symbol', 'numeric_code', 'full_name', 'decimal_places', 'internationalized_name_code']
-    # search_columns = ['name', 'symbol', 'numeric_code', 'full_name', 'decimal_places', 'internationalized_name_code']
+    list_columns = ['name', 'symbol', 'numeric_code', 'full_name']
+    # show_columns = ['name', 'symbol', 'numeric_code', 'full_name']
+    # edit_columns = ['name', 'symbol', 'numeric_code', 'full_name']
+    add_columns = ['name', 'symbol', 'numeric_code', 'full_name']
+    # search_columns = ['name', 'symbol', 'numeric_code', 'full_name']
     description_columns = {
-        'id' : 'Unique identifier for the currency.',
-        'name' : 'Short name or code of the currency.',
-        'symbol' : 'Symbol representing the currency.',
-        'numeric_code' : 'Numeric code for the currency.',
-        'full_name' : 'Full name or description of the currency.',
-        'decimal_places' : 'Number of decimal places for the currency.',
-        'internationalized_name_code' : 'Code for the internationalized name of the currency.',
+        'id' : 'None',
+        'name' : 'None',
+        'symbol' : 'None',
+        'numeric_code' : 'None',
+        'full_name' : 'None',
     }
-    # list_exclude_columns = ['name', 'symbol', 'numeric_code', 'full_name', 'decimal_places', 'internationalized_name_code']
-    # show_exclude_columns = ['name', 'symbol', 'numeric_code', 'full_name', 'decimal_places', 'internationalized_name_code']
-    # edit_exclude_columns = ['name', 'symbol', 'numeric_code', 'full_name', 'decimal_places', 'internationalized_name_code']
-    # add_exclude_columns = ['name', 'symbol', 'numeric_code', 'full_name', 'decimal_places', 'internationalized_name_code']
-    # search_exclude_columns = ['name', 'symbol', 'numeric_code', 'full_name', 'decimal_places', 'internationalized_name_code']
-    # order_columns = ['name', 'symbol', 'numeric_code', 'full_name', 'decimal_places', 'internationalized_name_code']
-    # add_columns = ['name', 'symbol', 'numeric_code', 'full_name', 'decimal_places', 'internationalized_name_code']
-    # add_columns = ['name', 'symbol', 'numeric_code', 'full_name', 'decimal_places', 'internationalized_name_code']
-    # add_columns = ['name', 'symbol', 'numeric_code', 'full_name', 'decimal_places', 'internationalized_name_code']
+    # list_exclude_columns = ['name', 'symbol', 'numeric_code', 'full_name']
+    # show_exclude_columns = ['name', 'symbol', 'numeric_code', 'full_name']
+    # edit_exclude_columns = ['name', 'symbol', 'numeric_code', 'full_name']
+    # add_exclude_columns = ['name', 'symbol', 'numeric_code', 'full_name']
+    # search_exclude_columns = ['name', 'symbol', 'numeric_code', 'full_name']
+    # order_columns = ['name', 'symbol', 'numeric_code', 'full_name']
+    # add_columns = ['name', 'symbol', 'numeric_code', 'full_name']
+    # add_columns = ['name', 'symbol', 'numeric_code', 'full_name']
+    # add_columns = ['name', 'symbol', 'numeric_code', 'full_name']
     
-    label_columns = {'name':'Name', 'symbol':'Symbol', 'numeric_code':'Numeric Code', 'full_name':'Full Name', 'decimal_places':'Decimal Places', 'internationalized_name_code':'Internationalized Name Code'}
+    label_columns = {'name':'Name', 'symbol':'Symbol', 'numeric_code':'Numeric Code', 'full_name':'Full Name'}
     # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
     # base_order = ("name", "asc")
     # page_size = 100 
-#    list_columns = ['name', 'symbol', 'numeric_code', 'full_name', 'decimal_places', 'internationalized_name_code']
-class CustomerSegmentModelView(ModelView):
-    datamodel = SQLAInterface(CustomerSegment)
-    list_title = 'List Customer Segment'
-    show_title = 'Show Customer Segment'
-    edit_title = 'Edit Customer Segment'
-    add_title  = 'Add Customer Segment'
+#    list_columns = ['name', 'symbol', 'numeric_code', 'full_name']
+class DiseaseModelView(ModelView):
+    datamodel = SQLAInterface(Disease)
+    list_title = 'List Disease'
+    show_title = 'Show Disease'
+    edit_title = 'Edit Disease'
+    add_title  = 'Add Disease'
  
-    list_columns = ['name', 'notes']
-    # show_columns = ['name', 'notes']
-    # edit_columns = ['name', 'notes']
-    add_columns = ['name', 'notes']
-    # search_columns = ['name', 'notes']
+    list_columns = ['disease_name', 'scientific_name', 'causal_agent', 'disease_signature', 'symptoms', 'transmission_mode', 'lifecycle', 'control_prevention_methods', 'affected_species', 'economic_impact', 'known_resistances', 'favorable_conditions', 'region_prevalence', 'images_url', 'treatment_options']
+    # show_columns = ['disease_name', 'scientific_name', 'causal_agent', 'disease_signature', 'symptoms', 'transmission_mode', 'lifecycle', 'control_prevention_methods', 'affected_species', 'economic_impact', 'known_resistances', 'favorable_conditions', 'region_prevalence', 'images_url', 'treatment_options']
+    # edit_columns = ['disease_name', 'scientific_name', 'causal_agent', 'disease_signature', 'symptoms', 'transmission_mode', 'lifecycle', 'control_prevention_methods', 'affected_species', 'economic_impact', 'known_resistances', 'favorable_conditions', 'region_prevalence', 'images_url', 'treatment_options']
+    add_columns = ['disease_name', 'scientific_name', 'causal_agent', 'disease_signature', 'symptoms', 'transmission_mode', 'lifecycle', 'control_prevention_methods', 'affected_species', 'economic_impact', 'known_resistances', 'favorable_conditions', 'region_prevalence', 'images_url', 'treatment_options']
+    # search_columns = ['disease_name', 'scientific_name', 'causal_agent', 'disease_signature', 'symptoms', 'transmission_mode', 'lifecycle', 'control_prevention_methods', 'affected_species', 'economic_impact', 'known_resistances', 'favorable_conditions', 'region_prevalence', 'images_url', 'treatment_options']
     description_columns = {
-        'id' : 'Unique identifier for the customer segment.',
-        'name' : 'Name or title of the customer segment.',
-        'notes' : 'Additional notes or descriptions related to the customer segment.',
+        'id' : 'Unique identifier for each disease',
+        'disease_name' : 'Common name of the disease',
+        'scientific_name' : 'Scientific name, if applicable',
+        'causal_agent' : 'Causal agent responsible for the disease (e.g., fungus, bacteria, virus)',
+        'disease_signature' : 'AI-driven identifier for the disease',
+        'symptoms' : 'Symptoms exhibited by plants/animals infected with the disease',
+        'transmission_mode' : 'How the disease spreads (e.g., air, water, vectors)',
+        'lifecycle' : 'Lifecycle or stages of the disease, if applicable',
+        'control_prevention_methods' : 'Methods to control or prevent the spread of the disease',
+        'affected_species' : 'Species (plant or animal) commonly affected by the disease',
+        'economic_impact' : 'Economic implications due to damages caused by the disease',
+        'known_resistances' : 'Any known resistances or immunity among species',
+        'favorable_conditions' : 'Environmental conditions that favor the disease’s spread',
+        'region_prevalence' : 'Regions where the disease is commonly found',
+        'images_url' : 'URLs of the disease images for visual identification',
+        'treatment_options' : 'Treatment options available, if applicable',
     }
-    # list_exclude_columns = ['name', 'notes']
-    # show_exclude_columns = ['name', 'notes']
-    # edit_exclude_columns = ['name', 'notes']
-    # add_exclude_columns = ['name', 'notes']
-    # search_exclude_columns = ['name', 'notes']
-    # order_columns = ['name', 'notes']
-    # add_columns = ['name', 'notes']
-    # add_columns = ['name', 'notes']
-    # add_columns = ['name', 'notes']
+    # list_exclude_columns = ['disease_name', 'scientific_name', 'causal_agent', 'disease_signature', 'symptoms', 'transmission_mode', 'lifecycle', 'control_prevention_methods', 'affected_species', 'economic_impact', 'known_resistances', 'favorable_conditions', 'region_prevalence', 'images_url', 'treatment_options']
+    # show_exclude_columns = ['disease_name', 'scientific_name', 'causal_agent', 'disease_signature', 'symptoms', 'transmission_mode', 'lifecycle', 'control_prevention_methods', 'affected_species', 'economic_impact', 'known_resistances', 'favorable_conditions', 'region_prevalence', 'images_url', 'treatment_options']
+    # edit_exclude_columns = ['disease_name', 'scientific_name', 'causal_agent', 'disease_signature', 'symptoms', 'transmission_mode', 'lifecycle', 'control_prevention_methods', 'affected_species', 'economic_impact', 'known_resistances', 'favorable_conditions', 'region_prevalence', 'images_url', 'treatment_options']
+    # add_exclude_columns = ['disease_name', 'scientific_name', 'causal_agent', 'disease_signature', 'symptoms', 'transmission_mode', 'lifecycle', 'control_prevention_methods', 'affected_species', 'economic_impact', 'known_resistances', 'favorable_conditions', 'region_prevalence', 'images_url', 'treatment_options']
+    # search_exclude_columns = ['disease_name', 'scientific_name', 'causal_agent', 'disease_signature', 'symptoms', 'transmission_mode', 'lifecycle', 'control_prevention_methods', 'affected_species', 'economic_impact', 'known_resistances', 'favorable_conditions', 'region_prevalence', 'images_url', 'treatment_options']
+    # order_columns = ['disease_name', 'scientific_name', 'causal_agent', 'disease_signature', 'symptoms', 'transmission_mode', 'lifecycle', 'control_prevention_methods', 'affected_species', 'economic_impact', 'known_resistances', 'favorable_conditions', 'region_prevalence', 'images_url', 'treatment_options']
+    # add_columns = ['disease_name', 'scientific_name', 'causal_agent', 'disease_signature', 'symptoms', 'transmission_mode', 'lifecycle', 'control_prevention_methods', 'affected_species', 'economic_impact', 'known_resistances', 'favorable_conditions', 'region_prevalence', 'images_url', 'treatment_options']
+    # add_columns = ['disease_name', 'scientific_name', 'causal_agent', 'disease_signature', 'symptoms', 'transmission_mode', 'lifecycle', 'control_prevention_methods', 'affected_species', 'economic_impact', 'known_resistances', 'favorable_conditions', 'region_prevalence', 'images_url', 'treatment_options']
+    # add_columns = ['disease_name', 'scientific_name', 'causal_agent', 'disease_signature', 'symptoms', 'transmission_mode', 'lifecycle', 'control_prevention_methods', 'affected_species', 'economic_impact', 'known_resistances', 'favorable_conditions', 'region_prevalence', 'images_url', 'treatment_options']
     
-    label_columns = {'name':'Name', 'notes':'Notes'}
+    label_columns = {'disease_name':'Disease Name', 'scientific_name':'Scientific Name', 'causal_agent':'Causal Agent', 'disease_signature':'Disease Signature', 'symptoms':'Symptoms', 'transmission_mode':'Transmission Mode', 'lifecycle':'Lifecycle', 'control_prevention_methods':'Control Prevention Methods', 'affected_species':'Affected Species', 'economic_impact':'Economic Impact', 'known_resistances':'Known Resistances', 'favorable_conditions':'Favorable Conditions', 'region_prevalence':'Region Prevalence', 'images_url':'Images Url', 'treatment_options':'Treatment Options'}
     # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
     # base_order = ("name", "asc")
     # page_size = 100 
-#    list_columns = ['name', 'notes']
+#    list_columns = ['disease_name', 'scientific_name', 'causal_agent', 'disease_signature', 'symptoms', 'transmission_mode', 'lifecycle', 'control_prevention_methods', 'affected_species', 'economic_impact', 'known_resistances', 'favorable_conditions', 'region_prevalence', 'images_url', 'treatment_options']
 class DocTypeModelView(ModelView):
     datamodel = SQLAInterface(DocType)
     list_title = 'List Doc Type'
@@ -347,20 +313,17 @@ class DocTypeModelView(ModelView):
     edit_title = 'Edit Doc Type'
     add_title  = 'Add Doc Type'
  
-    list_columns = ['name', 'doc_category', 'notes', 'required_information', 'is_serialized', 'serial_length', 'expires', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
-    # show_columns = ['name', 'doc_category', 'notes', 'required_information', 'is_serialized', 'serial_length', 'expires', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
-    # edit_columns = ['name', 'doc_category', 'notes', 'required_information', 'is_serialized', 'serial_length', 'expires', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
-    add_columns = ['name', 'doc_category', 'notes', 'required_information', 'is_serialized', 'serial_length', 'expires', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
-    # search_columns = ['name', 'doc_category', 'notes', 'required_information', 'is_serialized', 'serial_length', 'expires', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
+    list_columns = ['name', 'notes', 'required_information', 'category', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
+    # show_columns = ['name', 'notes', 'required_information', 'category', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
+    # edit_columns = ['name', 'notes', 'required_information', 'category', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
+    add_columns = ['name', 'notes', 'required_information', 'category', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
+    # search_columns = ['name', 'notes', 'required_information', 'category', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
     description_columns = {
         'id' : 'Unique identifier for the document type.',
         'name' : 'Name or title of the document type e.g. Passport, Drivers License.',
-        'doc_category' : 'category of this docunment',
         'notes' : 'Any additional remarks or details about the document type.',
         'required_information' : 'List or description of required fields/information for this document type.',
-        'is_serialized' : 'Does this document type have a serial number',
-        'serial_length' : 'Typical length of a serial number for this document type',
-        'expires' : 'Does this type of document expire',
+        'category' : 'Category or classification of the document, e.g., Identification, Certification, Financial.',
         'validity_period' : 'Standard validity duration of this type of document in days.',
         'renewal_frequency' : 'Frequency at which this document typically needs renewal, in days. Useful for setting reminders.',
         'is_government_issued' : 'Indicates if this document is typically issued by a government authority.',
@@ -370,21 +333,244 @@ class DocTypeModelView(ModelView):
         'created_at' : 'Timestamp when the document type was added to the system.',
         'updated_at' : 'Timestamp when the document type was last updated.',
     }
-    # list_exclude_columns = ['name', 'doc_category', 'notes', 'required_information', 'is_serialized', 'serial_length', 'expires', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
-    # show_exclude_columns = ['name', 'doc_category', 'notes', 'required_information', 'is_serialized', 'serial_length', 'expires', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
-    # edit_exclude_columns = ['name', 'doc_category', 'notes', 'required_information', 'is_serialized', 'serial_length', 'expires', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
-    # add_exclude_columns = ['name', 'doc_category', 'notes', 'required_information', 'is_serialized', 'serial_length', 'expires', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
-    # search_exclude_columns = ['name', 'doc_category', 'notes', 'required_information', 'is_serialized', 'serial_length', 'expires', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
-    # order_columns = ['name', 'doc_category', 'notes', 'required_information', 'is_serialized', 'serial_length', 'expires', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
-    # add_columns = ['name', 'doc_category', 'notes', 'required_information', 'is_serialized', 'serial_length', 'expires', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
-    # add_columns = ['name', 'doc_category', 'notes', 'required_information', 'is_serialized', 'serial_length', 'expires', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
-    # add_columns = ['name', 'doc_category', 'notes', 'required_information', 'is_serialized', 'serial_length', 'expires', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
+    # list_exclude_columns = ['name', 'notes', 'required_information', 'category', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
+    # show_exclude_columns = ['name', 'notes', 'required_information', 'category', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
+    # edit_exclude_columns = ['name', 'notes', 'required_information', 'category', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
+    # add_exclude_columns = ['name', 'notes', 'required_information', 'category', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
+    # search_exclude_columns = ['name', 'notes', 'required_information', 'category', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
+    # order_columns = ['name', 'notes', 'required_information', 'category', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
+    # add_columns = ['name', 'notes', 'required_information', 'category', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
+    # add_columns = ['name', 'notes', 'required_information', 'category', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
+    # add_columns = ['name', 'notes', 'required_information', 'category', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
     
-    label_columns = {'name':'Name', 'doc_category':'Doc Category', 'notes':'Notes', 'required_information':'Required Information', 'is_serialized':'Is Serialized', 'serial_length':'Serial Length', 'expires':'Expires', 'validity_period':'Validity Period', 'renewal_frequency':'Renewal Frequency', 'is_government_issued':'Is Government Issued', 'is_digital':'Is Digital', 'template_url':'Template Url', 'example_image_url':'Example Image Url', 'created_at':'Created At', 'updated_at':'Updated At'}
+    label_columns = {'name':'Name', 'notes':'Notes', 'required_information':'Required Information', 'category':'Category', 'validity_period':'Validity Period', 'renewal_frequency':'Renewal Frequency', 'is_government_issued':'Is Government Issued', 'is_digital':'Is Digital', 'template_url':'Template Url', 'example_image_url':'Example Image Url', 'created_at':'Created At', 'updated_at':'Updated At'}
     # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
     # base_order = ("name", "asc")
     # page_size = 100 
-#    list_columns = ['name', 'doc_category', 'notes', 'required_information', 'is_serialized', 'serial_length', 'expires', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
+#    list_columns = ['name', 'notes', 'required_information', 'category', 'validity_period', 'renewal_frequency', 'is_government_issued', 'is_digital', 'template_url', 'example_image_url', 'created_at', 'updated_at']
+class FeaturecodesModelView(ModelView):
+    datamodel = SQLAInterface(Featurecodes)
+    list_title = 'List Featurecodes'
+    show_title = 'Show Featurecodes'
+    edit_title = 'Edit Featurecodes'
+    add_title  = 'Add Featurecodes'
+ 
+    list_columns = ['code', 'fclass', 'fcode', 'label', 'description']
+    # show_columns = ['code', 'fclass', 'fcode', 'label', 'description']
+    # edit_columns = ['code', 'fclass', 'fcode', 'label', 'description']
+    add_columns = ['code', 'fclass', 'fcode', 'label', 'description']
+    # search_columns = ['code', 'fclass', 'fcode', 'label', 'description']
+    description_columns = {
+        'id' : 'None',
+        'code' : 'Primary identifier for the feature code, typically a combination of class and fcode',
+        'fclass' : 'Class identifier that categorizes the type of geographical feature e.g., P for populated place, T for mountain',
+        'fcode' : 'Specific code within a class that describes the feature in more detail. E.g., within class P, an fcode might specify city, village, etc.',
+        'label' : 'Short label or name for the feature code',
+        'description' : 'Detailed description of what the feature code represents',
+    }
+    # list_exclude_columns = ['code', 'fclass', 'fcode', 'label', 'description']
+    # show_exclude_columns = ['code', 'fclass', 'fcode', 'label', 'description']
+    # edit_exclude_columns = ['code', 'fclass', 'fcode', 'label', 'description']
+    # add_exclude_columns = ['code', 'fclass', 'fcode', 'label', 'description']
+    # search_exclude_columns = ['code', 'fclass', 'fcode', 'label', 'description']
+    # order_columns = ['code', 'fclass', 'fcode', 'label', 'description']
+    # add_columns = ['code', 'fclass', 'fcode', 'label', 'description']
+    # add_columns = ['code', 'fclass', 'fcode', 'label', 'description']
+    # add_columns = ['code', 'fclass', 'fcode', 'label', 'description']
+    
+    label_columns = {'code':'Code', 'fclass':'Fclass', 'fcode':'Fcode', 'label':'Label', 'description':'Description'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['code', 'fclass', 'fcode', 'label', 'description']
+class GeonameModelView(ModelView):
+    datamodel = SQLAInterface(Geoname)
+    list_title = 'List Geoname'
+    show_title = 'Show Geoname'
+    edit_title = 'Edit Geoname'
+    add_title  = 'Add Geoname'
+ 
+    list_columns = ['name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'fclass', 'fcode', 'country', 'cc2', 'admin1', 'admin2', 'admin3', 'admin4', 'population', 'elevation', 'gtopo30', 'timezone', 'moddate']
+    # show_columns = ['name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'fclass', 'fcode', 'country', 'cc2', 'admin1', 'admin2', 'admin3', 'admin4', 'population', 'elevation', 'gtopo30', 'timezone', 'moddate']
+    # edit_columns = ['name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'fclass', 'fcode', 'country', 'cc2', 'admin1', 'admin2', 'admin3', 'admin4', 'population', 'elevation', 'gtopo30', 'timezone', 'moddate']
+    add_columns = ['name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'fclass', 'fcode', 'country', 'cc2', 'admin1', 'admin2', 'admin3', 'admin4', 'population', 'elevation', 'gtopo30', 'timezone', 'moddate']
+    # search_columns = ['name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'fclass', 'fcode', 'country', 'cc2', 'admin1', 'admin2', 'admin3', 'admin4', 'population', 'elevation', 'gtopo30', 'timezone', 'moddate']
+    description_columns = {
+        'id' : 'Unique identifier for each geoname',
+        'name' : 'Local name of the place or location',
+        'asciiname' : 'ASCII version of the name, suitable for URL or systems that dont support unicode',
+        'alternatenames' : 'Alternative names or variations of the location name, possibly in different languages or scripts',
+        'latitude' : 'Latitude coordinate of the location',
+        'longitude' : 'Longitude coordinate of the location',
+        'fclass' : 'Feature class, represents general type/category of the location e.g. P for populated place, A for administrative division',
+        'fcode' : 'Feature code, more specific than feature class, indicating the exact type of feature',
+        'country' : 'ISO-3166 2-letter country code',
+        'cc2' : 'Alternative country codes if the location is near a border',
+        'admin1' : 'Primary administrative division, e.g., state in the USA, oblast in Russia',
+        'admin2' : 'Secondary administrative division, e.g., county in the USA',
+        'admin3' : 'Tertiary administrative division, specific to each country',
+        'admin4' : 'Quaternary administrative division, specific to each country',
+        'population' : 'Population of the location if applicable',
+        'elevation' : 'Elevation above sea level in meters',
+        'gtopo30' : 'Digital elevation model, indicates the average elevation of 30x30 area in meters',
+        'timezone' : 'The timezone in which the location lies, based on the IANA Time Zone Database',
+        'moddate' : 'The last date when the record was modified or updated',
+    }
+    # list_exclude_columns = ['name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'fclass', 'fcode', 'country', 'cc2', 'admin1', 'admin2', 'admin3', 'admin4', 'population', 'elevation', 'gtopo30', 'timezone', 'moddate']
+    # show_exclude_columns = ['name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'fclass', 'fcode', 'country', 'cc2', 'admin1', 'admin2', 'admin3', 'admin4', 'population', 'elevation', 'gtopo30', 'timezone', 'moddate']
+    # edit_exclude_columns = ['name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'fclass', 'fcode', 'country', 'cc2', 'admin1', 'admin2', 'admin3', 'admin4', 'population', 'elevation', 'gtopo30', 'timezone', 'moddate']
+    # add_exclude_columns = ['name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'fclass', 'fcode', 'country', 'cc2', 'admin1', 'admin2', 'admin3', 'admin4', 'population', 'elevation', 'gtopo30', 'timezone', 'moddate']
+    # search_exclude_columns = ['name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'fclass', 'fcode', 'country', 'cc2', 'admin1', 'admin2', 'admin3', 'admin4', 'population', 'elevation', 'gtopo30', 'timezone', 'moddate']
+    # order_columns = ['name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'fclass', 'fcode', 'country', 'cc2', 'admin1', 'admin2', 'admin3', 'admin4', 'population', 'elevation', 'gtopo30', 'timezone', 'moddate']
+    # add_columns = ['name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'fclass', 'fcode', 'country', 'cc2', 'admin1', 'admin2', 'admin3', 'admin4', 'population', 'elevation', 'gtopo30', 'timezone', 'moddate']
+    # add_columns = ['name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'fclass', 'fcode', 'country', 'cc2', 'admin1', 'admin2', 'admin3', 'admin4', 'population', 'elevation', 'gtopo30', 'timezone', 'moddate']
+    # add_columns = ['name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'fclass', 'fcode', 'country', 'cc2', 'admin1', 'admin2', 'admin3', 'admin4', 'population', 'elevation', 'gtopo30', 'timezone', 'moddate']
+    
+    label_columns = {'name':'Name', 'asciiname':'Asciiname', 'alternatenames':'Alternatenames', 'latitude':'Latitude', 'longitude':'Longitude', 'fclass':'Fclass', 'fcode':'Fcode', 'country':'Country', 'cc2':'Cc2', 'admin1':'Admin1', 'admin2':'Admin2', 'admin3':'Admin3', 'admin4':'Admin4', 'population':'Population', 'elevation':'Elevation', 'gtopo30':'Gtopo30', 'timezone':'Timezone', 'moddate':'Moddate'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'fclass', 'fcode', 'country', 'cc2', 'admin1', 'admin2', 'admin3', 'admin4', 'population', 'elevation', 'gtopo30', 'timezone', 'moddate']
+class IsicSectionModelView(ModelView):
+    datamodel = SQLAInterface(IsicSection)
+    list_title = 'List Isic Section'
+    show_title = 'Show Isic Section'
+    edit_title = 'Edit Isic Section'
+    add_title  = 'Add Isic Section'
+ 
+    list_columns = ['section_name']
+    # show_columns = ['section_name']
+    # edit_columns = ['section_name']
+    add_columns = ['section_name']
+    # search_columns = ['section_name']
+    description_columns = {
+        'id' : 'Unique identifier for each ISIC section.',
+        'section_name' : 'Name or description of the ISIC section.',
+    }
+    # list_exclude_columns = ['section_name']
+    # show_exclude_columns = ['section_name']
+    # edit_exclude_columns = ['section_name']
+    # add_exclude_columns = ['section_name']
+    # search_exclude_columns = ['section_name']
+    # order_columns = ['section_name']
+    # add_columns = ['section_name']
+    # add_columns = ['section_name']
+    # add_columns = ['section_name']
+    
+    label_columns = {'section_name':'Section Name'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['section_name']
+class LanguagecodesModelView(ModelView):
+    datamodel = SQLAInterface(Languagecodes)
+    list_title = 'List Languagecodes'
+    show_title = 'Show Languagecodes'
+    edit_title = 'Edit Languagecodes'
+    add_title  = 'Add Languagecodes'
+ 
+    list_columns = ['iso_639_3', 'iso_639_2', 'iso_639_1', 'name']
+    # show_columns = ['iso_639_3', 'iso_639_2', 'iso_639_1', 'name']
+    # edit_columns = ['iso_639_3', 'iso_639_2', 'iso_639_1', 'name']
+    add_columns = ['iso_639_3', 'iso_639_2', 'iso_639_1', 'name']
+    # search_columns = ['iso_639_3', 'iso_639_2', 'iso_639_1', 'name']
+    description_columns = {
+        'id' : 'None',
+        'iso_639_3' : 'ISO 639-3 code is a three-letter code that represents a specific language uniquely. It offers a comprehensive set of languages.',
+        'iso_639_2' : 'ISO 639-2 code is a three-letter code, which could be either bibliographic or terminological, representing a set of similar languages.',
+        'iso_639_1' : 'ISO 639-1 code is a two-letter code. It represents major languages but is not as exhaustive as ISO 639-3.',
+        'name' : 'The descriptive name of the language in English.',
+    }
+    # list_exclude_columns = ['iso_639_3', 'iso_639_2', 'iso_639_1', 'name']
+    # show_exclude_columns = ['iso_639_3', 'iso_639_2', 'iso_639_1', 'name']
+    # edit_exclude_columns = ['iso_639_3', 'iso_639_2', 'iso_639_1', 'name']
+    # add_exclude_columns = ['iso_639_3', 'iso_639_2', 'iso_639_1', 'name']
+    # search_exclude_columns = ['iso_639_3', 'iso_639_2', 'iso_639_1', 'name']
+    # order_columns = ['iso_639_3', 'iso_639_2', 'iso_639_1', 'name']
+    # add_columns = ['iso_639_3', 'iso_639_2', 'iso_639_1', 'name']
+    # add_columns = ['iso_639_3', 'iso_639_2', 'iso_639_1', 'name']
+    # add_columns = ['iso_639_3', 'iso_639_2', 'iso_639_1', 'name']
+    
+    label_columns = {'iso_639_3':'Iso 639 3', 'iso_639_2':'Iso 639 2', 'iso_639_1':'Iso 639 1', 'name':'Name'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['iso_639_3', 'iso_639_2', 'iso_639_1', 'name']
+class LoanTransactionModelView(ModelView):
+    datamodel = SQLAInterface(LoanTransaction)
+    list_title = 'List Loan Transaction'
+    show_title = 'Show Loan Transaction'
+    edit_title = 'Edit Loan Transaction'
+    add_title  = 'Add Loan Transaction'
+ 
+    list_columns = ['loan_id', 'is_reversed', 'payment_method', 'transaction_date', 'amount', 'principal_portion_derived', 'interest_portion_derived', 'fee_charges_portion_derived', 'penalty_charges_portion_derived']
+    # show_columns = ['loan_id', 'is_reversed', 'payment_method', 'transaction_date', 'amount', 'principal_portion_derived', 'interest_portion_derived', 'fee_charges_portion_derived', 'penalty_charges_portion_derived']
+    # edit_columns = ['loan_id', 'is_reversed', 'payment_method', 'transaction_date', 'amount', 'principal_portion_derived', 'interest_portion_derived', 'fee_charges_portion_derived', 'penalty_charges_portion_derived']
+    add_columns = ['loan_id', 'is_reversed', 'payment_method', 'transaction_date', 'amount', 'principal_portion_derived', 'interest_portion_derived', 'fee_charges_portion_derived', 'penalty_charges_portion_derived']
+    # search_columns = ['loan_id', 'is_reversed', 'payment_method', 'transaction_date', 'amount', 'principal_portion_derived', 'interest_portion_derived', 'fee_charges_portion_derived', 'penalty_charges_portion_derived']
+    description_columns = {
+        'id' : 'None',
+        'loan_id' : 'None',
+        'is_reversed' : 'None',
+        'payment_method' : 'None',
+        'transaction_date' : 'None',
+        'amount' : 'None',
+        'principal_portion_derived' : 'None',
+        'interest_portion_derived' : 'None',
+        'fee_charges_portion_derived' : 'None',
+        'penalty_charges_portion_derived' : 'None',
+    }
+    # list_exclude_columns = ['loan_id', 'is_reversed', 'payment_method', 'transaction_date', 'amount', 'principal_portion_derived', 'interest_portion_derived', 'fee_charges_portion_derived', 'penalty_charges_portion_derived']
+    # show_exclude_columns = ['loan_id', 'is_reversed', 'payment_method', 'transaction_date', 'amount', 'principal_portion_derived', 'interest_portion_derived', 'fee_charges_portion_derived', 'penalty_charges_portion_derived']
+    # edit_exclude_columns = ['loan_id', 'is_reversed', 'payment_method', 'transaction_date', 'amount', 'principal_portion_derived', 'interest_portion_derived', 'fee_charges_portion_derived', 'penalty_charges_portion_derived']
+    # add_exclude_columns = ['loan_id', 'is_reversed', 'payment_method', 'transaction_date', 'amount', 'principal_portion_derived', 'interest_portion_derived', 'fee_charges_portion_derived', 'penalty_charges_portion_derived']
+    # search_exclude_columns = ['loan_id', 'is_reversed', 'payment_method', 'transaction_date', 'amount', 'principal_portion_derived', 'interest_portion_derived', 'fee_charges_portion_derived', 'penalty_charges_portion_derived']
+    # order_columns = ['loan_id', 'is_reversed', 'payment_method', 'transaction_date', 'amount', 'principal_portion_derived', 'interest_portion_derived', 'fee_charges_portion_derived', 'penalty_charges_portion_derived']
+    # add_columns = ['loan_id', 'is_reversed', 'payment_method', 'transaction_date', 'amount', 'principal_portion_derived', 'interest_portion_derived', 'fee_charges_portion_derived', 'penalty_charges_portion_derived']
+    # add_columns = ['loan_id', 'is_reversed', 'payment_method', 'transaction_date', 'amount', 'principal_portion_derived', 'interest_portion_derived', 'fee_charges_portion_derived', 'penalty_charges_portion_derived']
+    # add_columns = ['loan_id', 'is_reversed', 'payment_method', 'transaction_date', 'amount', 'principal_portion_derived', 'interest_portion_derived', 'fee_charges_portion_derived', 'penalty_charges_portion_derived']
+    
+    label_columns = {'loan_id':'Loan Id', 'is_reversed':'Is Reversed', 'payment_method':'Payment Method', 'transaction_date':'Transaction Date', 'amount':'Amount', 'principal_portion_derived':'Principal Portion Derived', 'interest_portion_derived':'Interest Portion Derived', 'fee_charges_portion_derived':'Fee Charges Portion Derived', 'penalty_charges_portion_derived':'Penalty Charges Portion Derived'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['loan_id', 'is_reversed', 'payment_method', 'transaction_date', 'amount', 'principal_portion_derived', 'interest_portion_derived', 'fee_charges_portion_derived', 'penalty_charges_portion_derived']
+class LoanTransactionStrategyModelView(ModelView):
+    datamodel = SQLAInterface(LoanTransactionStrategy)
+    list_title = 'List Loan Transaction Strategy'
+    show_title = 'Show Loan Transaction Strategy'
+    edit_title = 'Edit Loan Transaction Strategy'
+    add_title  = 'Add Loan Transaction Strategy'
+ 
+    list_columns = ['name', 'description', 'is_active', 'created_at', 'updated_at', 'note']
+    # show_columns = ['name', 'description', 'is_active', 'created_at', 'updated_at', 'note']
+    # edit_columns = ['name', 'description', 'is_active', 'created_at', 'updated_at', 'note']
+    add_columns = ['name', 'description', 'is_active', 'created_at', 'updated_at', 'note']
+    # search_columns = ['name', 'description', 'is_active', 'created_at', 'updated_at', 'note']
+    description_columns = {
+        'id' : 'Primary key, auto-incremented',
+        'name' : 'Human-readable name of the strategy',
+        'description' : 'Detailed explanation of what the strategy entails',
+        'is_active' : 'Flag indicating if this strategy is active or not',
+        'created_at' : 'Timestamp when this record was created',
+        'updated_at' : 'Timestamp when this record was last updated',
+        'note' : 'None',
+    }
+    # list_exclude_columns = ['name', 'description', 'is_active', 'created_at', 'updated_at', 'note']
+    # show_exclude_columns = ['name', 'description', 'is_active', 'created_at', 'updated_at', 'note']
+    # edit_exclude_columns = ['name', 'description', 'is_active', 'created_at', 'updated_at', 'note']
+    # add_exclude_columns = ['name', 'description', 'is_active', 'created_at', 'updated_at', 'note']
+    # search_exclude_columns = ['name', 'description', 'is_active', 'created_at', 'updated_at', 'note']
+    # order_columns = ['name', 'description', 'is_active', 'created_at', 'updated_at', 'note']
+    # add_columns = ['name', 'description', 'is_active', 'created_at', 'updated_at', 'note']
+    # add_columns = ['name', 'description', 'is_active', 'created_at', 'updated_at', 'note']
+    # add_columns = ['name', 'description', 'is_active', 'created_at', 'updated_at', 'note']
+    
+    label_columns = {'name':'Name', 'description':'Description', 'is_active':'Is Active', 'created_at':'Created At', 'updated_at':'Updated At', 'note':'Note'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['name', 'description', 'is_active', 'created_at', 'updated_at', 'note']
 class MimeTypeModelView(ModelView):
     datamodel = SQLAInterface(MimeType)
     list_title = 'List Mime Type'
@@ -399,9 +585,9 @@ class MimeTypeModelView(ModelView):
     # search_columns = ['label', 'mime_type', 'file_extension']
     description_columns = {
         'id' : 'None',
-        'label' : 'Label of this mime type',
+        'label' : 'None',
         'mime_type' : 'None',
-        'file_extension' : 'File extensions for this mime type',
+        'file_extension' : 'None',
     }
     # list_exclude_columns = ['label', 'mime_type', 'file_extension']
     # show_exclude_columns = ['label', 'mime_type', 'file_extension']
@@ -431,9 +617,9 @@ class MimeTypeMapModelView(ModelView):
     add_columns = ['extension', 'mime_type']
     # search_columns = ['extension', 'mime_type']
     description_columns = {
-        'id' : 'Unique identifier for the MIME type mapping.',
-        'extension' : 'File extension, such as jpg or pdf',
-        'mime_type' : 'MIME type associated with the file extension.',
+        'id' : 'None',
+        'extension' : 'None',
+        'mime_type' : 'None',
     }
     # list_exclude_columns = ['extension', 'mime_type']
     # show_exclude_columns = ['extension', 'mime_type']
@@ -450,759 +636,41 @@ class MimeTypeMapModelView(ModelView):
     # base_order = ("name", "asc")
     # page_size = 100 
 #    list_columns = ['extension', 'mime_type']
-class PaymentCardModelView(ModelView):
-    datamodel = SQLAInterface(PaymentCard)
-    list_title = 'List Payment Card'
-    show_title = 'Show Payment Card'
-    edit_title = 'Edit Payment Card'
-    add_title  = 'Add Payment Card'
+class ModuleModelView(ModelView):
+    datamodel = SQLAInterface(Module)
+    list_title = 'List Module'
+    show_title = 'Show Module'
+    edit_title = 'Edit Module'
+    add_title  = 'Add Module'
  
-    list_columns = ['bin', 'pan', 'credit_card_expired', 'card_token', 'issue_number', 'bill_to_city', 'masked_number', 'name', 'company_name', 'card_holder_name', 'number_last_digits', 'payment_card_type', 'derived_card_type_code', 'expiration_year', 'expiration_month', 'bill_to_street', 'bill_to_street2', 'bill_to_first_name', 'bill_to_last_name', 'payment_method_status', 'card_number', 'cardholder_name', 'card_expiration', 'service_code', 'cvv']
-    # show_columns = ['bin', 'pan', 'credit_card_expired', 'card_token', 'issue_number', 'bill_to_city', 'masked_number', 'name', 'company_name', 'card_holder_name', 'number_last_digits', 'payment_card_type', 'derived_card_type_code', 'expiration_year', 'expiration_month', 'bill_to_street', 'bill_to_street2', 'bill_to_first_name', 'bill_to_last_name', 'payment_method_status', 'card_number', 'cardholder_name', 'card_expiration', 'service_code', 'cvv']
-    # edit_columns = ['bin', 'pan', 'credit_card_expired', 'card_token', 'issue_number', 'bill_to_city', 'masked_number', 'name', 'company_name', 'card_holder_name', 'number_last_digits', 'payment_card_type', 'derived_card_type_code', 'expiration_year', 'expiration_month', 'bill_to_street', 'bill_to_street2', 'bill_to_first_name', 'bill_to_last_name', 'payment_method_status', 'card_number', 'cardholder_name', 'card_expiration', 'service_code', 'cvv']
-    add_columns = ['bin', 'pan', 'credit_card_expired', 'card_token', 'issue_number', 'bill_to_city', 'masked_number', 'name', 'company_name', 'card_holder_name', 'number_last_digits', 'payment_card_type', 'derived_card_type_code', 'expiration_year', 'expiration_month', 'bill_to_street', 'bill_to_street2', 'bill_to_first_name', 'bill_to_last_name', 'payment_method_status', 'card_number', 'cardholder_name', 'card_expiration', 'service_code', 'cvv']
-    # search_columns = ['bin', 'pan', 'credit_card_expired', 'card_token', 'issue_number', 'bill_to_city', 'masked_number', 'name', 'company_name', 'card_holder_name', 'number_last_digits', 'payment_card_type', 'derived_card_type_code', 'expiration_year', 'expiration_month', 'bill_to_street', 'bill_to_street2', 'bill_to_first_name', 'bill_to_last_name', 'payment_method_status', 'card_number', 'cardholder_name', 'card_expiration', 'service_code', 'cvv']
-    description_columns = {
-        'id' : 'Unique identifier for the payment card.',
-        'bin' : 'Bank Identification Number (BIN) of the card.',
-        'pan' : 'Primary Account Number (PAN) of the card.',
-        'credit_card_expired' : 'Indicates whether the credit card has expired.',
-        'card_token' : 'Tokenized representation of the card.',
-        'issue_number' : 'Issue number of the card.',
-        'bill_to_city' : 'City associated with the billing address.',
-        'masked_number' : 'Masked version of the card number.',
-        'name' : 'Name associated with the card.',
-        'company_name' : 'Company name associated with the card.',
-        'card_holder_name' : 'Name of the cardholder.',
-        'number_last_digits' : 'Last digits of the card number.',
-        'payment_card_type' : 'Type of payment card (e.g., Visa, Mastercard).',
-        'derived_card_type_code' : 'Derived card type code.',
-        'expiration_year' : 'Year of card expiration.',
-        'expiration_month' : 'Month of card expiration.',
-        'bill_to_street' : 'Street address associated with the billing address.',
-        'bill_to_street2' : 'Additional street address information.',
-        'bill_to_first_name' : 'First name associated with the billing address.',
-        'bill_to_last_name' : 'Last name associated with the billing address.',
-        'payment_method_status' : 'Status of the payment method.',
-        'card_number' : 'Masked version of the card number.',
-        'cardholder_name' : 'Name of the cardholder.',
-        'card_expiration' : 'Expiration date of the card (stored as MM/YY format).',
-        'service_code' : 'Service code associated with the card.',
-        'cvv' : 'Masked or hashed version of the CVV (Card Verification Value).',
-    }
-    # list_exclude_columns = ['bin', 'pan', 'credit_card_expired', 'card_token', 'issue_number', 'bill_to_city', 'masked_number', 'name', 'company_name', 'card_holder_name', 'number_last_digits', 'payment_card_type', 'derived_card_type_code', 'expiration_year', 'expiration_month', 'bill_to_street', 'bill_to_street2', 'bill_to_first_name', 'bill_to_last_name', 'payment_method_status', 'card_number', 'cardholder_name', 'card_expiration', 'service_code', 'cvv']
-    # show_exclude_columns = ['bin', 'pan', 'credit_card_expired', 'card_token', 'issue_number', 'bill_to_city', 'masked_number', 'name', 'company_name', 'card_holder_name', 'number_last_digits', 'payment_card_type', 'derived_card_type_code', 'expiration_year', 'expiration_month', 'bill_to_street', 'bill_to_street2', 'bill_to_first_name', 'bill_to_last_name', 'payment_method_status', 'card_number', 'cardholder_name', 'card_expiration', 'service_code', 'cvv']
-    # edit_exclude_columns = ['bin', 'pan', 'credit_card_expired', 'card_token', 'issue_number', 'bill_to_city', 'masked_number', 'name', 'company_name', 'card_holder_name', 'number_last_digits', 'payment_card_type', 'derived_card_type_code', 'expiration_year', 'expiration_month', 'bill_to_street', 'bill_to_street2', 'bill_to_first_name', 'bill_to_last_name', 'payment_method_status', 'card_number', 'cardholder_name', 'card_expiration', 'service_code', 'cvv']
-    # add_exclude_columns = ['bin', 'pan', 'credit_card_expired', 'card_token', 'issue_number', 'bill_to_city', 'masked_number', 'name', 'company_name', 'card_holder_name', 'number_last_digits', 'payment_card_type', 'derived_card_type_code', 'expiration_year', 'expiration_month', 'bill_to_street', 'bill_to_street2', 'bill_to_first_name', 'bill_to_last_name', 'payment_method_status', 'card_number', 'cardholder_name', 'card_expiration', 'service_code', 'cvv']
-    # search_exclude_columns = ['bin', 'pan', 'credit_card_expired', 'card_token', 'issue_number', 'bill_to_city', 'masked_number', 'name', 'company_name', 'card_holder_name', 'number_last_digits', 'payment_card_type', 'derived_card_type_code', 'expiration_year', 'expiration_month', 'bill_to_street', 'bill_to_street2', 'bill_to_first_name', 'bill_to_last_name', 'payment_method_status', 'card_number', 'cardholder_name', 'card_expiration', 'service_code', 'cvv']
-    # order_columns = ['bin', 'pan', 'credit_card_expired', 'card_token', 'issue_number', 'bill_to_city', 'masked_number', 'name', 'company_name', 'card_holder_name', 'number_last_digits', 'payment_card_type', 'derived_card_type_code', 'expiration_year', 'expiration_month', 'bill_to_street', 'bill_to_street2', 'bill_to_first_name', 'bill_to_last_name', 'payment_method_status', 'card_number', 'cardholder_name', 'card_expiration', 'service_code', 'cvv']
-    # add_columns = ['bin', 'pan', 'credit_card_expired', 'card_token', 'issue_number', 'bill_to_city', 'masked_number', 'name', 'company_name', 'card_holder_name', 'number_last_digits', 'payment_card_type', 'derived_card_type_code', 'expiration_year', 'expiration_month', 'bill_to_street', 'bill_to_street2', 'bill_to_first_name', 'bill_to_last_name', 'payment_method_status', 'card_number', 'cardholder_name', 'card_expiration', 'service_code', 'cvv']
-    # add_columns = ['bin', 'pan', 'credit_card_expired', 'card_token', 'issue_number', 'bill_to_city', 'masked_number', 'name', 'company_name', 'card_holder_name', 'number_last_digits', 'payment_card_type', 'derived_card_type_code', 'expiration_year', 'expiration_month', 'bill_to_street', 'bill_to_street2', 'bill_to_first_name', 'bill_to_last_name', 'payment_method_status', 'card_number', 'cardholder_name', 'card_expiration', 'service_code', 'cvv']
-    # add_columns = ['bin', 'pan', 'credit_card_expired', 'card_token', 'issue_number', 'bill_to_city', 'masked_number', 'name', 'company_name', 'card_holder_name', 'number_last_digits', 'payment_card_type', 'derived_card_type_code', 'expiration_year', 'expiration_month', 'bill_to_street', 'bill_to_street2', 'bill_to_first_name', 'bill_to_last_name', 'payment_method_status', 'card_number', 'cardholder_name', 'card_expiration', 'service_code', 'cvv']
-    
-    label_columns = {'bin':'Bin', 'pan':'Pan', 'credit_card_expired':'Credit Card Expired', 'card_token':'Card Token', 'issue_number':'Issue Number', 'bill_to_city':'Bill To City', 'masked_number':'Masked Number', 'name':'Name', 'company_name':'Company Name', 'card_holder_name':'Card Holder Name', 'number_last_digits':'Number Last Digits', 'payment_card_type':'Payment Card Type', 'derived_card_type_code':'Derived Card Type Code', 'expiration_year':'Expiration Year', 'expiration_month':'Expiration Month', 'bill_to_street':'Bill To Street', 'bill_to_street2':'Bill To Street2', 'bill_to_first_name':'Bill To First Name', 'bill_to_last_name':'Bill To Last Name', 'payment_method_status':'Payment Method Status', 'card_number':'Card Number', 'cardholder_name':'Cardholder Name', 'card_expiration':'Card Expiration', 'service_code':'Service Code', 'cvv':'Cvv'}
-    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
-    # base_order = ("name", "asc")
-    # page_size = 100 
-#    list_columns = ['bin', 'pan', 'credit_card_expired', 'card_token', 'issue_number', 'bill_to_city', 'masked_number', 'name', 'company_name', 'card_holder_name', 'number_last_digits', 'payment_card_type', 'derived_card_type_code', 'expiration_year', 'expiration_month', 'bill_to_street', 'bill_to_street2', 'bill_to_first_name', 'bill_to_last_name', 'payment_method_status', 'card_number', 'cardholder_name', 'card_expiration', 'service_code', 'cvv']
-class PromotionModelView(ModelView):
-    datamodel = SQLAInterface(Promotion)
-    list_title = 'List Promotion'
-    show_title = 'Show Promotion'
-    edit_title = 'Edit Promotion'
-    add_title  = 'Add Promotion'
- 
-    list_columns = ['name', 'notes', 'start_date', 'end_date']
-    # show_columns = ['name', 'notes', 'start_date', 'end_date']
-    # edit_columns = ['name', 'notes', 'start_date', 'end_date']
-    add_columns = ['name', 'notes', 'start_date', 'end_date']
-    # search_columns = ['name', 'notes', 'start_date', 'end_date']
-    description_columns = {
-        'id' : 'Unique identifier for the promotion.',
-        'name' : 'Name or title of the promotion.',
-        'notes' : 'Additional remarks or details about the promotion.',
-        'start_date' : 'Start date of the promotion.',
-        'end_date' : 'End date of the promotion.',
-    }
-    # list_exclude_columns = ['name', 'notes', 'start_date', 'end_date']
-    # show_exclude_columns = ['name', 'notes', 'start_date', 'end_date']
-    # edit_exclude_columns = ['name', 'notes', 'start_date', 'end_date']
-    # add_exclude_columns = ['name', 'notes', 'start_date', 'end_date']
-    # search_exclude_columns = ['name', 'notes', 'start_date', 'end_date']
-    # order_columns = ['name', 'notes', 'start_date', 'end_date']
-    # add_columns = ['name', 'notes', 'start_date', 'end_date']
-    # add_columns = ['name', 'notes', 'start_date', 'end_date']
-    # add_columns = ['name', 'notes', 'start_date', 'end_date']
-    
-    label_columns = {'name':'Name', 'notes':'Notes', 'start_date':'Start Date', 'end_date':'End Date'}
-    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
-    # base_order = ("name", "asc")
-    # page_size = 100 
-#    list_columns = ['name', 'notes', 'start_date', 'end_date']
-class RiskProfileModelView(ModelView):
-    datamodel = SQLAInterface(RiskProfile)
-    list_title = 'List Risk Profile'
-    show_title = 'Show Risk Profile'
-    edit_title = 'Edit Risk Profile'
-    add_title  = 'Add Risk Profile'
- 
-    list_columns = ['name', 'description', 'risk_score', 'risk_category', 'max_acceptable_loss', 'probability_of_loss', 'historical_volatility', 'liquidity_rating', 'regulatory_compliance', 'market_sensitivity', 'credit_rating', 'investment_horizon', 'sector_exposure', 'geographic_exposure']
-    # show_columns = ['name', 'description', 'risk_score', 'risk_category', 'max_acceptable_loss', 'probability_of_loss', 'historical_volatility', 'liquidity_rating', 'regulatory_compliance', 'market_sensitivity', 'credit_rating', 'investment_horizon', 'sector_exposure', 'geographic_exposure']
-    # edit_columns = ['name', 'description', 'risk_score', 'risk_category', 'max_acceptable_loss', 'probability_of_loss', 'historical_volatility', 'liquidity_rating', 'regulatory_compliance', 'market_sensitivity', 'credit_rating', 'investment_horizon', 'sector_exposure', 'geographic_exposure']
-    add_columns = ['name', 'description', 'risk_score', 'risk_category', 'max_acceptable_loss', 'probability_of_loss', 'historical_volatility', 'liquidity_rating', 'regulatory_compliance', 'market_sensitivity', 'credit_rating', 'investment_horizon', 'sector_exposure', 'geographic_exposure']
-    # search_columns = ['name', 'description', 'risk_score', 'risk_category', 'max_acceptable_loss', 'probability_of_loss', 'historical_volatility', 'liquidity_rating', 'regulatory_compliance', 'market_sensitivity', 'credit_rating', 'investment_horizon', 'sector_exposure', 'geographic_exposure']
-    description_columns = {
-        'id' : 'Unique identifier for each risk profile',
-        'name' : 'Name of the risk profile',
-        'description' : 'Detailed description of the risk profile',
-        'risk_score' : 'Quantitative measure of risk, often based on a specific scoring system',
-        'risk_category' : 'Categorization of risk (e.g., Low, Moderate, High)',
-        'max_acceptable_loss' : 'Maximum financial loss that is acceptable for this risk profile, usually a percentage or monetary value',
-        'probability_of_loss' : 'Likelihood of incurring a loss, often expressed as a percentage',
-        'historical_volatility' : 'Measure of the variation in the price of the asset over time',
-        'liquidity_rating' : 'Rating representing the ease of converting the asset to cash without significant loss of value',
-        'regulatory_compliance' : 'Indication of any specific regulatory compliance considerations relevant to the risk profile',
-        'market_sensitivity' : 'Measure of how sensitive the asset is to market fluctuations',
-        'credit_rating' : 'Creditworthiness of a debtor, particularly relevant in the context of credit risk',
-        'investment_horizon' : 'Expected duration for holding the investment',
-        'sector_exposure' : 'Indicates the sectors to which the investment is exposed',
-        'geographic_exposure' : 'Highlights the geographical regions involved in the transaction',
-    }
-    # list_exclude_columns = ['name', 'description', 'risk_score', 'risk_category', 'max_acceptable_loss', 'probability_of_loss', 'historical_volatility', 'liquidity_rating', 'regulatory_compliance', 'market_sensitivity', 'credit_rating', 'investment_horizon', 'sector_exposure', 'geographic_exposure']
-    # show_exclude_columns = ['name', 'description', 'risk_score', 'risk_category', 'max_acceptable_loss', 'probability_of_loss', 'historical_volatility', 'liquidity_rating', 'regulatory_compliance', 'market_sensitivity', 'credit_rating', 'investment_horizon', 'sector_exposure', 'geographic_exposure']
-    # edit_exclude_columns = ['name', 'description', 'risk_score', 'risk_category', 'max_acceptable_loss', 'probability_of_loss', 'historical_volatility', 'liquidity_rating', 'regulatory_compliance', 'market_sensitivity', 'credit_rating', 'investment_horizon', 'sector_exposure', 'geographic_exposure']
-    # add_exclude_columns = ['name', 'description', 'risk_score', 'risk_category', 'max_acceptable_loss', 'probability_of_loss', 'historical_volatility', 'liquidity_rating', 'regulatory_compliance', 'market_sensitivity', 'credit_rating', 'investment_horizon', 'sector_exposure', 'geographic_exposure']
-    # search_exclude_columns = ['name', 'description', 'risk_score', 'risk_category', 'max_acceptable_loss', 'probability_of_loss', 'historical_volatility', 'liquidity_rating', 'regulatory_compliance', 'market_sensitivity', 'credit_rating', 'investment_horizon', 'sector_exposure', 'geographic_exposure']
-    # order_columns = ['name', 'description', 'risk_score', 'risk_category', 'max_acceptable_loss', 'probability_of_loss', 'historical_volatility', 'liquidity_rating', 'regulatory_compliance', 'market_sensitivity', 'credit_rating', 'investment_horizon', 'sector_exposure', 'geographic_exposure']
-    # add_columns = ['name', 'description', 'risk_score', 'risk_category', 'max_acceptable_loss', 'probability_of_loss', 'historical_volatility', 'liquidity_rating', 'regulatory_compliance', 'market_sensitivity', 'credit_rating', 'investment_horizon', 'sector_exposure', 'geographic_exposure']
-    # add_columns = ['name', 'description', 'risk_score', 'risk_category', 'max_acceptable_loss', 'probability_of_loss', 'historical_volatility', 'liquidity_rating', 'regulatory_compliance', 'market_sensitivity', 'credit_rating', 'investment_horizon', 'sector_exposure', 'geographic_exposure']
-    # add_columns = ['name', 'description', 'risk_score', 'risk_category', 'max_acceptable_loss', 'probability_of_loss', 'historical_volatility', 'liquidity_rating', 'regulatory_compliance', 'market_sensitivity', 'credit_rating', 'investment_horizon', 'sector_exposure', 'geographic_exposure']
-    
-    label_columns = {'name':'Name', 'description':'Description', 'risk_score':'Risk Score', 'risk_category':'Risk Category', 'max_acceptable_loss':'Max Acceptable Loss', 'probability_of_loss':'Probability Of Loss', 'historical_volatility':'Historical Volatility', 'liquidity_rating':'Liquidity Rating', 'regulatory_compliance':'Regulatory Compliance', 'market_sensitivity':'Market Sensitivity', 'credit_rating':'Credit Rating', 'investment_horizon':'Investment Horizon', 'sector_exposure':'Sector Exposure', 'geographic_exposure':'Geographic Exposure'}
-    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
-    # base_order = ("name", "asc")
-    # page_size = 100 
-#    list_columns = ['name', 'description', 'risk_score', 'risk_category', 'max_acceptable_loss', 'probability_of_loss', 'historical_volatility', 'liquidity_rating', 'regulatory_compliance', 'market_sensitivity', 'credit_rating', 'investment_horizon', 'sector_exposure', 'geographic_exposure']
-class TechparamsModelView(ModelView):
-    datamodel = SQLAInterface(Techparams)
-    list_title = 'List Techparams'
-    show_title = 'Show Techparams'
-    edit_title = 'Edit Techparams'
-    add_title  = 'Add Techparams'
- 
-    list_columns = ['tp_key', 'tp_value', 'enabled', 'notes']
-    # show_columns = ['tp_key', 'tp_value', 'enabled', 'notes']
-    # edit_columns = ['tp_key', 'tp_value', 'enabled', 'notes']
-    add_columns = ['tp_key', 'tp_value', 'enabled', 'notes']
-    # search_columns = ['tp_key', 'tp_value', 'enabled', 'notes']
+    list_columns = ['title', 'description', 'module_level', 'created_at', 'updated_at']
+    # show_columns = ['title', 'description', 'module_level', 'created_at', 'updated_at']
+    # edit_columns = ['title', 'description', 'module_level', 'created_at', 'updated_at']
+    add_columns = ['title', 'description', 'module_level', 'created_at', 'updated_at']
+    # search_columns = ['title', 'description', 'module_level', 'created_at', 'updated_at']
     description_columns = {
         'id' : 'None',
-        'tp_key' : 'Tech Param Key',
-        'tp_value' : 'Tech Param Value',
-        'enabled' : 'Is this param used',
-        'notes' : 'Notes on this parameter',
+        'title' : 'None',
+        'description' : 'None',
+        'module_level' : 'None',
+        'created_at' : 'None',
+        'updated_at' : 'None',
     }
-    # list_exclude_columns = ['tp_key', 'tp_value', 'enabled', 'notes']
-    # show_exclude_columns = ['tp_key', 'tp_value', 'enabled', 'notes']
-    # edit_exclude_columns = ['tp_key', 'tp_value', 'enabled', 'notes']
-    # add_exclude_columns = ['tp_key', 'tp_value', 'enabled', 'notes']
-    # search_exclude_columns = ['tp_key', 'tp_value', 'enabled', 'notes']
-    # order_columns = ['tp_key', 'tp_value', 'enabled', 'notes']
-    # add_columns = ['tp_key', 'tp_value', 'enabled', 'notes']
-    # add_columns = ['tp_key', 'tp_value', 'enabled', 'notes']
-    # add_columns = ['tp_key', 'tp_value', 'enabled', 'notes']
+    # list_exclude_columns = ['title', 'description', 'module_level', 'created_at', 'updated_at']
+    # show_exclude_columns = ['title', 'description', 'module_level', 'created_at', 'updated_at']
+    # edit_exclude_columns = ['title', 'description', 'module_level', 'created_at', 'updated_at']
+    # add_exclude_columns = ['title', 'description', 'module_level', 'created_at', 'updated_at']
+    # search_exclude_columns = ['title', 'description', 'module_level', 'created_at', 'updated_at']
+    # order_columns = ['title', 'description', 'module_level', 'created_at', 'updated_at']
+    # add_columns = ['title', 'description', 'module_level', 'created_at', 'updated_at']
+    # add_columns = ['title', 'description', 'module_level', 'created_at', 'updated_at']
+    # add_columns = ['title', 'description', 'module_level', 'created_at', 'updated_at']
     
-    label_columns = {'tp_key':'Tp Key', 'tp_value':'Tp Value', 'enabled':'Enabled', 'notes':'Notes'}
+    label_columns = {'title':'Title', 'description':'Description', 'module_level':'Module Level', 'created_at':'Created At', 'updated_at':'Updated At'}
     # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
     # base_order = ("name", "asc")
     # page_size = 100 
-#    list_columns = ['tp_key', 'tp_value', 'enabled', 'notes']
-class TokenProviderModelView(ModelView):
-    datamodel = SQLAInterface(TokenProvider)
-    list_title = 'List Token Provider'
-    show_title = 'Show Token Provider'
-    edit_title = 'Edit Token Provider'
-    add_title  = 'Add Token Provider'
- 
-    list_columns = ['name', 'notes', 'priv_key', 'pub_key', 'endpoint', 'protocol', 'auth', 'ssl', 'ip_whitelist', 'password', 'enabled']
-    # show_columns = ['name', 'notes', 'priv_key', 'pub_key', 'endpoint', 'protocol', 'auth', 'ssl', 'ip_whitelist', 'password', 'enabled']
-    # edit_columns = ['name', 'notes', 'priv_key', 'pub_key', 'endpoint', 'protocol', 'auth', 'ssl', 'ip_whitelist', 'password', 'enabled']
-    add_columns = ['name', 'notes', 'priv_key', 'pub_key', 'endpoint', 'protocol', 'auth', 'ssl', 'ip_whitelist', 'password', 'enabled']
-    # search_columns = ['name', 'notes', 'priv_key', 'pub_key', 'endpoint', 'protocol', 'auth', 'ssl', 'ip_whitelist', 'password', 'enabled']
-    description_columns = {
-        'id' : 'Unique identifier for the token provider.',
-        'name' : 'Name of the token provider.',
-        'notes' : 'Additional notes or remarks about the token provider.',
-        'priv_key' : 'Private key used for authentication and encryption.',
-        'pub_key' : 'Public key used for authentication and encryption.',
-        'endpoint' : 'Endpoint URL for communication with the token provider.',
-        'protocol' : 'Communication protocol used with the token provider (e.g., HTTPS).',
-        'auth' : 'Authentication mechanism or credentials required for access.',
-        'ssl' : 'SSL/TLS configuration or settings for secure communication.',
-        'ip_whitelist' : 'List of whitelisted IP addresses for accessing the token provider.',
-        'password' : 'Password associated with the token provider.',
-        'enabled' : 'Indicates if the token provider is enabled or disabled.',
-    }
-    # list_exclude_columns = ['name', 'notes', 'priv_key', 'pub_key', 'endpoint', 'protocol', 'auth', 'ssl', 'ip_whitelist', 'password', 'enabled']
-    # show_exclude_columns = ['name', 'notes', 'priv_key', 'pub_key', 'endpoint', 'protocol', 'auth', 'ssl', 'ip_whitelist', 'password', 'enabled']
-    # edit_exclude_columns = ['name', 'notes', 'priv_key', 'pub_key', 'endpoint', 'protocol', 'auth', 'ssl', 'ip_whitelist', 'password', 'enabled']
-    # add_exclude_columns = ['name', 'notes', 'priv_key', 'pub_key', 'endpoint', 'protocol', 'auth', 'ssl', 'ip_whitelist', 'password', 'enabled']
-    # search_exclude_columns = ['name', 'notes', 'priv_key', 'pub_key', 'endpoint', 'protocol', 'auth', 'ssl', 'ip_whitelist', 'password', 'enabled']
-    # order_columns = ['name', 'notes', 'priv_key', 'pub_key', 'endpoint', 'protocol', 'auth', 'ssl', 'ip_whitelist', 'password', 'enabled']
-    # add_columns = ['name', 'notes', 'priv_key', 'pub_key', 'endpoint', 'protocol', 'auth', 'ssl', 'ip_whitelist', 'password', 'enabled']
-    # add_columns = ['name', 'notes', 'priv_key', 'pub_key', 'endpoint', 'protocol', 'auth', 'ssl', 'ip_whitelist', 'password', 'enabled']
-    # add_columns = ['name', 'notes', 'priv_key', 'pub_key', 'endpoint', 'protocol', 'auth', 'ssl', 'ip_whitelist', 'password', 'enabled']
-    
-    label_columns = {'name':'Name', 'notes':'Notes', 'priv_key':'Priv Key', 'pub_key':'Pub Key', 'endpoint':'Endpoint', 'protocol':'Protocol', 'auth':'Auth', 'ssl':'Ssl', 'ip_whitelist':'Ip Whitelist', 'password':'Password', 'enabled':'Enabled'}
-    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
-    # base_order = ("name", "asc")
-    # page_size = 100 
-#    list_columns = ['name', 'notes', 'priv_key', 'pub_key', 'endpoint', 'protocol', 'auth', 'ssl', 'ip_whitelist', 'password', 'enabled']
-class TransRoutingThresholdsModelView(ModelView):
-    datamodel = SQLAInterface(TransRoutingThresholds)
-    list_title = 'List Trans Routing Thresholds'
-    show_title = 'Show Trans Routing Thresholds'
-    edit_title = 'Edit Trans Routing Thresholds'
-    add_title  = 'Add Trans Routing Thresholds'
- 
-    list_columns = ['name', 'min_amount', 'max_amount', 'priority']
-    # show_columns = ['name', 'min_amount', 'max_amount', 'priority']
-    # edit_columns = ['name', 'min_amount', 'max_amount', 'priority']
-    add_columns = ['name', 'min_amount', 'max_amount', 'priority']
-    # search_columns = ['name', 'min_amount', 'max_amount', 'priority']
-    description_columns = {
-        'id' : 'Unique identifier for the threshold.',
-        'name' : 'Name or description of the threshold.',
-        'min_amount' : 'Minimum transaction amount that triggers this threshold.',
-        'max_amount' : 'Maximum transaction amount that triggers this threshold.',
-        'priority' : 'Priority level for this threshold.',
-    }
-    # list_exclude_columns = ['name', 'min_amount', 'max_amount', 'priority']
-    # show_exclude_columns = ['name', 'min_amount', 'max_amount', 'priority']
-    # edit_exclude_columns = ['name', 'min_amount', 'max_amount', 'priority']
-    # add_exclude_columns = ['name', 'min_amount', 'max_amount', 'priority']
-    # search_exclude_columns = ['name', 'min_amount', 'max_amount', 'priority']
-    # order_columns = ['name', 'min_amount', 'max_amount', 'priority']
-    # add_columns = ['name', 'min_amount', 'max_amount', 'priority']
-    # add_columns = ['name', 'min_amount', 'max_amount', 'priority']
-    # add_columns = ['name', 'min_amount', 'max_amount', 'priority']
-    
-    label_columns = {'name':'Name', 'min_amount':'Min Amount', 'max_amount':'Max Amount', 'priority':'Priority'}
-    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
-    # base_order = ("name", "asc")
-    # page_size = 100 
-#    list_columns = ['name', 'min_amount', 'max_amount', 'priority']
-class TransTypeModelView(ModelView):
-    datamodel = SQLAInterface(TransType)
-    list_title = 'List Trans Type'
-    show_title = 'Show Trans Type'
-    edit_title = 'Edit Trans Type'
-    add_title  = 'Add Trans Type'
- 
-    list_columns = ['name', 'notes']
-    # show_columns = ['name', 'notes']
-    # edit_columns = ['name', 'notes']
-    add_columns = ['name', 'notes']
-    # search_columns = ['name', 'notes']
-    description_columns = {
-        'id' : 'Unique identifier for the transaction type.',
-        'name' : 'Name or title of the transaction type, e.g., Deposit, Withdrawal, Transfer, Bill Payment, etc.',
-        'notes' : 'Additional notes or descriptions related to the transaction type.',
-    }
-    # list_exclude_columns = ['name', 'notes']
-    # show_exclude_columns = ['name', 'notes']
-    # edit_exclude_columns = ['name', 'notes']
-    # add_exclude_columns = ['name', 'notes']
-    # search_exclude_columns = ['name', 'notes']
-    # order_columns = ['name', 'notes']
-    # add_columns = ['name', 'notes']
-    # add_columns = ['name', 'notes']
-    # add_columns = ['name', 'notes']
-    
-    label_columns = {'name':'Name', 'notes':'Notes'}
-    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
-    # base_order = ("name", "asc")
-    # page_size = 100 
-#    list_columns = ['name', 'notes']
-class UserExtModelView(ModelView):
-    datamodel = SQLAInterface(UserExt)
-    list_title = 'List User Ext'
-    show_title = 'Show User Ext'
-    edit_title = 'Edit User Ext'
-    add_title  = 'Add User Ext'
- 
-    list_columns = ['manager', 'middle_name', 'employee_number', 'job_title', 'phone_number', 'email', 'user_data']
-    # show_columns = ['manager', 'middle_name', 'employee_number', 'job_title', 'phone_number', 'email', 'user_data']
-    # edit_columns = ['manager', 'middle_name', 'employee_number', 'job_title', 'phone_number', 'email', 'user_data']
-    add_columns = ['manager', 'middle_name', 'employee_number', 'job_title', 'phone_number', 'email', 'user_data']
-    # search_columns = ['manager', 'middle_name', 'employee_number', 'job_title', 'phone_number', 'email', 'user_data']
-    description_columns = {
-        'id' : 'Unique identifier for the user.',
-        'manager_id_fk' : 'Manager ID - References the manager of the user, if applicable.',
-        'middle_name' : 'Middle name of the user, if available.',
-        'employee_number' : 'Employee number assigned to the user, if applicable.',
-        'job_title' : 'Job title or position of the user within the organization.',
-        'phone_number' : 'Phone number for contacting the user.',
-        'email' : 'Email address of the user, used for communication.',
-        'user_data' : 'Additional user data or information, such as user preferences or details.',
-    }
-    # list_exclude_columns = ['manager', 'middle_name', 'employee_number', 'job_title', 'phone_number', 'email', 'user_data']
-    # show_exclude_columns = ['manager', 'middle_name', 'employee_number', 'job_title', 'phone_number', 'email', 'user_data']
-    # edit_exclude_columns = ['manager', 'middle_name', 'employee_number', 'job_title', 'phone_number', 'email', 'user_data']
-    # add_exclude_columns = ['manager', 'middle_name', 'employee_number', 'job_title', 'phone_number', 'email', 'user_data']
-    # search_exclude_columns = ['manager', 'middle_name', 'employee_number', 'job_title', 'phone_number', 'email', 'user_data']
-    # order_columns = ['manager', 'middle_name', 'employee_number', 'job_title', 'phone_number', 'email', 'user_data']
-    # add_columns = ['manager', 'middle_name', 'employee_number', 'job_title', 'phone_number', 'email', 'user_data']
-    # add_columns = ['manager', 'middle_name', 'employee_number', 'job_title', 'phone_number', 'email', 'user_data']
-    # add_columns = ['manager', 'middle_name', 'employee_number', 'job_title', 'phone_number', 'email', 'user_data']
-    
-    label_columns = {'manager':'Manager', 'middle_name':'Middle Name', 'employee_number':'Employee Number', 'job_title':'Job Title', 'phone_number':'Phone Number', 'email':'Email', 'user_data':'User Data'}
-    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
-    # base_order = ("name", "asc")
-    # page_size = 100 
-#    list_columns = ['manager', 'middle_name', 'employee_number', 'job_title', 'phone_number', 'email', 'user_data']
-class BillerModelView(ModelView):
-    datamodel = SQLAInterface(Biller)
-    list_title = 'List Biller'
-    show_title = 'Show Biller'
-    edit_title = 'Edit Biller'
-    add_title  = 'Add Biller'
- 
-    list_columns = ['category', 'code', 'name', 'url', 'note']
-    # show_columns = ['category', 'code', 'name', 'url', 'note']
-    # edit_columns = ['category', 'code', 'name', 'url', 'note']
-    add_columns = ['category', 'code', 'name', 'url', 'note']
-    # search_columns = ['category', 'code', 'name', 'url', 'note']
-    description_columns = {
-        'id' : 'Unique identifier for the biller.',
-        'category_id_fk' : 'Foreign key referencing the biller category to which this biller belongs.',
-        'code' : 'Unique code or identifier for the biller.',
-        'name' : 'Name or title of the biller.',
-        'url' : 'URL or link associated with the biller.',
-        'note' : 'Additional notes or remarks about the biller.',
-    }
-    # list_exclude_columns = ['category', 'code', 'name', 'url', 'note']
-    # show_exclude_columns = ['category', 'code', 'name', 'url', 'note']
-    # edit_exclude_columns = ['category', 'code', 'name', 'url', 'note']
-    # add_exclude_columns = ['category', 'code', 'name', 'url', 'note']
-    # search_exclude_columns = ['category', 'code', 'name', 'url', 'note']
-    # order_columns = ['category', 'code', 'name', 'url', 'note']
-    # add_columns = ['category', 'code', 'name', 'url', 'note']
-    # add_columns = ['category', 'code', 'name', 'url', 'note']
-    # add_columns = ['category', 'code', 'name', 'url', 'note']
-    
-    label_columns = {'category':'Category', 'code':'Code', 'name':'Name', 'url':'Url', 'note':'Note'}
-    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
-    # base_order = ("name", "asc")
-    # page_size = 100 
-#    list_columns = ['category', 'code', 'name', 'url', 'note']
-class StateModelView(ModelView):
-    datamodel = SQLAInterface(State)
-    list_title = 'List State'
-    show_title = 'Show State'
-    edit_title = 'Edit State'
-    add_title  = 'Add State'
- 
-    list_columns = ['country', 'code', 'name', 'description']
-    # show_columns = ['country', 'code', 'name', 'description']
-    # edit_columns = ['country', 'code', 'name', 'description']
-    add_columns = ['country', 'code', 'name', 'description']
-    # search_columns = ['country', 'code', 'name', 'description']
-    description_columns = {
-        'country_id_fk' : 'None',
-        'id' : 'ID of this column',
-        'code' : 'State Code',
-        'name' : 'Name of the state',
-        'description' : 'Brief description of the state',
-    }
-    # list_exclude_columns = ['country', 'code', 'name', 'description']
-    # show_exclude_columns = ['country', 'code', 'name', 'description']
-    # edit_exclude_columns = ['country', 'code', 'name', 'description']
-    # add_exclude_columns = ['country', 'code', 'name', 'description']
-    # search_exclude_columns = ['country', 'code', 'name', 'description']
-    # order_columns = ['country', 'code', 'name', 'description']
-    # add_columns = ['country', 'code', 'name', 'description']
-    # add_columns = ['country', 'code', 'name', 'description']
-    # add_columns = ['country', 'code', 'name', 'description']
-    
-    label_columns = {'country':'Country', 'code':'Code', 'name':'Name', 'description':'Description'}
-    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
-    # base_order = ("name", "asc")
-    # page_size = 100 
-#    list_columns = ['country', 'code', 'name', 'description']
-class TokenModelView(ModelView):
-    datamodel = SQLAInterface(Token)
-    list_title = 'List Token'
-    show_title = 'Show Token'
-    edit_title = 'Edit Token'
-    add_title  = 'Add Token'
- 
-    list_columns = ['token_provider', 'token_name', 'token_issue_date', 'token_expiry_date', 'token_validity', 'token_expired', 'token_value', 'token_username', 'token_password', 'token_notes', 'token_client_secret', 'enabled']
-    # show_columns = ['token_provider', 'token_name', 'token_issue_date', 'token_expiry_date', 'token_validity', 'token_expired', 'token_value', 'token_username', 'token_password', 'token_notes', 'token_client_secret', 'enabled']
-    # edit_columns = ['token_provider', 'token_name', 'token_issue_date', 'token_expiry_date', 'token_validity', 'token_expired', 'token_value', 'token_username', 'token_password', 'token_notes', 'token_client_secret', 'enabled']
-    add_columns = ['token_provider', 'token_name', 'token_issue_date', 'token_expiry_date', 'token_validity', 'token_expired', 'token_value', 'token_username', 'token_password', 'token_notes', 'token_client_secret', 'enabled']
-    # search_columns = ['token_provider', 'token_name', 'token_issue_date', 'token_expiry_date', 'token_validity', 'token_expired', 'token_value', 'token_username', 'token_password', 'token_notes', 'token_client_secret', 'enabled']
-    description_columns = {
-        'id' : 'Unique identifier for the token.',
-        'token_provider_id_fk' : 'Foreign key referencing the associated token provider.',
-        'token_name' : 'Name or identifier for the token.',
-        'token_issue_date' : 'Timestamp when the token was issued.',
-        'token_expiry_date' : 'Timestamp when the token expires.',
-        'token_validity' : 'Duration of token validity in seconds.',
-        'token_expired' : 'Indicates if the token has expired.',
-        'token_value' : 'Actual token value or token string.',
-        'token_username' : 'Username associated with the token.',
-        'token_password' : 'Password associated with the token.',
-        'token_notes' : 'Additional notes or remarks about the token.',
-        'token_client_secret' : 'Client secret associated with the token.',
-        'enabled' : 'Indicates if the token is enabled or disabled.',
-    }
-    # list_exclude_columns = ['token_provider', 'token_name', 'token_issue_date', 'token_expiry_date', 'token_validity', 'token_expired', 'token_value', 'token_username', 'token_password', 'token_notes', 'token_client_secret', 'enabled']
-    # show_exclude_columns = ['token_provider', 'token_name', 'token_issue_date', 'token_expiry_date', 'token_validity', 'token_expired', 'token_value', 'token_username', 'token_password', 'token_notes', 'token_client_secret', 'enabled']
-    # edit_exclude_columns = ['token_provider', 'token_name', 'token_issue_date', 'token_expiry_date', 'token_validity', 'token_expired', 'token_value', 'token_username', 'token_password', 'token_notes', 'token_client_secret', 'enabled']
-    # add_exclude_columns = ['token_provider', 'token_name', 'token_issue_date', 'token_expiry_date', 'token_validity', 'token_expired', 'token_value', 'token_username', 'token_password', 'token_notes', 'token_client_secret', 'enabled']
-    # search_exclude_columns = ['token_provider', 'token_name', 'token_issue_date', 'token_expiry_date', 'token_validity', 'token_expired', 'token_value', 'token_username', 'token_password', 'token_notes', 'token_client_secret', 'enabled']
-    # order_columns = ['token_provider', 'token_name', 'token_issue_date', 'token_expiry_date', 'token_validity', 'token_expired', 'token_value', 'token_username', 'token_password', 'token_notes', 'token_client_secret', 'enabled']
-    # add_columns = ['token_provider', 'token_name', 'token_issue_date', 'token_expiry_date', 'token_validity', 'token_expired', 'token_value', 'token_username', 'token_password', 'token_notes', 'token_client_secret', 'enabled']
-    # add_columns = ['token_provider', 'token_name', 'token_issue_date', 'token_expiry_date', 'token_validity', 'token_expired', 'token_value', 'token_username', 'token_password', 'token_notes', 'token_client_secret', 'enabled']
-    # add_columns = ['token_provider', 'token_name', 'token_issue_date', 'token_expiry_date', 'token_validity', 'token_expired', 'token_value', 'token_username', 'token_password', 'token_notes', 'token_client_secret', 'enabled']
-    
-    label_columns = {'token_provider':'Token Provider', 'token_name':'Token Name', 'token_issue_date':'Token Issue Date', 'token_expiry_date':'Token Expiry Date', 'token_validity':'Token Validity', 'token_expired':'Token Expired', 'token_value':'Token Value', 'token_username':'Token Username', 'token_password':'Token Password', 'token_notes':'Token Notes', 'token_client_secret':'Token Client Secret', 'enabled':'Enabled'}
-    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
-    # base_order = ("name", "asc")
-    # page_size = 100 
-#    list_columns = ['token_provider', 'token_name', 'token_issue_date', 'token_expiry_date', 'token_validity', 'token_expired', 'token_value', 'token_username', 'token_password', 'token_notes', 'token_client_secret', 'enabled']
-class BillerOfferingModelView(ModelView):
-    datamodel = SQLAInterface(BillerOffering)
-    list_title = 'List Biller Offering'
-    show_title = 'Show Biller Offering'
-    edit_title = 'Edit Biller Offering'
-    add_title  = 'Add Biller Offering'
- 
-    list_columns = ['biller', 'name', 'description', 'price']
-    # show_columns = ['biller', 'name', 'description', 'price']
-    # edit_columns = ['biller', 'name', 'description', 'price']
-    add_columns = ['biller', 'name', 'description', 'price']
-    # search_columns = ['biller', 'name', 'description', 'price']
-    description_columns = {
-        'biller_id_fk' : 'Foreign key referencing the biller to which this offering belongs.',
-        'id' : 'Unique identifier for the biller offering.',
-        'name' : 'Name or title of the biller offering.',
-        'description' : 'Description of the biller offering.',
-        'price' : 'Price or cost associated with the biller offering.',
-    }
-    # list_exclude_columns = ['biller', 'name', 'description', 'price']
-    # show_exclude_columns = ['biller', 'name', 'description', 'price']
-    # edit_exclude_columns = ['biller', 'name', 'description', 'price']
-    # add_exclude_columns = ['biller', 'name', 'description', 'price']
-    # search_exclude_columns = ['biller', 'name', 'description', 'price']
-    # order_columns = ['biller', 'name', 'description', 'price']
-    # add_columns = ['biller', 'name', 'description', 'price']
-    # add_columns = ['biller', 'name', 'description', 'price']
-    # add_columns = ['biller', 'name', 'description', 'price']
-    
-    label_columns = {'biller':'Biller', 'name':'Name', 'description':'Description', 'price':'Price'}
-    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
-    # base_order = ("name", "asc")
-    # page_size = 100 
-#    list_columns = ['biller', 'name', 'description', 'price']
-class LgaModelView(ModelView):
-    datamodel = SQLAInterface(Lga)
-    list_title = 'List Lga'
-    show_title = 'Show Lga'
-    edit_title = 'Edit Lga'
-    add_title  = 'Add Lga'
- 
-    list_columns = ['state', 'code', 'lga_name']
-    # show_columns = ['state', 'code', 'lga_name']
-    # edit_columns = ['state', 'code', 'lga_name']
-    add_columns = ['state', 'code', 'lga_name']
-    # search_columns = ['state', 'code', 'lga_name']
-    description_columns = {
-        'id' : 'ID of this column',
-        'state_id_fk' : 'Foreign Key of the state',
-        'code' : 'Local Government Code',
-        'lga_name' : 'LGA Name',
-    }
-    # list_exclude_columns = ['state', 'code', 'lga_name']
-    # show_exclude_columns = ['state', 'code', 'lga_name']
-    # edit_exclude_columns = ['state', 'code', 'lga_name']
-    # add_exclude_columns = ['state', 'code', 'lga_name']
-    # search_exclude_columns = ['state', 'code', 'lga_name']
-    # order_columns = ['state', 'code', 'lga_name']
-    # add_columns = ['state', 'code', 'lga_name']
-    # add_columns = ['state', 'code', 'lga_name']
-    # add_columns = ['state', 'code', 'lga_name']
-    
-    label_columns = {'state':'State', 'code':'Code', 'lga_name':'Lga Name'}
-    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
-    # base_order = ("name", "asc")
-    # page_size = 100 
-#    list_columns = ['state', 'code', 'lga_name']
-class AgentModelView(ModelView):
-    datamodel = SQLAInterface(Agent)
-    list_title = 'List Agent'
-    show_title = 'Show Agent'
-    edit_title = 'Edit Agent'
-    add_title  = 'Add Agent'
- 
-    list_columns = ['aggregator', 'is_aggregator', 'became_aggregator_date', 'assigned_pos_count', 'aggregator_pos_threshold', 'verification_status', 'verification_status_notes', 'agent_type', 'agent_role', 'agent_tier', 'account_manager', 'agent_name', 'alias', 'phone_country', 'phone', 'phone_ext', 'alt_phone_country', 'alt_phone', 'alt_phone_ext', 'email', 'alt_email', 'bvn', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'bank', 'bank_acc_no', 'biz_name', 'biz_state', 'biz_lga', 'biz_city', 'biz_city_area', 'biz_street', 'biz_building', 'biz_address', 'biz_poa_img', 'biz_poa_desc', 'biz_poa_valid', 'biz_lat', 'biz_lon', 'biz_loc', 'biz_ggl_code', 'company_name', 'cac_number', 'cac_reg_date', 'cac_cert_img', 'cac_cert_no', 'ref_code', 'access_pin', 'registered_by', 'registration_date', 'reviewed_by', 'review_date', 'approved_by', 'approval_date', 'approval_narrative', 'kyc_submit_date', 'kyc_verification_status', 'kyc_approval_date', 'kyc_ref_code', 'kyc_rejection_narrative', 'kyc_rejection_by', 'rejection_date', 'rejection_narrative', 'rejected_by', 'face_matrix', 'finger_print_img', 'agent_public_key', 'agent_pj_expiry', 'agent_history']
-    # show_columns = ['aggregator', 'is_aggregator', 'became_aggregator_date', 'assigned_pos_count', 'aggregator_pos_threshold', 'verification_status', 'verification_status_notes', 'agent_type', 'agent_role', 'agent_tier', 'account_manager', 'agent_name', 'alias', 'phone_country', 'phone', 'phone_ext', 'alt_phone_country', 'alt_phone', 'alt_phone_ext', 'email', 'alt_email', 'bvn', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'bank', 'bank_acc_no', 'biz_name', 'biz_state', 'biz_lga', 'biz_city', 'biz_city_area', 'biz_street', 'biz_building', 'biz_address', 'biz_poa_img', 'biz_poa_desc', 'biz_poa_valid', 'biz_lat', 'biz_lon', 'biz_loc', 'biz_ggl_code', 'company_name', 'cac_number', 'cac_reg_date', 'cac_cert_img', 'cac_cert_no', 'ref_code', 'access_pin', 'registered_by', 'registration_date', 'reviewed_by', 'review_date', 'approved_by', 'approval_date', 'approval_narrative', 'kyc_submit_date', 'kyc_verification_status', 'kyc_approval_date', 'kyc_ref_code', 'kyc_rejection_narrative', 'kyc_rejection_by', 'rejection_date', 'rejection_narrative', 'rejected_by', 'face_matrix', 'finger_print_img', 'agent_public_key', 'agent_pj_expiry', 'agent_history']
-    # edit_columns = ['aggregator', 'is_aggregator', 'became_aggregator_date', 'assigned_pos_count', 'aggregator_pos_threshold', 'verification_status', 'verification_status_notes', 'agent_type', 'agent_role', 'agent_tier', 'account_manager', 'agent_name', 'alias', 'phone_country', 'phone', 'phone_ext', 'alt_phone_country', 'alt_phone', 'alt_phone_ext', 'email', 'alt_email', 'bvn', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'bank', 'bank_acc_no', 'biz_name', 'biz_state', 'biz_lga', 'biz_city', 'biz_city_area', 'biz_street', 'biz_building', 'biz_address', 'biz_poa_img', 'biz_poa_desc', 'biz_poa_valid', 'biz_lat', 'biz_lon', 'biz_loc', 'biz_ggl_code', 'company_name', 'cac_number', 'cac_reg_date', 'cac_cert_img', 'cac_cert_no', 'ref_code', 'access_pin', 'registered_by', 'registration_date', 'reviewed_by', 'review_date', 'approved_by', 'approval_date', 'approval_narrative', 'kyc_submit_date', 'kyc_verification_status', 'kyc_approval_date', 'kyc_ref_code', 'kyc_rejection_narrative', 'kyc_rejection_by', 'rejection_date', 'rejection_narrative', 'rejected_by', 'face_matrix', 'finger_print_img', 'agent_public_key', 'agent_pj_expiry', 'agent_history']
-    add_columns = ['aggregator', 'is_aggregator', 'became_aggregator_date', 'assigned_pos_count', 'aggregator_pos_threshold', 'verification_status', 'verification_status_notes', 'agent_type', 'agent_role', 'agent_tier', 'account_manager', 'agent_name', 'alias', 'phone_country', 'phone', 'phone_ext', 'alt_phone_country', 'alt_phone', 'alt_phone_ext', 'email', 'alt_email', 'bvn', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'bank', 'bank_acc_no', 'biz_name', 'biz_state', 'biz_lga', 'biz_city', 'biz_city_area', 'biz_street', 'biz_building', 'biz_address', 'biz_poa_img', 'biz_poa_desc', 'biz_poa_valid', 'biz_lat', 'biz_lon', 'biz_loc', 'biz_ggl_code', 'company_name', 'cac_number', 'cac_reg_date', 'cac_cert_img', 'cac_cert_no', 'ref_code', 'access_pin', 'registered_by', 'registration_date', 'reviewed_by', 'review_date', 'approved_by', 'approval_date', 'approval_narrative', 'kyc_submit_date', 'kyc_verification_status', 'kyc_approval_date', 'kyc_ref_code', 'kyc_rejection_narrative', 'kyc_rejection_by', 'rejection_date', 'rejection_narrative', 'rejected_by', 'face_matrix', 'finger_print_img', 'agent_public_key', 'agent_pj_expiry', 'agent_history']
-    # search_columns = ['aggregator', 'is_aggregator', 'became_aggregator_date', 'assigned_pos_count', 'aggregator_pos_threshold', 'verification_status', 'verification_status_notes', 'agent_type', 'agent_role', 'agent_tier', 'account_manager', 'agent_name', 'alias', 'phone_country', 'phone', 'phone_ext', 'alt_phone_country', 'alt_phone', 'alt_phone_ext', 'email', 'alt_email', 'bvn', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'bank', 'bank_acc_no', 'biz_name', 'biz_state', 'biz_lga', 'biz_city', 'biz_city_area', 'biz_street', 'biz_building', 'biz_address', 'biz_poa_img', 'biz_poa_desc', 'biz_poa_valid', 'biz_lat', 'biz_lon', 'biz_loc', 'biz_ggl_code', 'company_name', 'cac_number', 'cac_reg_date', 'cac_cert_img', 'cac_cert_no', 'ref_code', 'access_pin', 'registered_by', 'registration_date', 'reviewed_by', 'review_date', 'approved_by', 'approval_date', 'approval_narrative', 'kyc_submit_date', 'kyc_verification_status', 'kyc_approval_date', 'kyc_ref_code', 'kyc_rejection_narrative', 'kyc_rejection_by', 'rejection_date', 'rejection_narrative', 'rejected_by', 'face_matrix', 'finger_print_img', 'agent_public_key', 'agent_pj_expiry', 'agent_history']
-    description_columns = {
-        'id' : 'Unique identifier for the agent.',
-        'aggregator_id_fk' : 'References the aggregator agent if applicable.',
-        'is_aggregator' : 'Indicates whether the agent is an aggregator.',
-        'became_aggregator_date' : 'Timestamp when the agent became an aggregator, if applicable.',
-        'assigned_pos_count' : 'Count of assigned point-of-sale (POS) devices.',
-        'aggregator_pos_threshold' : 'Threshold for becoming an aggregator based on POS device count.',
-        'verification_status' : 'The status of this agent, such as pending, active, etc.',
-        'verification_status_notes' : 'Additional notes or remarks about the agents verification status.',
-        'agent_type' : 'Type of agent, e.g., Individual, Business.',
-        'agent_role' : 'Role of the agent, e.g., agent, sub-agent, aggregator.',
-        'agent_tier_id_fk' : 'References the agents tier.',
-        'account_manager_id_fk' : 'References the account manager responsible for this agent.',
-        'agent_name' : 'Name of the agent.',
-        'alias' : 'Alias or alternate name for reporting purposes, if available.',
-        'phone_country_id_fk' : 'References the country of the agents phone number.',
-        'phone' : 'Primary phone number of the agent.',
-        'phone_ext' : 'Extension for the primary phone number.',
-        'alt_phone_country_id_fk' : 'References the country of the alternate phone number.',
-        'alt_phone' : 'Alternate phone number for the agent.',
-        'alt_phone_ext' : 'Extension for the alternate phone number.',
-        'email' : 'Email address of the agent.',
-        'alt_email' : 'Alternate email address for the agent.',
-        'bvn' : 'Bank Verification Number (BVN) of the agent.',
-        'bvn_verified' : 'Indicates whether the BVN is verified.',
-        'bvn_verification_date' : 'Timestamp of BVN verification.',
-        'bvn_verification_code' : 'Verification code for BVN.',
-        'tax_id' : 'Tax identification number of the agent.',
-        'bank_id_fk' : 'References the bank where the agent has an account.',
-        'bank_acc_no' : 'Agent bank account number.',
-        'biz_name' : 'Name of the agents business, if applicable.',
-        'biz_state_id_fk' : 'References the state where the business is located.',
-        'biz_lga_id_fk' : 'References the LGA where the business is located.',
-        'biz_city' : 'City where the business is located.',
-        'biz_city_area' : 'Specific area within the city where the business is located.',
-        'biz_street' : 'Street address of the business.',
-        'biz_building' : 'Building name or number of the business location.',
-        'biz_address' : 'Detailed address information for the business.',
-        'biz_poa_img' : 'Image of Proof of Address (POA) for the business.',
-        'biz_poa_desc' : 'Description of the Proof of Address document.',
-        'biz_poa_valid' : 'Indicates if the Proof of Address is valid.',
-        'biz_lat' : 'Latitude coordinates of the business location.',
-        'biz_lon' : 'Longitude coordinates of the business location.',
-        'biz_loc' : 'Location description of the business.',
-        'biz_ggl_code' : 'Google Maps code for the business location.',
-        'company_name' : 'Name of the company associated with the agent.',
-        'cac_number' : 'Corporate Affairs Commission (CAC) registration number.',
-        'cac_reg_date' : 'Date of CAC registration.',
-        'cac_cert_img' : 'Image of the CAC certificate.',
-        'cac_cert_no' : 'Certificate number issued by CAC.',
-        'ref_code' : 'Reference code associated with the agent.',
-        'access_pin' : 'Access PIN for agent transactions.',
-        'registered_by_id_fk' : 'References the user who registered the agent.',
-        'registration_date' : 'Timestamp of agent registration.',
-        'reviewed_by_id_fk' : 'References the user who reviewed the agent.',
-        'review_date' : 'Timestamp of agent review.',
-        'approved_by_id_fk' : 'References the user who approved the agent.',
-        'approval_date' : 'Timestamp of agent approval.',
-        'approval_narrative' : 'Narrative or notes related to agent approval.',
-        'kyc_submit_date' : 'Timestamp of KYC document submission.',
-        'kyc_verification_status' : 'KYC verification status, e.g., pending, approved.',
-        'kyc_approval_date' : 'Timestamp of KYC document approval.',
-        'kyc_ref_code' : 'Reference code associated with KYC.',
-        'kyc_rejection_narrative' : 'Narrative or notes related to KYC rejection.',
-        'kyc_rejection_by_id_fk' : 'References the user who rejected KYC.',
-        'rejection_date' : 'Timestamp of agent rejection.',
-        'rejection_narrative' : 'Narrative or notes related to agent rejection.',
-        'rejected_by_id_fk' : 'References the user who rejected the agent.',
-        'face_matrix' : 'Biometric data for face recognition.',
-        'finger_print_img' : 'Image of fingerprint data.',
-        'agent_public_key' : 'Public key for cryptographic operations.',
-        'agent_pj_expiry' : 'Timestamp of public key expiration.',
-        'agent_history' : 'Textual history of agent-related events.',
-    }
-    # list_exclude_columns = ['aggregator', 'is_aggregator', 'became_aggregator_date', 'assigned_pos_count', 'aggregator_pos_threshold', 'verification_status', 'verification_status_notes', 'agent_type', 'agent_role', 'agent_tier', 'account_manager', 'agent_name', 'alias', 'phone_country', 'phone', 'phone_ext', 'alt_phone_country', 'alt_phone', 'alt_phone_ext', 'email', 'alt_email', 'bvn', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'bank', 'bank_acc_no', 'biz_name', 'biz_state', 'biz_lga', 'biz_city', 'biz_city_area', 'biz_street', 'biz_building', 'biz_address', 'biz_poa_img', 'biz_poa_desc', 'biz_poa_valid', 'biz_lat', 'biz_lon', 'biz_loc', 'biz_ggl_code', 'company_name', 'cac_number', 'cac_reg_date', 'cac_cert_img', 'cac_cert_no', 'ref_code', 'access_pin', 'registered_by', 'registration_date', 'reviewed_by', 'review_date', 'approved_by', 'approval_date', 'approval_narrative', 'kyc_submit_date', 'kyc_verification_status', 'kyc_approval_date', 'kyc_ref_code', 'kyc_rejection_narrative', 'kyc_rejection_by', 'rejection_date', 'rejection_narrative', 'rejected_by', 'face_matrix', 'finger_print_img', 'agent_public_key', 'agent_pj_expiry', 'agent_history']
-    # show_exclude_columns = ['aggregator', 'is_aggregator', 'became_aggregator_date', 'assigned_pos_count', 'aggregator_pos_threshold', 'verification_status', 'verification_status_notes', 'agent_type', 'agent_role', 'agent_tier', 'account_manager', 'agent_name', 'alias', 'phone_country', 'phone', 'phone_ext', 'alt_phone_country', 'alt_phone', 'alt_phone_ext', 'email', 'alt_email', 'bvn', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'bank', 'bank_acc_no', 'biz_name', 'biz_state', 'biz_lga', 'biz_city', 'biz_city_area', 'biz_street', 'biz_building', 'biz_address', 'biz_poa_img', 'biz_poa_desc', 'biz_poa_valid', 'biz_lat', 'biz_lon', 'biz_loc', 'biz_ggl_code', 'company_name', 'cac_number', 'cac_reg_date', 'cac_cert_img', 'cac_cert_no', 'ref_code', 'access_pin', 'registered_by', 'registration_date', 'reviewed_by', 'review_date', 'approved_by', 'approval_date', 'approval_narrative', 'kyc_submit_date', 'kyc_verification_status', 'kyc_approval_date', 'kyc_ref_code', 'kyc_rejection_narrative', 'kyc_rejection_by', 'rejection_date', 'rejection_narrative', 'rejected_by', 'face_matrix', 'finger_print_img', 'agent_public_key', 'agent_pj_expiry', 'agent_history']
-    # edit_exclude_columns = ['aggregator', 'is_aggregator', 'became_aggregator_date', 'assigned_pos_count', 'aggregator_pos_threshold', 'verification_status', 'verification_status_notes', 'agent_type', 'agent_role', 'agent_tier', 'account_manager', 'agent_name', 'alias', 'phone_country', 'phone', 'phone_ext', 'alt_phone_country', 'alt_phone', 'alt_phone_ext', 'email', 'alt_email', 'bvn', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'bank', 'bank_acc_no', 'biz_name', 'biz_state', 'biz_lga', 'biz_city', 'biz_city_area', 'biz_street', 'biz_building', 'biz_address', 'biz_poa_img', 'biz_poa_desc', 'biz_poa_valid', 'biz_lat', 'biz_lon', 'biz_loc', 'biz_ggl_code', 'company_name', 'cac_number', 'cac_reg_date', 'cac_cert_img', 'cac_cert_no', 'ref_code', 'access_pin', 'registered_by', 'registration_date', 'reviewed_by', 'review_date', 'approved_by', 'approval_date', 'approval_narrative', 'kyc_submit_date', 'kyc_verification_status', 'kyc_approval_date', 'kyc_ref_code', 'kyc_rejection_narrative', 'kyc_rejection_by', 'rejection_date', 'rejection_narrative', 'rejected_by', 'face_matrix', 'finger_print_img', 'agent_public_key', 'agent_pj_expiry', 'agent_history']
-    # add_exclude_columns = ['aggregator', 'is_aggregator', 'became_aggregator_date', 'assigned_pos_count', 'aggregator_pos_threshold', 'verification_status', 'verification_status_notes', 'agent_type', 'agent_role', 'agent_tier', 'account_manager', 'agent_name', 'alias', 'phone_country', 'phone', 'phone_ext', 'alt_phone_country', 'alt_phone', 'alt_phone_ext', 'email', 'alt_email', 'bvn', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'bank', 'bank_acc_no', 'biz_name', 'biz_state', 'biz_lga', 'biz_city', 'biz_city_area', 'biz_street', 'biz_building', 'biz_address', 'biz_poa_img', 'biz_poa_desc', 'biz_poa_valid', 'biz_lat', 'biz_lon', 'biz_loc', 'biz_ggl_code', 'company_name', 'cac_number', 'cac_reg_date', 'cac_cert_img', 'cac_cert_no', 'ref_code', 'access_pin', 'registered_by', 'registration_date', 'reviewed_by', 'review_date', 'approved_by', 'approval_date', 'approval_narrative', 'kyc_submit_date', 'kyc_verification_status', 'kyc_approval_date', 'kyc_ref_code', 'kyc_rejection_narrative', 'kyc_rejection_by', 'rejection_date', 'rejection_narrative', 'rejected_by', 'face_matrix', 'finger_print_img', 'agent_public_key', 'agent_pj_expiry', 'agent_history']
-    # search_exclude_columns = ['aggregator', 'is_aggregator', 'became_aggregator_date', 'assigned_pos_count', 'aggregator_pos_threshold', 'verification_status', 'verification_status_notes', 'agent_type', 'agent_role', 'agent_tier', 'account_manager', 'agent_name', 'alias', 'phone_country', 'phone', 'phone_ext', 'alt_phone_country', 'alt_phone', 'alt_phone_ext', 'email', 'alt_email', 'bvn', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'bank', 'bank_acc_no', 'biz_name', 'biz_state', 'biz_lga', 'biz_city', 'biz_city_area', 'biz_street', 'biz_building', 'biz_address', 'biz_poa_img', 'biz_poa_desc', 'biz_poa_valid', 'biz_lat', 'biz_lon', 'biz_loc', 'biz_ggl_code', 'company_name', 'cac_number', 'cac_reg_date', 'cac_cert_img', 'cac_cert_no', 'ref_code', 'access_pin', 'registered_by', 'registration_date', 'reviewed_by', 'review_date', 'approved_by', 'approval_date', 'approval_narrative', 'kyc_submit_date', 'kyc_verification_status', 'kyc_approval_date', 'kyc_ref_code', 'kyc_rejection_narrative', 'kyc_rejection_by', 'rejection_date', 'rejection_narrative', 'rejected_by', 'face_matrix', 'finger_print_img', 'agent_public_key', 'agent_pj_expiry', 'agent_history']
-    # order_columns = ['aggregator', 'is_aggregator', 'became_aggregator_date', 'assigned_pos_count', 'aggregator_pos_threshold', 'verification_status', 'verification_status_notes', 'agent_type', 'agent_role', 'agent_tier', 'account_manager', 'agent_name', 'alias', 'phone_country', 'phone', 'phone_ext', 'alt_phone_country', 'alt_phone', 'alt_phone_ext', 'email', 'alt_email', 'bvn', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'bank', 'bank_acc_no', 'biz_name', 'biz_state', 'biz_lga', 'biz_city', 'biz_city_area', 'biz_street', 'biz_building', 'biz_address', 'biz_poa_img', 'biz_poa_desc', 'biz_poa_valid', 'biz_lat', 'biz_lon', 'biz_loc', 'biz_ggl_code', 'company_name', 'cac_number', 'cac_reg_date', 'cac_cert_img', 'cac_cert_no', 'ref_code', 'access_pin', 'registered_by', 'registration_date', 'reviewed_by', 'review_date', 'approved_by', 'approval_date', 'approval_narrative', 'kyc_submit_date', 'kyc_verification_status', 'kyc_approval_date', 'kyc_ref_code', 'kyc_rejection_narrative', 'kyc_rejection_by', 'rejection_date', 'rejection_narrative', 'rejected_by', 'face_matrix', 'finger_print_img', 'agent_public_key', 'agent_pj_expiry', 'agent_history']
-    # add_columns = ['aggregator', 'is_aggregator', 'became_aggregator_date', 'assigned_pos_count', 'aggregator_pos_threshold', 'verification_status', 'verification_status_notes', 'agent_type', 'agent_role', 'agent_tier', 'account_manager', 'agent_name', 'alias', 'phone_country', 'phone', 'phone_ext', 'alt_phone_country', 'alt_phone', 'alt_phone_ext', 'email', 'alt_email', 'bvn', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'bank', 'bank_acc_no', 'biz_name', 'biz_state', 'biz_lga', 'biz_city', 'biz_city_area', 'biz_street', 'biz_building', 'biz_address', 'biz_poa_img', 'biz_poa_desc', 'biz_poa_valid', 'biz_lat', 'biz_lon', 'biz_loc', 'biz_ggl_code', 'company_name', 'cac_number', 'cac_reg_date', 'cac_cert_img', 'cac_cert_no', 'ref_code', 'access_pin', 'registered_by', 'registration_date', 'reviewed_by', 'review_date', 'approved_by', 'approval_date', 'approval_narrative', 'kyc_submit_date', 'kyc_verification_status', 'kyc_approval_date', 'kyc_ref_code', 'kyc_rejection_narrative', 'kyc_rejection_by', 'rejection_date', 'rejection_narrative', 'rejected_by', 'face_matrix', 'finger_print_img', 'agent_public_key', 'agent_pj_expiry', 'agent_history']
-    # add_columns = ['aggregator', 'is_aggregator', 'became_aggregator_date', 'assigned_pos_count', 'aggregator_pos_threshold', 'verification_status', 'verification_status_notes', 'agent_type', 'agent_role', 'agent_tier', 'account_manager', 'agent_name', 'alias', 'phone_country', 'phone', 'phone_ext', 'alt_phone_country', 'alt_phone', 'alt_phone_ext', 'email', 'alt_email', 'bvn', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'bank', 'bank_acc_no', 'biz_name', 'biz_state', 'biz_lga', 'biz_city', 'biz_city_area', 'biz_street', 'biz_building', 'biz_address', 'biz_poa_img', 'biz_poa_desc', 'biz_poa_valid', 'biz_lat', 'biz_lon', 'biz_loc', 'biz_ggl_code', 'company_name', 'cac_number', 'cac_reg_date', 'cac_cert_img', 'cac_cert_no', 'ref_code', 'access_pin', 'registered_by', 'registration_date', 'reviewed_by', 'review_date', 'approved_by', 'approval_date', 'approval_narrative', 'kyc_submit_date', 'kyc_verification_status', 'kyc_approval_date', 'kyc_ref_code', 'kyc_rejection_narrative', 'kyc_rejection_by', 'rejection_date', 'rejection_narrative', 'rejected_by', 'face_matrix', 'finger_print_img', 'agent_public_key', 'agent_pj_expiry', 'agent_history']
-    # add_columns = ['aggregator', 'is_aggregator', 'became_aggregator_date', 'assigned_pos_count', 'aggregator_pos_threshold', 'verification_status', 'verification_status_notes', 'agent_type', 'agent_role', 'agent_tier', 'account_manager', 'agent_name', 'alias', 'phone_country', 'phone', 'phone_ext', 'alt_phone_country', 'alt_phone', 'alt_phone_ext', 'email', 'alt_email', 'bvn', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'bank', 'bank_acc_no', 'biz_name', 'biz_state', 'biz_lga', 'biz_city', 'biz_city_area', 'biz_street', 'biz_building', 'biz_address', 'biz_poa_img', 'biz_poa_desc', 'biz_poa_valid', 'biz_lat', 'biz_lon', 'biz_loc', 'biz_ggl_code', 'company_name', 'cac_number', 'cac_reg_date', 'cac_cert_img', 'cac_cert_no', 'ref_code', 'access_pin', 'registered_by', 'registration_date', 'reviewed_by', 'review_date', 'approved_by', 'approval_date', 'approval_narrative', 'kyc_submit_date', 'kyc_verification_status', 'kyc_approval_date', 'kyc_ref_code', 'kyc_rejection_narrative', 'kyc_rejection_by', 'rejection_date', 'rejection_narrative', 'rejected_by', 'face_matrix', 'finger_print_img', 'agent_public_key', 'agent_pj_expiry', 'agent_history']
-    
-    label_columns = {'aggregator':'Aggregator', 'is_aggregator':'Is Aggregator', 'became_aggregator_date':'Became Aggregator Date', 'assigned_pos_count':'Assigned Pos Count', 'aggregator_pos_threshold':'Aggregator Pos Threshold', 'verification_status':'Verification Status', 'verification_status_notes':'Verification Status Notes', 'agent_type':'Agent Type', 'agent_role':'Agent Role', 'agent_tier':'Agent Tier', 'account_manager':'Account Manager', 'agent_name':'Agent Name', 'alias':'Alias', 'phone_country':'Phone Country', 'phone':'Phone', 'phone_ext':'Phone Ext', 'alt_phone_country':'Alt Phone Country', 'alt_phone':'Alt Phone', 'alt_phone_ext':'Alt Phone Ext', 'email':'Email', 'alt_email':'Alt Email', 'bvn':'Bvn', 'bvn_verified':'Bvn Verified', 'bvn_verification_date':'Bvn Verification Date', 'bvn_verification_code':'Bvn Verification Code', 'tax_id':'Tax Id', 'bank':'Bank', 'bank_acc_no':'Bank Acc No', 'biz_name':'Biz Name', 'biz_state':'Biz State', 'biz_lga':'Biz Lga', 'biz_city':'Biz City', 'biz_city_area':'Biz City Area', 'biz_street':'Biz Street', 'biz_building':'Biz Building', 'biz_address':'Biz Address', 'biz_poa_img':'Biz Poa Img', 'biz_poa_desc':'Biz Poa Desc', 'biz_poa_valid':'Biz Poa Valid', 'biz_lat':'Biz Lat', 'biz_lon':'Biz Lon', 'biz_loc':'Biz Loc', 'biz_ggl_code':'Biz Ggl Code', 'company_name':'Company Name', 'cac_number':'Cac Number', 'cac_reg_date':'Cac Reg Date', 'cac_cert_img':'Cac Cert Img', 'cac_cert_no':'Cac Cert No', 'ref_code':'Ref Code', 'access_pin':'Access Pin', 'registered_by':'Registered By', 'registration_date':'Registration Date', 'reviewed_by':'Reviewed By', 'review_date':'Review Date', 'approved_by':'Approved By', 'approval_date':'Approval Date', 'approval_narrative':'Approval Narrative', 'kyc_submit_date':'Kyc Submit Date', 'kyc_verification_status':'Kyc Verification Status', 'kyc_approval_date':'Kyc Approval Date', 'kyc_ref_code':'Kyc Ref Code', 'kyc_rejection_narrative':'Kyc Rejection Narrative', 'kyc_rejection_by':'Kyc Rejection By', 'rejection_date':'Rejection Date', 'rejection_narrative':'Rejection Narrative', 'rejected_by':'Rejected By', 'face_matrix':'Face Matrix', 'finger_print_img':'Finger Print Img', 'agent_public_key':'Agent Public Key', 'agent_pj_expiry':'Agent Pj Expiry', 'agent_history':'Agent History'}
-    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
-    # base_order = ("name", "asc")
-    # page_size = 100 
-#    list_columns = ['aggregator', 'is_aggregator', 'became_aggregator_date', 'assigned_pos_count', 'aggregator_pos_threshold', 'verification_status', 'verification_status_notes', 'agent_type', 'agent_role', 'agent_tier', 'account_manager', 'agent_name', 'alias', 'phone_country', 'phone', 'phone_ext', 'alt_phone_country', 'alt_phone', 'alt_phone_ext', 'email', 'alt_email', 'bvn', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'bank', 'bank_acc_no', 'biz_name', 'biz_state', 'biz_lga', 'biz_city', 'biz_city_area', 'biz_street', 'biz_building', 'biz_address', 'biz_poa_img', 'biz_poa_desc', 'biz_poa_valid', 'biz_lat', 'biz_lon', 'biz_loc', 'biz_ggl_code', 'company_name', 'cac_number', 'cac_reg_date', 'cac_cert_img', 'cac_cert_no', 'ref_code', 'access_pin', 'registered_by', 'registration_date', 'reviewed_by', 'review_date', 'approved_by', 'approval_date', 'approval_narrative', 'kyc_submit_date', 'kyc_verification_status', 'kyc_approval_date', 'kyc_ref_code', 'kyc_rejection_narrative', 'kyc_rejection_by', 'rejection_date', 'rejection_narrative', 'rejected_by', 'face_matrix', 'finger_print_img', 'agent_public_key', 'agent_pj_expiry', 'agent_history']
-class PosModelView(ModelView):
-    datamodel = SQLAInterface(Pos)
-    list_title = 'List Pos'
-    show_title = 'Show Pos'
-    edit_title = 'Edit Pos'
-    add_title  = 'Add Pos'
- 
-    list_columns = ['serial_no', 'imei', 'mac_addr', 'device_model', 'device_make', 'device_mfg', 'os_version', 'device_color', 'device_condition', 'status', 'owner_type', 'registration_date', 'assigned', 'assigned_date', 'assigned_narrative', 'active', 'activation_date', 'last_active', 'deployed', 'deploy_date', 'deploy_narrative', 'returned', 'return_date', 'return_narrative', 'return_received_date', 'return_received_by', 'state', 'lga', 'street_address', 'building_name', 'contact_phone_num', 'pos_user', 'crypt_priv_key', 'crypt_pub_key', 'crypt_password', 'override_key']
-    # show_columns = ['serial_no', 'imei', 'mac_addr', 'device_model', 'device_make', 'device_mfg', 'os_version', 'device_color', 'device_condition', 'status', 'owner_type', 'registration_date', 'assigned', 'assigned_date', 'assigned_narrative', 'active', 'activation_date', 'last_active', 'deployed', 'deploy_date', 'deploy_narrative', 'returned', 'return_date', 'return_narrative', 'return_received_date', 'return_received_by', 'state', 'lga', 'street_address', 'building_name', 'contact_phone_num', 'pos_user', 'crypt_priv_key', 'crypt_pub_key', 'crypt_password', 'override_key']
-    # edit_columns = ['serial_no', 'imei', 'mac_addr', 'device_model', 'device_make', 'device_mfg', 'os_version', 'device_color', 'device_condition', 'status', 'owner_type', 'registration_date', 'assigned', 'assigned_date', 'assigned_narrative', 'active', 'activation_date', 'last_active', 'deployed', 'deploy_date', 'deploy_narrative', 'returned', 'return_date', 'return_narrative', 'return_received_date', 'return_received_by', 'state', 'lga', 'street_address', 'building_name', 'contact_phone_num', 'pos_user', 'crypt_priv_key', 'crypt_pub_key', 'crypt_password', 'override_key']
-    add_columns = ['serial_no', 'imei', 'mac_addr', 'device_model', 'device_make', 'device_mfg', 'os_version', 'device_color', 'device_condition', 'status', 'owner_type', 'registration_date', 'assigned', 'assigned_date', 'assigned_narrative', 'active', 'activation_date', 'last_active', 'deployed', 'deploy_date', 'deploy_narrative', 'returned', 'return_date', 'return_narrative', 'return_received_date', 'return_received_by', 'state', 'lga', 'street_address', 'building_name', 'contact_phone_num', 'pos_user', 'crypt_priv_key', 'crypt_pub_key', 'crypt_password', 'override_key']
-    # search_columns = ['serial_no', 'imei', 'mac_addr', 'device_model', 'device_make', 'device_mfg', 'os_version', 'device_color', 'device_condition', 'status', 'owner_type', 'registration_date', 'assigned', 'assigned_date', 'assigned_narrative', 'active', 'activation_date', 'last_active', 'deployed', 'deploy_date', 'deploy_narrative', 'returned', 'return_date', 'return_narrative', 'return_received_date', 'return_received_by', 'state', 'lga', 'street_address', 'building_name', 'contact_phone_num', 'pos_user', 'crypt_priv_key', 'crypt_pub_key', 'crypt_password', 'override_key']
-    description_columns = {
-        'id' : 'Unique identifier for the Point of Sale (PoS).',
-        'serial_no' : 'Unique serial number for the PoS.',
-        'imei' : 'IMEI number of the PoS, if applicable.',
-        'mac_addr' : 'MAC address of the PoS.',
-        'device_model' : 'Model of the PoS device.',
-        'device_make' : 'Make or manufacturer of the PoS device.',
-        'device_mfg' : 'Manufacturer of the PoS device.',
-        'os_version' : 'Operating system version of the PoS.',
-        'device_color' : 'Color of the PoS device.',
-        'device_condition' : 'Condition of the PoS device (e.g., working, irreparable, repaired).',
-        'status' : 'Current status of the PoS.',
-        'owner_type' : 'Type of owner of the PoS.',
-        'registration_date' : 'Timestamp when the PoS was registered.',
-        'assigned' : 'Indicates if the PoS is assigned.',
-        'assigned_date' : 'Timestamp when the PoS was assigned.',
-        'assigned_narrative' : 'Narrative or description of the assignment.',
-        'active' : 'Indicates if the PoS is active.',
-        'activation_date' : 'Timestamp when the PoS was activated.',
-        'last_active' : 'Timestamp of the last activity.',
-        'deployed' : 'Indicates if the PoS is deployed.',
-        'deploy_date' : 'Timestamp when the PoS was deployed.',
-        'deploy_narrative' : 'Narrative or description of the deployment.',
-        'returned' : 'Indicates if the PoS was returned.',
-        'return_date' : 'Timestamp when the PoS was returned.',
-        'return_narrative' : 'Narrative or description of the return.',
-        'return_received_date' : 'Timestamp when the return was received.',
-        'return_received_by_id_fk' : 'Reference to the user who received the return.',
-        'state_id_fk' : 'Reference to the state where the PoS is deployed.',
-        'lga_id_fk' : 'Reference to the local government area where the PoS is deployed.',
-        'street_address' : 'Street address of the PoS deployment location.',
-        'building_name' : 'Name of the building where the PoS is deployed.',
-        'contact_phone_num' : 'Contact phone number for the PoS deployment location.',
-        'pos_user' : 'User associated with the PoS.',
-        'crypt_priv_key' : 'Private key for cryptographic operations.',
-        'crypt_pub_key' : 'Public key for cryptographic operations.',
-        'crypt_password' : 'Password for cryptographic operations.',
-        'override_key' : 'Override key for cryptographic operations.',
-    }
-    # list_exclude_columns = ['serial_no', 'imei', 'mac_addr', 'device_model', 'device_make', 'device_mfg', 'os_version', 'device_color', 'device_condition', 'status', 'owner_type', 'registration_date', 'assigned', 'assigned_date', 'assigned_narrative', 'active', 'activation_date', 'last_active', 'deployed', 'deploy_date', 'deploy_narrative', 'returned', 'return_date', 'return_narrative', 'return_received_date', 'return_received_by', 'state', 'lga', 'street_address', 'building_name', 'contact_phone_num', 'pos_user', 'crypt_priv_key', 'crypt_pub_key', 'crypt_password', 'override_key']
-    # show_exclude_columns = ['serial_no', 'imei', 'mac_addr', 'device_model', 'device_make', 'device_mfg', 'os_version', 'device_color', 'device_condition', 'status', 'owner_type', 'registration_date', 'assigned', 'assigned_date', 'assigned_narrative', 'active', 'activation_date', 'last_active', 'deployed', 'deploy_date', 'deploy_narrative', 'returned', 'return_date', 'return_narrative', 'return_received_date', 'return_received_by', 'state', 'lga', 'street_address', 'building_name', 'contact_phone_num', 'pos_user', 'crypt_priv_key', 'crypt_pub_key', 'crypt_password', 'override_key']
-    # edit_exclude_columns = ['serial_no', 'imei', 'mac_addr', 'device_model', 'device_make', 'device_mfg', 'os_version', 'device_color', 'device_condition', 'status', 'owner_type', 'registration_date', 'assigned', 'assigned_date', 'assigned_narrative', 'active', 'activation_date', 'last_active', 'deployed', 'deploy_date', 'deploy_narrative', 'returned', 'return_date', 'return_narrative', 'return_received_date', 'return_received_by', 'state', 'lga', 'street_address', 'building_name', 'contact_phone_num', 'pos_user', 'crypt_priv_key', 'crypt_pub_key', 'crypt_password', 'override_key']
-    # add_exclude_columns = ['serial_no', 'imei', 'mac_addr', 'device_model', 'device_make', 'device_mfg', 'os_version', 'device_color', 'device_condition', 'status', 'owner_type', 'registration_date', 'assigned', 'assigned_date', 'assigned_narrative', 'active', 'activation_date', 'last_active', 'deployed', 'deploy_date', 'deploy_narrative', 'returned', 'return_date', 'return_narrative', 'return_received_date', 'return_received_by', 'state', 'lga', 'street_address', 'building_name', 'contact_phone_num', 'pos_user', 'crypt_priv_key', 'crypt_pub_key', 'crypt_password', 'override_key']
-    # search_exclude_columns = ['serial_no', 'imei', 'mac_addr', 'device_model', 'device_make', 'device_mfg', 'os_version', 'device_color', 'device_condition', 'status', 'owner_type', 'registration_date', 'assigned', 'assigned_date', 'assigned_narrative', 'active', 'activation_date', 'last_active', 'deployed', 'deploy_date', 'deploy_narrative', 'returned', 'return_date', 'return_narrative', 'return_received_date', 'return_received_by', 'state', 'lga', 'street_address', 'building_name', 'contact_phone_num', 'pos_user', 'crypt_priv_key', 'crypt_pub_key', 'crypt_password', 'override_key']
-    # order_columns = ['serial_no', 'imei', 'mac_addr', 'device_model', 'device_make', 'device_mfg', 'os_version', 'device_color', 'device_condition', 'status', 'owner_type', 'registration_date', 'assigned', 'assigned_date', 'assigned_narrative', 'active', 'activation_date', 'last_active', 'deployed', 'deploy_date', 'deploy_narrative', 'returned', 'return_date', 'return_narrative', 'return_received_date', 'return_received_by', 'state', 'lga', 'street_address', 'building_name', 'contact_phone_num', 'pos_user', 'crypt_priv_key', 'crypt_pub_key', 'crypt_password', 'override_key']
-    # add_columns = ['serial_no', 'imei', 'mac_addr', 'device_model', 'device_make', 'device_mfg', 'os_version', 'device_color', 'device_condition', 'status', 'owner_type', 'registration_date', 'assigned', 'assigned_date', 'assigned_narrative', 'active', 'activation_date', 'last_active', 'deployed', 'deploy_date', 'deploy_narrative', 'returned', 'return_date', 'return_narrative', 'return_received_date', 'return_received_by', 'state', 'lga', 'street_address', 'building_name', 'contact_phone_num', 'pos_user', 'crypt_priv_key', 'crypt_pub_key', 'crypt_password', 'override_key']
-    # add_columns = ['serial_no', 'imei', 'mac_addr', 'device_model', 'device_make', 'device_mfg', 'os_version', 'device_color', 'device_condition', 'status', 'owner_type', 'registration_date', 'assigned', 'assigned_date', 'assigned_narrative', 'active', 'activation_date', 'last_active', 'deployed', 'deploy_date', 'deploy_narrative', 'returned', 'return_date', 'return_narrative', 'return_received_date', 'return_received_by', 'state', 'lga', 'street_address', 'building_name', 'contact_phone_num', 'pos_user', 'crypt_priv_key', 'crypt_pub_key', 'crypt_password', 'override_key']
-    # add_columns = ['serial_no', 'imei', 'mac_addr', 'device_model', 'device_make', 'device_mfg', 'os_version', 'device_color', 'device_condition', 'status', 'owner_type', 'registration_date', 'assigned', 'assigned_date', 'assigned_narrative', 'active', 'activation_date', 'last_active', 'deployed', 'deploy_date', 'deploy_narrative', 'returned', 'return_date', 'return_narrative', 'return_received_date', 'return_received_by', 'state', 'lga', 'street_address', 'building_name', 'contact_phone_num', 'pos_user', 'crypt_priv_key', 'crypt_pub_key', 'crypt_password', 'override_key']
-    
-    label_columns = {'serial_no':'Serial No', 'imei':'Imei', 'mac_addr':'Mac Addr', 'device_model':'Device Model', 'device_make':'Device Make', 'device_mfg':'Device Mfg', 'os_version':'Os Version', 'device_color':'Device Color', 'device_condition':'Device Condition', 'status':'Status', 'owner_type':'Owner Type', 'registration_date':'Registration Date', 'assigned':'Assigned', 'assigned_date':'Assigned Date', 'assigned_narrative':'Assigned Narrative', 'active':'Active', 'activation_date':'Activation Date', 'last_active':'Last Active', 'deployed':'Deployed', 'deploy_date':'Deploy Date', 'deploy_narrative':'Deploy Narrative', 'returned':'Returned', 'return_date':'Return Date', 'return_narrative':'Return Narrative', 'return_received_date':'Return Received Date', 'return_received_by':'Return Received By', 'state':'State', 'lga':'Lga', 'street_address':'Street Address', 'building_name':'Building Name', 'contact_phone_num':'Contact Phone Num', 'pos_user':'Pos User', 'crypt_priv_key':'Crypt Priv Key', 'crypt_pub_key':'Crypt Pub Key', 'crypt_password':'Crypt Password', 'override_key':'Override Key'}
-    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
-    # base_order = ("name", "asc")
-    # page_size = 100 
-#    list_columns = ['serial_no', 'imei', 'mac_addr', 'device_model', 'device_make', 'device_mfg', 'os_version', 'device_color', 'device_condition', 'status', 'owner_type', 'registration_date', 'assigned', 'assigned_date', 'assigned_narrative', 'active', 'activation_date', 'last_active', 'deployed', 'deploy_date', 'deploy_narrative', 'returned', 'return_date', 'return_narrative', 'return_received_date', 'return_received_by', 'state', 'lga', 'street_address', 'building_name', 'contact_phone_num', 'pos_user', 'crypt_priv_key', 'crypt_pub_key', 'crypt_password', 'override_key']
-class AgentPosLinkModelView(ModelView):
-    datamodel = SQLAInterface(AgentPosLink)
-    list_title = 'List Agent Pos Link'
-    show_title = 'Show Agent Pos Link'
-    edit_title = 'Edit Agent Pos Link'
-    add_title  = 'Add Agent Pos Link'
- 
-    list_columns = ['agent', 'pos', 'assigned_date', 'assigned_by', 'received_by', 'received_date', 'received_location', 'delivery_note', 'delivery_note_printed', 'activated', 'activation_date', 'activation_otp', 'otp_sent', 'otp_sent_time', 'otp_used', 'history']
-    # show_columns = ['agent', 'pos', 'assigned_date', 'assigned_by', 'received_by', 'received_date', 'received_location', 'delivery_note', 'delivery_note_printed', 'activated', 'activation_date', 'activation_otp', 'otp_sent', 'otp_sent_time', 'otp_used', 'history']
-    # edit_columns = ['agent', 'pos', 'assigned_date', 'assigned_by', 'received_by', 'received_date', 'received_location', 'delivery_note', 'delivery_note_printed', 'activated', 'activation_date', 'activation_otp', 'otp_sent', 'otp_sent_time', 'otp_used', 'history']
-    add_columns = ['agent', 'pos', 'assigned_date', 'assigned_by', 'received_by', 'received_date', 'received_location', 'delivery_note', 'delivery_note_printed', 'activated', 'activation_date', 'activation_otp', 'otp_sent', 'otp_sent_time', 'otp_used', 'history']
-    # search_columns = ['agent', 'pos', 'assigned_date', 'assigned_by', 'received_by', 'received_date', 'received_location', 'delivery_note', 'delivery_note_printed', 'activated', 'activation_date', 'activation_otp', 'otp_sent', 'otp_sent_time', 'otp_used', 'history']
-    description_columns = {
-        'agent_id_fk' : 'Foreign key reference to the agent to whom the PoS is assigned.',
-        'pos_id_fk' : 'Foreign key reference to the Point of Sale (PoS) being assigned.',
-        'assigned_date' : 'Timestamp when the PoS is assigned.',
-        'assigned_by' : 'User who assigned the PoS to the agent.',
-        'received_by' : 'User who received the PoS.',
-        'received_date' : 'Timestamp when the PoS is received by the agent.',
-        'received_location' : 'Location where the PoS is received.',
-        'delivery_note' : 'Delivery note associated with the PoS assignment.',
-        'delivery_note_printed' : 'Indicates whether the delivery note has been printed.',
-        'activated' : 'Indicates whether the PoS has been activated.',
-        'activation_date' : 'Timestamp when the PoS is activated.',
-        'activation_otp' : 'One-Time Password (OTP) used for activation.',
-        'otp_sent' : 'Indicates whether the OTP has been sent.',
-        'otp_sent_time' : 'Timestamp when the OTP is sent.',
-        'otp_used' : 'Indicates whether the OTP has been used for activation.',
-        'history' : 'Text field to store the history or additional information about the PoS assignment.',
-    }
-    # list_exclude_columns = ['agent', 'pos', 'assigned_date', 'assigned_by', 'received_by', 'received_date', 'received_location', 'delivery_note', 'delivery_note_printed', 'activated', 'activation_date', 'activation_otp', 'otp_sent', 'otp_sent_time', 'otp_used', 'history']
-    # show_exclude_columns = ['agent', 'pos', 'assigned_date', 'assigned_by', 'received_by', 'received_date', 'received_location', 'delivery_note', 'delivery_note_printed', 'activated', 'activation_date', 'activation_otp', 'otp_sent', 'otp_sent_time', 'otp_used', 'history']
-    # edit_exclude_columns = ['agent', 'pos', 'assigned_date', 'assigned_by', 'received_by', 'received_date', 'received_location', 'delivery_note', 'delivery_note_printed', 'activated', 'activation_date', 'activation_otp', 'otp_sent', 'otp_sent_time', 'otp_used', 'history']
-    # add_exclude_columns = ['agent', 'pos', 'assigned_date', 'assigned_by', 'received_by', 'received_date', 'received_location', 'delivery_note', 'delivery_note_printed', 'activated', 'activation_date', 'activation_otp', 'otp_sent', 'otp_sent_time', 'otp_used', 'history']
-    # search_exclude_columns = ['agent', 'pos', 'assigned_date', 'assigned_by', 'received_by', 'received_date', 'received_location', 'delivery_note', 'delivery_note_printed', 'activated', 'activation_date', 'activation_otp', 'otp_sent', 'otp_sent_time', 'otp_used', 'history']
-    # order_columns = ['agent', 'pos', 'assigned_date', 'assigned_by', 'received_by', 'received_date', 'received_location', 'delivery_note', 'delivery_note_printed', 'activated', 'activation_date', 'activation_otp', 'otp_sent', 'otp_sent_time', 'otp_used', 'history']
-    # add_columns = ['agent', 'pos', 'assigned_date', 'assigned_by', 'received_by', 'received_date', 'received_location', 'delivery_note', 'delivery_note_printed', 'activated', 'activation_date', 'activation_otp', 'otp_sent', 'otp_sent_time', 'otp_used', 'history']
-    # add_columns = ['agent', 'pos', 'assigned_date', 'assigned_by', 'received_by', 'received_date', 'received_location', 'delivery_note', 'delivery_note_printed', 'activated', 'activation_date', 'activation_otp', 'otp_sent', 'otp_sent_time', 'otp_used', 'history']
-    # add_columns = ['agent', 'pos', 'assigned_date', 'assigned_by', 'received_by', 'received_date', 'received_location', 'delivery_note', 'delivery_note_printed', 'activated', 'activation_date', 'activation_otp', 'otp_sent', 'otp_sent_time', 'otp_used', 'history']
-    
-    label_columns = {'agent':'Agent', 'pos':'Pos', 'assigned_date':'Assigned Date', 'assigned_by':'Assigned By', 'received_by':'Received By', 'received_date':'Received Date', 'received_location':'Received Location', 'delivery_note':'Delivery Note', 'delivery_note_printed':'Delivery Note Printed', 'activated':'Activated', 'activation_date':'Activation Date', 'activation_otp':'Activation Otp', 'otp_sent':'Otp Sent', 'otp_sent_time':'Otp Sent Time', 'otp_used':'Otp Used', 'history':'History'}
-    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
-    # base_order = ("name", "asc")
-    # page_size = 100 
-#    list_columns = ['agent', 'pos', 'assigned_date', 'assigned_by', 'received_by', 'received_date', 'received_location', 'delivery_note', 'delivery_note_printed', 'activated', 'activation_date', 'activation_otp', 'otp_sent', 'otp_sent_time', 'otp_used', 'history']
-class CommissionModelView(ModelView):
-    datamodel = SQLAInterface(Commission)
-    list_title = 'List Commission'
-    show_title = 'Show Commission'
-    edit_title = 'Edit Commission'
-    add_title  = 'Add Commission'
- 
-    list_columns = ['agent_type', 'agent_tier_level', 'agent', 'state', 'lga', 'currency', 'risk_profile', 'biller', 'biller_offering', 'transaction_type', 'customer_segment', 'special_promotion', 'min_trans_amount', 'max_trans_amount', 'min_max_step', 'min_comm_amount', 'max_comm_amount', 'commission_rate', 'start_time', 'end_time', 'start_date', 'end_date']
-    # show_columns = ['agent_type', 'agent_tier_level', 'agent', 'state', 'lga', 'currency', 'risk_profile', 'biller', 'biller_offering', 'transaction_type', 'customer_segment', 'special_promotion', 'min_trans_amount', 'max_trans_amount', 'min_max_step', 'min_comm_amount', 'max_comm_amount', 'commission_rate', 'start_time', 'end_time', 'start_date', 'end_date']
-    # edit_columns = ['agent_type', 'agent_tier_level', 'agent', 'state', 'lga', 'currency', 'risk_profile', 'biller', 'biller_offering', 'transaction_type', 'customer_segment', 'special_promotion', 'min_trans_amount', 'max_trans_amount', 'min_max_step', 'min_comm_amount', 'max_comm_amount', 'commission_rate', 'start_time', 'end_time', 'start_date', 'end_date']
-    add_columns = ['agent_type', 'agent_tier_level', 'agent', 'state', 'lga', 'currency', 'risk_profile', 'biller', 'biller_offering', 'transaction_type', 'customer_segment', 'special_promotion', 'min_trans_amount', 'max_trans_amount', 'min_max_step', 'min_comm_amount', 'max_comm_amount', 'commission_rate', 'start_time', 'end_time', 'start_date', 'end_date']
-    # search_columns = ['agent_type', 'agent_tier_level', 'agent', 'state', 'lga', 'currency', 'risk_profile', 'biller', 'biller_offering', 'transaction_type', 'customer_segment', 'special_promotion', 'min_trans_amount', 'max_trans_amount', 'min_max_step', 'min_comm_amount', 'max_comm_amount', 'commission_rate', 'start_time', 'end_time', 'start_date', 'end_date']
-    description_columns = {
-        'id' : 'Unique identifier for the commission reference.',
-        'agent_type' : 'Type of agent, e.g., Individual, Business, etc.',
-        'agent_tier_level_id_fk' : 'Foreign key to the agent tier level if applicable.',
-        'agent_id_fk' : 'Foreign key to the agent associated with this commission reference.',
-        'state_id_fk' : 'Foreign key to the state if applicable.',
-        'lga_id_fk' : 'Foreign key to the local government area if applicable.',
-        'currency_id_fk' : 'Commission of specfic currencies, defaults to NGN',
-        'risk_profile_id_fk' : 'Risk associated with financial transactions',
-        'biller_id_fk' : 'Foreign key to the biller associated with this commission reference.',
-        'biller_offering_id_fk' : 'Foreign key to the biller offering associated with this commission reference.',
-        'transaction_type_id_fk' : 'Foreign key to the transaction type if applicable.',
-        'customer_segment_id_fk' : 'Foreign key to the customer segment.',
-        'special_promotion_id_fk' : 'Foreign key to the special promotion if applicable.',
-        'min_trans_amount' : 'Minimum transaction amount for commission calculation.',
-        'max_trans_amount' : 'Maximum transaction amount for commission calculation.',
-        'min_max_step' : 'Step value for minimum and maximum transaction amounts.',
-        'min_comm_amount' : 'Minimum commission amount.',
-        'max_comm_amount' : 'Maximum commission amount.',
-        'commission_rate' : 'Commission rate in percentage.',
-        'start_time' : 'Start time of commission rate validity.',
-        'end_time' : 'End time of commission rate validity.',
-        'start_date' : 'Start date of commission rate validity (if applicable).',
-        'end_date' : 'End date of commission rate validity (if applicable).',
-    }
-    # list_exclude_columns = ['agent_type', 'agent_tier_level', 'agent', 'state', 'lga', 'currency', 'risk_profile', 'biller', 'biller_offering', 'transaction_type', 'customer_segment', 'special_promotion', 'min_trans_amount', 'max_trans_amount', 'min_max_step', 'min_comm_amount', 'max_comm_amount', 'commission_rate', 'start_time', 'end_time', 'start_date', 'end_date']
-    # show_exclude_columns = ['agent_type', 'agent_tier_level', 'agent', 'state', 'lga', 'currency', 'risk_profile', 'biller', 'biller_offering', 'transaction_type', 'customer_segment', 'special_promotion', 'min_trans_amount', 'max_trans_amount', 'min_max_step', 'min_comm_amount', 'max_comm_amount', 'commission_rate', 'start_time', 'end_time', 'start_date', 'end_date']
-    # edit_exclude_columns = ['agent_type', 'agent_tier_level', 'agent', 'state', 'lga', 'currency', 'risk_profile', 'biller', 'biller_offering', 'transaction_type', 'customer_segment', 'special_promotion', 'min_trans_amount', 'max_trans_amount', 'min_max_step', 'min_comm_amount', 'max_comm_amount', 'commission_rate', 'start_time', 'end_time', 'start_date', 'end_date']
-    # add_exclude_columns = ['agent_type', 'agent_tier_level', 'agent', 'state', 'lga', 'currency', 'risk_profile', 'biller', 'biller_offering', 'transaction_type', 'customer_segment', 'special_promotion', 'min_trans_amount', 'max_trans_amount', 'min_max_step', 'min_comm_amount', 'max_comm_amount', 'commission_rate', 'start_time', 'end_time', 'start_date', 'end_date']
-    # search_exclude_columns = ['agent_type', 'agent_tier_level', 'agent', 'state', 'lga', 'currency', 'risk_profile', 'biller', 'biller_offering', 'transaction_type', 'customer_segment', 'special_promotion', 'min_trans_amount', 'max_trans_amount', 'min_max_step', 'min_comm_amount', 'max_comm_amount', 'commission_rate', 'start_time', 'end_time', 'start_date', 'end_date']
-    # order_columns = ['agent_type', 'agent_tier_level', 'agent', 'state', 'lga', 'currency', 'risk_profile', 'biller', 'biller_offering', 'transaction_type', 'customer_segment', 'special_promotion', 'min_trans_amount', 'max_trans_amount', 'min_max_step', 'min_comm_amount', 'max_comm_amount', 'commission_rate', 'start_time', 'end_time', 'start_date', 'end_date']
-    # add_columns = ['agent_type', 'agent_tier_level', 'agent', 'state', 'lga', 'currency', 'risk_profile', 'biller', 'biller_offering', 'transaction_type', 'customer_segment', 'special_promotion', 'min_trans_amount', 'max_trans_amount', 'min_max_step', 'min_comm_amount', 'max_comm_amount', 'commission_rate', 'start_time', 'end_time', 'start_date', 'end_date']
-    # add_columns = ['agent_type', 'agent_tier_level', 'agent', 'state', 'lga', 'currency', 'risk_profile', 'biller', 'biller_offering', 'transaction_type', 'customer_segment', 'special_promotion', 'min_trans_amount', 'max_trans_amount', 'min_max_step', 'min_comm_amount', 'max_comm_amount', 'commission_rate', 'start_time', 'end_time', 'start_date', 'end_date']
-    # add_columns = ['agent_type', 'agent_tier_level', 'agent', 'state', 'lga', 'currency', 'risk_profile', 'biller', 'biller_offering', 'transaction_type', 'customer_segment', 'special_promotion', 'min_trans_amount', 'max_trans_amount', 'min_max_step', 'min_comm_amount', 'max_comm_amount', 'commission_rate', 'start_time', 'end_time', 'start_date', 'end_date']
-    
-    label_columns = {'agent_type':'Agent Type', 'agent_tier_level':'Agent Tier Level', 'agent':'Agent', 'state':'State', 'lga':'Lga', 'currency':'Currency', 'risk_profile':'Risk Profile', 'biller':'Biller', 'biller_offering':'Biller Offering', 'transaction_type':'Transaction Type', 'customer_segment':'Customer Segment', 'special_promotion':'Special Promotion', 'min_trans_amount':'Min Trans Amount', 'max_trans_amount':'Max Trans Amount', 'min_max_step':'Min Max Step', 'min_comm_amount':'Min Comm Amount', 'max_comm_amount':'Max Comm Amount', 'commission_rate':'Commission Rate', 'start_time':'Start Time', 'end_time':'End Time', 'start_date':'Start Date', 'end_date':'End Date'}
-    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
-    # base_order = ("name", "asc")
-    # page_size = 100 
-#    list_columns = ['agent_type', 'agent_tier_level', 'agent', 'state', 'lga', 'currency', 'risk_profile', 'biller', 'biller_offering', 'transaction_type', 'customer_segment', 'special_promotion', 'min_trans_amount', 'max_trans_amount', 'min_max_step', 'min_comm_amount', 'max_comm_amount', 'commission_rate', 'start_time', 'end_time', 'start_date', 'end_date']
+#    list_columns = ['title', 'description', 'module_level', 'created_at', 'updated_at']
 class PersonModelView(ModelView):
     datamodel = SQLAInterface(Person)
     list_title = 'List Person'
@@ -1210,222 +678,832 @@ class PersonModelView(ModelView):
     edit_title = 'Edit Person'
     add_title  = 'Add Person'
  
-    list_columns = ['agent', 'next_of_kin', 'person_role', 'first_name', 'middle_name', 'surname', 'nick_name', 'gender', 'photo_img', 'signature_img', 'bvn_no', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'home_poa_img', 'home_poa_desc', 'home_poa_valid', 'home_lat', 'home_lon', 'home_loc', 'home_ggl_code']
-    # show_columns = ['agent', 'next_of_kin', 'person_role', 'first_name', 'middle_name', 'surname', 'nick_name', 'gender', 'photo_img', 'signature_img', 'bvn_no', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'home_poa_img', 'home_poa_desc', 'home_poa_valid', 'home_lat', 'home_lon', 'home_loc', 'home_ggl_code']
-    # edit_columns = ['agent', 'next_of_kin', 'person_role', 'first_name', 'middle_name', 'surname', 'nick_name', 'gender', 'photo_img', 'signature_img', 'bvn_no', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'home_poa_img', 'home_poa_desc', 'home_poa_valid', 'home_lat', 'home_lon', 'home_loc', 'home_ggl_code']
-    add_columns = ['agent', 'next_of_kin', 'person_role', 'first_name', 'middle_name', 'surname', 'nick_name', 'gender', 'photo_img', 'signature_img', 'bvn_no', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'home_poa_img', 'home_poa_desc', 'home_poa_valid', 'home_lat', 'home_lon', 'home_loc', 'home_ggl_code']
-    # search_columns = ['agent', 'next_of_kin', 'person_role', 'first_name', 'middle_name', 'surname', 'nick_name', 'gender', 'photo_img', 'signature_img', 'bvn_no', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'home_poa_img', 'home_poa_desc', 'home_poa_valid', 'home_lat', 'home_lon', 'home_loc', 'home_ggl_code']
+    list_columns = ['first_name', 'middle_name', 'family_name', 'nick_name', 'display_name', 'person_role', 'photo_url', 'linkedin_Url', 'avatar_Url', 'mob_phone_no', 'address_line_1', 'address_line_2', 'city', 'state', 'join_date', 'join_status']
+    # show_columns = ['first_name', 'middle_name', 'family_name', 'nick_name', 'display_name', 'person_role', 'photo_url', 'linkedin_Url', 'avatar_Url', 'mob_phone_no', 'address_line_1', 'address_line_2', 'city', 'state', 'join_date', 'join_status']
+    # edit_columns = ['first_name', 'middle_name', 'family_name', 'nick_name', 'display_name', 'person_role', 'photo_url', 'linkedin_Url', 'avatar_Url', 'mob_phone_no', 'address_line_1', 'address_line_2', 'city', 'state', 'join_date', 'join_status']
+    add_columns = ['first_name', 'middle_name', 'family_name', 'nick_name', 'display_name', 'person_role', 'photo_url', 'linkedin_Url', 'avatar_Url', 'mob_phone_no', 'address_line_1', 'address_line_2', 'city', 'state', 'join_date', 'join_status']
+    # search_columns = ['first_name', 'middle_name', 'family_name', 'nick_name', 'display_name', 'person_role', 'photo_url', 'linkedin_Url', 'avatar_Url', 'mob_phone_no', 'address_line_1', 'address_line_2', 'city', 'state', 'join_date', 'join_status']
     description_columns = {
-        'id' : 'Unique identifier for the person.',
-        'agent_id_fk' : 'References the associated agent if applicable.',
-        'next_of_kin_id_fk' : 'References the next of kin for this person, if applicable.',
-        'person_role' : 'Role or type of person, e.g., customer, contact.',
-        'first_name' : 'First name of the person.',
-        'middle_name' : 'Middle name of the person.',
-        'surname' : 'Last name or surname of the person.',
-        'nick_name' : 'Nickname or alias of the person.',
-        'gender' : 'Gender of the person, e.g., Male, Female.',
-        'photo_img' : 'Image of the person.',
-        'signature_img' : 'Image of the persons signature.',
-        'bvn_no' : 'Bank Verification Number (BVN) of the person.',
-        'bvn_verified' : 'Indicates whether the BVN is verified.',
-        'bvn_verification_date' : 'Timestamp of BVN verification.',
-        'bvn_verification_code' : 'Verification code for BVN.',
-        'tax_id' : 'Tax identification number of the person.',
-        'home_poa_img' : 'Image of Proof of Address (POA) for the home address.',
-        'home_poa_desc' : 'Description of the Proof of Address document for the home address.',
-        'home_poa_valid' : 'Indicates if the Proof of Address for the home is valid.',
-        'home_lat' : 'Latitude coordinates of the home address.',
-        'home_lon' : 'Longitude coordinates of the home address.',
-        'home_loc' : 'Location description of the home address.',
-        'home_ggl_code' : 'Google Maps code for the home address.',
+        'id' : 'None',
+        'first_name' : 'None',
+        'middle_name' : 'None',
+        'family_name' : 'None',
+        'nick_name' : 'None',
+        'display_name' : 'None',
+        'person_role' : 'None',
+        'photo_url' : 'None',
+        'linkedin_Url' : 'None',
+        'avatar_Url' : 'None',
+        'mob_phone_no' : 'None',
+        'address_line_1' : 'None',
+        'address_line_2' : 'None',
+        'city' : 'None',
+        'state' : 'None',
+        'join_date' : 'None',
+        'join_status' : 'None',
     }
-    # list_exclude_columns = ['agent', 'next_of_kin', 'person_role', 'first_name', 'middle_name', 'surname', 'nick_name', 'gender', 'photo_img', 'signature_img', 'bvn_no', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'home_poa_img', 'home_poa_desc', 'home_poa_valid', 'home_lat', 'home_lon', 'home_loc', 'home_ggl_code']
-    # show_exclude_columns = ['agent', 'next_of_kin', 'person_role', 'first_name', 'middle_name', 'surname', 'nick_name', 'gender', 'photo_img', 'signature_img', 'bvn_no', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'home_poa_img', 'home_poa_desc', 'home_poa_valid', 'home_lat', 'home_lon', 'home_loc', 'home_ggl_code']
-    # edit_exclude_columns = ['agent', 'next_of_kin', 'person_role', 'first_name', 'middle_name', 'surname', 'nick_name', 'gender', 'photo_img', 'signature_img', 'bvn_no', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'home_poa_img', 'home_poa_desc', 'home_poa_valid', 'home_lat', 'home_lon', 'home_loc', 'home_ggl_code']
-    # add_exclude_columns = ['agent', 'next_of_kin', 'person_role', 'first_name', 'middle_name', 'surname', 'nick_name', 'gender', 'photo_img', 'signature_img', 'bvn_no', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'home_poa_img', 'home_poa_desc', 'home_poa_valid', 'home_lat', 'home_lon', 'home_loc', 'home_ggl_code']
-    # search_exclude_columns = ['agent', 'next_of_kin', 'person_role', 'first_name', 'middle_name', 'surname', 'nick_name', 'gender', 'photo_img', 'signature_img', 'bvn_no', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'home_poa_img', 'home_poa_desc', 'home_poa_valid', 'home_lat', 'home_lon', 'home_loc', 'home_ggl_code']
-    # order_columns = ['agent', 'next_of_kin', 'person_role', 'first_name', 'middle_name', 'surname', 'nick_name', 'gender', 'photo_img', 'signature_img', 'bvn_no', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'home_poa_img', 'home_poa_desc', 'home_poa_valid', 'home_lat', 'home_lon', 'home_loc', 'home_ggl_code']
-    # add_columns = ['agent', 'next_of_kin', 'person_role', 'first_name', 'middle_name', 'surname', 'nick_name', 'gender', 'photo_img', 'signature_img', 'bvn_no', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'home_poa_img', 'home_poa_desc', 'home_poa_valid', 'home_lat', 'home_lon', 'home_loc', 'home_ggl_code']
-    # add_columns = ['agent', 'next_of_kin', 'person_role', 'first_name', 'middle_name', 'surname', 'nick_name', 'gender', 'photo_img', 'signature_img', 'bvn_no', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'home_poa_img', 'home_poa_desc', 'home_poa_valid', 'home_lat', 'home_lon', 'home_loc', 'home_ggl_code']
-    # add_columns = ['agent', 'next_of_kin', 'person_role', 'first_name', 'middle_name', 'surname', 'nick_name', 'gender', 'photo_img', 'signature_img', 'bvn_no', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'home_poa_img', 'home_poa_desc', 'home_poa_valid', 'home_lat', 'home_lon', 'home_loc', 'home_ggl_code']
+    # list_exclude_columns = ['first_name', 'middle_name', 'family_name', 'nick_name', 'display_name', 'person_role', 'photo_url', 'linkedin_Url', 'avatar_Url', 'mob_phone_no', 'address_line_1', 'address_line_2', 'city', 'state', 'join_date', 'join_status']
+    # show_exclude_columns = ['first_name', 'middle_name', 'family_name', 'nick_name', 'display_name', 'person_role', 'photo_url', 'linkedin_Url', 'avatar_Url', 'mob_phone_no', 'address_line_1', 'address_line_2', 'city', 'state', 'join_date', 'join_status']
+    # edit_exclude_columns = ['first_name', 'middle_name', 'family_name', 'nick_name', 'display_name', 'person_role', 'photo_url', 'linkedin_Url', 'avatar_Url', 'mob_phone_no', 'address_line_1', 'address_line_2', 'city', 'state', 'join_date', 'join_status']
+    # add_exclude_columns = ['first_name', 'middle_name', 'family_name', 'nick_name', 'display_name', 'person_role', 'photo_url', 'linkedin_Url', 'avatar_Url', 'mob_phone_no', 'address_line_1', 'address_line_2', 'city', 'state', 'join_date', 'join_status']
+    # search_exclude_columns = ['first_name', 'middle_name', 'family_name', 'nick_name', 'display_name', 'person_role', 'photo_url', 'linkedin_Url', 'avatar_Url', 'mob_phone_no', 'address_line_1', 'address_line_2', 'city', 'state', 'join_date', 'join_status']
+    # order_columns = ['first_name', 'middle_name', 'family_name', 'nick_name', 'display_name', 'person_role', 'photo_url', 'linkedin_Url', 'avatar_Url', 'mob_phone_no', 'address_line_1', 'address_line_2', 'city', 'state', 'join_date', 'join_status']
+    # add_columns = ['first_name', 'middle_name', 'family_name', 'nick_name', 'display_name', 'person_role', 'photo_url', 'linkedin_Url', 'avatar_Url', 'mob_phone_no', 'address_line_1', 'address_line_2', 'city', 'state', 'join_date', 'join_status']
+    # add_columns = ['first_name', 'middle_name', 'family_name', 'nick_name', 'display_name', 'person_role', 'photo_url', 'linkedin_Url', 'avatar_Url', 'mob_phone_no', 'address_line_1', 'address_line_2', 'city', 'state', 'join_date', 'join_status']
+    # add_columns = ['first_name', 'middle_name', 'family_name', 'nick_name', 'display_name', 'person_role', 'photo_url', 'linkedin_Url', 'avatar_Url', 'mob_phone_no', 'address_line_1', 'address_line_2', 'city', 'state', 'join_date', 'join_status']
     
-    label_columns = {'agent':'Agent', 'next_of_kin':'Next Of Kin', 'person_role':'Person Role', 'first_name':'First Name', 'middle_name':'Middle Name', 'surname':'Surname', 'nick_name':'Nick Name', 'gender':'Gender', 'photo_img':'Photo Img', 'signature_img':'Signature Img', 'bvn_no':'Bvn No', 'bvn_verified':'Bvn Verified', 'bvn_verification_date':'Bvn Verification Date', 'bvn_verification_code':'Bvn Verification Code', 'tax_id':'Tax Id', 'home_poa_img':'Home Poa Img', 'home_poa_desc':'Home Poa Desc', 'home_poa_valid':'Home Poa Valid', 'home_lat':'Home Lat', 'home_lon':'Home Lon', 'home_loc':'Home Loc', 'home_ggl_code':'Home Ggl Code'}
+    label_columns = {'first_name':'First Name', 'middle_name':'Middle Name', 'family_name':'Family Name', 'nick_name':'Nick Name', 'display_name':'Display Name', 'person_role':'Person Role', 'photo_url':'Photo Url', 'linkedin_Url':'Linkedin Url', 'avatar_Url':'Avatar Url', 'mob_phone_no':'Mob Phone No', 'address_line_1':'Address Line 1', 'address_line_2':'Address Line 2', 'city':'City', 'state':'State', 'join_date':'Join Date', 'join_status':'Join Status'}
     # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
     # base_order = ("name", "asc")
     # page_size = 100 
-#    list_columns = ['agent', 'next_of_kin', 'person_role', 'first_name', 'middle_name', 'surname', 'nick_name', 'gender', 'photo_img', 'signature_img', 'bvn_no', 'bvn_verified', 'bvn_verification_date', 'bvn_verification_code', 'tax_id', 'home_poa_img', 'home_poa_desc', 'home_poa_valid', 'home_lat', 'home_lon', 'home_loc', 'home_ggl_code']
-class WalletModelView(ModelView):
-    datamodel = SQLAInterface(Wallet)
-    list_title = 'List Wallet'
-    show_title = 'Show Wallet'
-    edit_title = 'Edit Wallet'
-    add_title  = 'Add Wallet'
+#    list_columns = ['first_name', 'middle_name', 'family_name', 'nick_name', 'display_name', 'person_role', 'photo_url', 'linkedin_Url', 'avatar_Url', 'mob_phone_no', 'address_line_1', 'address_line_2', 'city', 'state', 'join_date', 'join_status']
+class PestModelView(ModelView):
+    datamodel = SQLAInterface(Pest)
+    list_title = 'List Pest'
+    show_title = 'Show Pest'
+    edit_title = 'Edit Pest'
+    add_title  = 'Add Pest'
  
-    list_columns = ['agent', 'pos', 'wallet_name', 'wallet_balance', 'wallet_locked', 'wallet_active', 'wallet_code', 'wallet_crypt', 'wallet_narrative']
-    # show_columns = ['agent', 'pos', 'wallet_name', 'wallet_balance', 'wallet_locked', 'wallet_active', 'wallet_code', 'wallet_crypt', 'wallet_narrative']
-    # edit_columns = ['agent', 'pos', 'wallet_name', 'wallet_balance', 'wallet_locked', 'wallet_active', 'wallet_code', 'wallet_crypt', 'wallet_narrative']
-    add_columns = ['agent', 'pos', 'wallet_name', 'wallet_balance', 'wallet_locked', 'wallet_active', 'wallet_code', 'wallet_crypt', 'wallet_narrative']
-    # search_columns = ['agent', 'pos', 'wallet_name', 'wallet_balance', 'wallet_locked', 'wallet_active', 'wallet_code', 'wallet_crypt', 'wallet_narrative']
+    list_columns = ['pest_name', 'scientific_name', 'family_name', 'genus', 'species', 'pest_signature', 'lifecycle', 'habitat', 'common_regions', 'primary_diet', 'natural_predators', 'economic_impact', 'control_methods', 'known_resistances', 'impact_on_crops', 'reproduction_rate', 'image_url']
+    # show_columns = ['pest_name', 'scientific_name', 'family_name', 'genus', 'species', 'pest_signature', 'lifecycle', 'habitat', 'common_regions', 'primary_diet', 'natural_predators', 'economic_impact', 'control_methods', 'known_resistances', 'impact_on_crops', 'reproduction_rate', 'image_url']
+    # edit_columns = ['pest_name', 'scientific_name', 'family_name', 'genus', 'species', 'pest_signature', 'lifecycle', 'habitat', 'common_regions', 'primary_diet', 'natural_predators', 'economic_impact', 'control_methods', 'known_resistances', 'impact_on_crops', 'reproduction_rate', 'image_url']
+    add_columns = ['pest_name', 'scientific_name', 'family_name', 'genus', 'species', 'pest_signature', 'lifecycle', 'habitat', 'common_regions', 'primary_diet', 'natural_predators', 'economic_impact', 'control_methods', 'known_resistances', 'impact_on_crops', 'reproduction_rate', 'image_url']
+    # search_columns = ['pest_name', 'scientific_name', 'family_name', 'genus', 'species', 'pest_signature', 'lifecycle', 'habitat', 'common_regions', 'primary_diet', 'natural_predators', 'economic_impact', 'control_methods', 'known_resistances', 'impact_on_crops', 'reproduction_rate', 'image_url']
     description_columns = {
-        'id' : 'Unique identifier for the wallet.',
-        'agent_id_fk' : 'Foreign key reference to the agent associated with the wallet.',
-        'pos_id_fk' : 'Foreign key reference to the Point of Sale (PoS) associated with the wallet.',
-        'wallet_name' : 'Name of the wallet.',
-        'wallet_balance' : 'The balance or amount of funds in the wallet.',
-        'wallet_locked' : 'Indicates whether the wallet is locked.',
-        'wallet_active' : 'Indicates whether the wallet is active.',
-        'wallet_code' : 'Code or identifier associated with the wallet for security purposes.',
-        'wallet_crypt' : 'Cryptographic information related to the wallet.',
-        'wallet_narrative' : 'Narrative or additional information about the wallet.',
+        'id' : 'Unique identifier for each pest',
+        'pest_name' : 'Common name of the pest',
+        'scientific_name' : 'Binomial nomenclature of the pest',
+        'family_name' : 'Taxonomic family the pest belongs to',
+        'genus' : 'Genus of the pest',
+        'species' : 'Specific species of the pest within the genus',
+        'pest_signature' : 'AI-driven identifier for the pest',
+        'lifecycle' : 'Description of the pest’s lifecycle stages',
+        'habitat' : 'Preferred habitats of the pest',
+        'common_regions' : 'Regions where the pest is commonly found',
+        'primary_diet' : 'Primary food sources of the pest',
+        'natural_predators' : 'Natural predators of the pest',
+        'economic_impact' : 'Economic impact due to damages caused by the pest',
+        'control_methods' : 'Commonly used methods to control the pest',
+        'known_resistances' : 'Any known resistances, e.g., to certain pesticides',
+        'impact_on_crops' : 'Impact of the pest on agricultural crops',
+        'reproduction_rate' : 'Average reproduction rate of the pest',
+        'image_url' : 'URL of the pest image for visual identification',
     }
-    # list_exclude_columns = ['agent', 'pos', 'wallet_name', 'wallet_balance', 'wallet_locked', 'wallet_active', 'wallet_code', 'wallet_crypt', 'wallet_narrative']
-    # show_exclude_columns = ['agent', 'pos', 'wallet_name', 'wallet_balance', 'wallet_locked', 'wallet_active', 'wallet_code', 'wallet_crypt', 'wallet_narrative']
-    # edit_exclude_columns = ['agent', 'pos', 'wallet_name', 'wallet_balance', 'wallet_locked', 'wallet_active', 'wallet_code', 'wallet_crypt', 'wallet_narrative']
-    # add_exclude_columns = ['agent', 'pos', 'wallet_name', 'wallet_balance', 'wallet_locked', 'wallet_active', 'wallet_code', 'wallet_crypt', 'wallet_narrative']
-    # search_exclude_columns = ['agent', 'pos', 'wallet_name', 'wallet_balance', 'wallet_locked', 'wallet_active', 'wallet_code', 'wallet_crypt', 'wallet_narrative']
-    # order_columns = ['agent', 'pos', 'wallet_name', 'wallet_balance', 'wallet_locked', 'wallet_active', 'wallet_code', 'wallet_crypt', 'wallet_narrative']
-    # add_columns = ['agent', 'pos', 'wallet_name', 'wallet_balance', 'wallet_locked', 'wallet_active', 'wallet_code', 'wallet_crypt', 'wallet_narrative']
-    # add_columns = ['agent', 'pos', 'wallet_name', 'wallet_balance', 'wallet_locked', 'wallet_active', 'wallet_code', 'wallet_crypt', 'wallet_narrative']
-    # add_columns = ['agent', 'pos', 'wallet_name', 'wallet_balance', 'wallet_locked', 'wallet_active', 'wallet_code', 'wallet_crypt', 'wallet_narrative']
+    # list_exclude_columns = ['pest_name', 'scientific_name', 'family_name', 'genus', 'species', 'pest_signature', 'lifecycle', 'habitat', 'common_regions', 'primary_diet', 'natural_predators', 'economic_impact', 'control_methods', 'known_resistances', 'impact_on_crops', 'reproduction_rate', 'image_url']
+    # show_exclude_columns = ['pest_name', 'scientific_name', 'family_name', 'genus', 'species', 'pest_signature', 'lifecycle', 'habitat', 'common_regions', 'primary_diet', 'natural_predators', 'economic_impact', 'control_methods', 'known_resistances', 'impact_on_crops', 'reproduction_rate', 'image_url']
+    # edit_exclude_columns = ['pest_name', 'scientific_name', 'family_name', 'genus', 'species', 'pest_signature', 'lifecycle', 'habitat', 'common_regions', 'primary_diet', 'natural_predators', 'economic_impact', 'control_methods', 'known_resistances', 'impact_on_crops', 'reproduction_rate', 'image_url']
+    # add_exclude_columns = ['pest_name', 'scientific_name', 'family_name', 'genus', 'species', 'pest_signature', 'lifecycle', 'habitat', 'common_regions', 'primary_diet', 'natural_predators', 'economic_impact', 'control_methods', 'known_resistances', 'impact_on_crops', 'reproduction_rate', 'image_url']
+    # search_exclude_columns = ['pest_name', 'scientific_name', 'family_name', 'genus', 'species', 'pest_signature', 'lifecycle', 'habitat', 'common_regions', 'primary_diet', 'natural_predators', 'economic_impact', 'control_methods', 'known_resistances', 'impact_on_crops', 'reproduction_rate', 'image_url']
+    # order_columns = ['pest_name', 'scientific_name', 'family_name', 'genus', 'species', 'pest_signature', 'lifecycle', 'habitat', 'common_regions', 'primary_diet', 'natural_predators', 'economic_impact', 'control_methods', 'known_resistances', 'impact_on_crops', 'reproduction_rate', 'image_url']
+    # add_columns = ['pest_name', 'scientific_name', 'family_name', 'genus', 'species', 'pest_signature', 'lifecycle', 'habitat', 'common_regions', 'primary_diet', 'natural_predators', 'economic_impact', 'control_methods', 'known_resistances', 'impact_on_crops', 'reproduction_rate', 'image_url']
+    # add_columns = ['pest_name', 'scientific_name', 'family_name', 'genus', 'species', 'pest_signature', 'lifecycle', 'habitat', 'common_regions', 'primary_diet', 'natural_predators', 'economic_impact', 'control_methods', 'known_resistances', 'impact_on_crops', 'reproduction_rate', 'image_url']
+    # add_columns = ['pest_name', 'scientific_name', 'family_name', 'genus', 'species', 'pest_signature', 'lifecycle', 'habitat', 'common_regions', 'primary_diet', 'natural_predators', 'economic_impact', 'control_methods', 'known_resistances', 'impact_on_crops', 'reproduction_rate', 'image_url']
     
-    label_columns = {'agent':'Agent', 'pos':'Pos', 'wallet_name':'Wallet Name', 'wallet_balance':'Wallet Balance', 'wallet_locked':'Wallet Locked', 'wallet_active':'Wallet Active', 'wallet_code':'Wallet Code', 'wallet_crypt':'Wallet Crypt', 'wallet_narrative':'Wallet Narrative'}
+    label_columns = {'pest_name':'Pest Name', 'scientific_name':'Scientific Name', 'family_name':'Family Name', 'genus':'Genus', 'species':'Species', 'pest_signature':'Pest Signature', 'lifecycle':'Lifecycle', 'habitat':'Habitat', 'common_regions':'Common Regions', 'primary_diet':'Primary Diet', 'natural_predators':'Natural Predators', 'economic_impact':'Economic Impact', 'control_methods':'Control Methods', 'known_resistances':'Known Resistances', 'impact_on_crops':'Impact On Crops', 'reproduction_rate':'Reproduction Rate', 'image_url':'Image Url'}
     # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
     # base_order = ("name", "asc")
     # page_size = 100 
-#    list_columns = ['agent', 'pos', 'wallet_name', 'wallet_balance', 'wallet_locked', 'wallet_active', 'wallet_code', 'wallet_crypt', 'wallet_narrative']
-class AgentPersonLinkModelView(ModelView):
-    datamodel = SQLAInterface(AgentPersonLink)
-    list_title = 'List Agent Person Link'
-    show_title = 'Show Agent Person Link'
-    edit_title = 'Edit Agent Person Link'
-    add_title  = 'Add Agent Person Link'
+#    list_columns = ['pest_name', 'scientific_name', 'family_name', 'genus', 'species', 'pest_signature', 'lifecycle', 'habitat', 'common_regions', 'primary_diet', 'natural_predators', 'economic_impact', 'control_methods', 'known_resistances', 'impact_on_crops', 'reproduction_rate', 'image_url']
+class ProductClassModelView(ModelView):
+    datamodel = SQLAInterface(ProductClass)
+    list_title = 'List Product Class'
+    show_title = 'Show Product Class'
+    edit_title = 'Edit Product Class'
+    add_title  = 'Add Product Class'
  
-    list_columns = ['person', 'agent']
-    # show_columns = ['person', 'agent']
-    # edit_columns = ['person', 'agent']
-    add_columns = ['person', 'agent']
-    # search_columns = ['person', 'agent']
+    list_columns = ['segment_code', 'segment_name', 'family_code', 'family_name', 'class_code', 'class_name', 'commodity_code', 'commodity_name']
+    # show_columns = ['segment_code', 'segment_name', 'family_code', 'family_name', 'class_code', 'class_name', 'commodity_code', 'commodity_name']
+    # edit_columns = ['segment_code', 'segment_name', 'family_code', 'family_name', 'class_code', 'class_name', 'commodity_code', 'commodity_name']
+    add_columns = ['segment_code', 'segment_name', 'family_code', 'family_name', 'class_code', 'class_name', 'commodity_code', 'commodity_name']
+    # search_columns = ['segment_code', 'segment_name', 'family_code', 'family_name', 'class_code', 'class_name', 'commodity_code', 'commodity_name']
     description_columns = {
-        'person_id_fk' : 'Foreign key reference to the person linked to the agent.',
-        'agent_id_fk' : 'Foreign key reference to the agent linked to the person.',
+        'id' : 'Unique identifier for each record in the product_class table.',
+        'segment_code' : 'The highest level of the UNSPSC classification. It represents a general industry sector.',
+        'segment_name' : 'The descriptive name for the segment code.',
+        'family_code' : 'Subdivision of a segment. Represents a more specific product or service category within the segment.',
+        'family_name' : 'The descriptive name for the family code.',
+        'class_code' : 'Subdivision of a family. Represents even more specific categories within the family.',
+        'class_name' : 'The descriptive name for the class code.',
+        'commodity_code' : 'The lowest level of UNSPSC classification. Represents the most detailed specification of products or services.',
+        'commodity_name' : 'The descriptive name for the commodity code.',
     }
-    # list_exclude_columns = ['person', 'agent']
-    # show_exclude_columns = ['person', 'agent']
-    # edit_exclude_columns = ['person', 'agent']
-    # add_exclude_columns = ['person', 'agent']
-    # search_exclude_columns = ['person', 'agent']
-    # order_columns = ['person', 'agent']
-    # add_columns = ['person', 'agent']
-    # add_columns = ['person', 'agent']
-    # add_columns = ['person', 'agent']
+    # list_exclude_columns = ['segment_code', 'segment_name', 'family_code', 'family_name', 'class_code', 'class_name', 'commodity_code', 'commodity_name']
+    # show_exclude_columns = ['segment_code', 'segment_name', 'family_code', 'family_name', 'class_code', 'class_name', 'commodity_code', 'commodity_name']
+    # edit_exclude_columns = ['segment_code', 'segment_name', 'family_code', 'family_name', 'class_code', 'class_name', 'commodity_code', 'commodity_name']
+    # add_exclude_columns = ['segment_code', 'segment_name', 'family_code', 'family_name', 'class_code', 'class_name', 'commodity_code', 'commodity_name']
+    # search_exclude_columns = ['segment_code', 'segment_name', 'family_code', 'family_name', 'class_code', 'class_name', 'commodity_code', 'commodity_name']
+    # order_columns = ['segment_code', 'segment_name', 'family_code', 'family_name', 'class_code', 'class_name', 'commodity_code', 'commodity_name']
+    # add_columns = ['segment_code', 'segment_name', 'family_code', 'family_name', 'class_code', 'class_name', 'commodity_code', 'commodity_name']
+    # add_columns = ['segment_code', 'segment_name', 'family_code', 'family_name', 'class_code', 'class_name', 'commodity_code', 'commodity_name']
+    # add_columns = ['segment_code', 'segment_name', 'family_code', 'family_name', 'class_code', 'class_name', 'commodity_code', 'commodity_name']
     
-    label_columns = {'person':'Person', 'agent':'Agent'}
+    label_columns = {'segment_code':'Segment Code', 'segment_name':'Segment Name', 'family_code':'Family Code', 'family_name':'Family Name', 'class_code':'Class Code', 'class_name':'Class Name', 'commodity_code':'Commodity Code', 'commodity_name':'Commodity Name'}
     # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
     # base_order = ("name", "asc")
     # page_size = 100 
-#    list_columns = ['person', 'agent']
-class ContactModelView(ModelView):
-    datamodel = SQLAInterface(Contact)
-    list_title = 'List Contact'
-    show_title = 'Show Contact'
-    edit_title = 'Edit Contact'
-    add_title  = 'Add Contact'
+#    list_columns = ['segment_code', 'segment_name', 'family_code', 'family_name', 'class_code', 'class_name', 'commodity_code', 'commodity_name']
+class SpatialRefSysModelView(ModelView):
+    datamodel = SQLAInterface(SpatialRefSys)
+    list_title = 'List Spatial Ref Sys'
+    show_title = 'Show Spatial Ref Sys'
+    edit_title = 'Edit Spatial Ref Sys'
+    add_title  = 'Add Spatial Ref Sys'
  
-    list_columns = ['person', 'agent', 'contact_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
-    # show_columns = ['person', 'agent', 'contact_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
-    # edit_columns = ['person', 'agent', 'contact_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
-    add_columns = ['person', 'agent', 'contact_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
-    # search_columns = ['person', 'agent', 'contact_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
+    list_columns = ['srid', 'auth_name', 'auth_srid', 'srtext', 'proj4text']
+    # show_columns = ['srid', 'auth_name', 'auth_srid', 'srtext', 'proj4text']
+    # edit_columns = ['srid', 'auth_name', 'auth_srid', 'srtext', 'proj4text']
+    add_columns = ['srid', 'auth_name', 'auth_srid', 'srtext', 'proj4text']
+    # search_columns = ['srid', 'auth_name', 'auth_srid', 'srtext', 'proj4text']
     description_columns = {
-        'id' : 'Unique identifier for the contact.',
-        'person_id_fk' : 'Reference to the individual associated with this contact.',
-        'agent_id_fk' : 'Reference to the organization associated with this contact.',
-        'contact_type_id_fk' : 'Reference to the type of contact.',
-        'contact' : 'Actual contact value, e.g., phone number or email address.',
-        'priority' : 'Ordering priority for displaying or using the contact. Lower value indicates higher priority.',
-        'best_time_to_contact_start' : 'Preferred start time when the individual/organization is available for contact.',
-        'best_time_to_contact_end' : 'Preferred end time for availability.',
-        'active_from_date' : 'Date when this contact became active or relevant.',
-        'active_to_date' : 'Date when this contact ceases to be active or relevant.',
-        'for_business_use' : 'Indicates if the contact is primarily for business purposes.',
-        'for_personal_use' : 'Indicates if the contact is primarily for personal use.',
-        'do_not_use' : 'Indicates if there are any restrictions or requests not to use this contact.',
-        'is_active' : 'Indicates if this contact is currently active and usable.',
-        'is_blocked' : 'Indicates if this contact is blocked, maybe due to spam or other reasons.',
-        'is_verified' : 'Indicates if this contact has been verified, e.g., via OTP or email confirmation.',
-        'notes' : 'Additional notes or context about the contact.',
+        'srid' : 'None',
+        'auth_name' : 'None',
+        'auth_srid' : 'None',
+        'srtext' : 'None',
+        'proj4text' : 'None',
     }
-    # list_exclude_columns = ['person', 'agent', 'contact_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
-    # show_exclude_columns = ['person', 'agent', 'contact_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
-    # edit_exclude_columns = ['person', 'agent', 'contact_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
-    # add_exclude_columns = ['person', 'agent', 'contact_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
-    # search_exclude_columns = ['person', 'agent', 'contact_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
-    # order_columns = ['person', 'agent', 'contact_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
-    # add_columns = ['person', 'agent', 'contact_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
-    # add_columns = ['person', 'agent', 'contact_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
-    # add_columns = ['person', 'agent', 'contact_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
+    # list_exclude_columns = ['srid', 'auth_name', 'auth_srid', 'srtext', 'proj4text']
+    # show_exclude_columns = ['srid', 'auth_name', 'auth_srid', 'srtext', 'proj4text']
+    # edit_exclude_columns = ['srid', 'auth_name', 'auth_srid', 'srtext', 'proj4text']
+    # add_exclude_columns = ['srid', 'auth_name', 'auth_srid', 'srtext', 'proj4text']
+    # search_exclude_columns = ['srid', 'auth_name', 'auth_srid', 'srtext', 'proj4text']
+    # order_columns = ['srid', 'auth_name', 'auth_srid', 'srtext', 'proj4text']
+    # add_columns = ['srid', 'auth_name', 'auth_srid', 'srtext', 'proj4text']
+    # add_columns = ['srid', 'auth_name', 'auth_srid', 'srtext', 'proj4text']
+    # add_columns = ['srid', 'auth_name', 'auth_srid', 'srtext', 'proj4text']
     
-    label_columns = {'person':'Person', 'agent':'Agent', 'contact_type':'Contact Type', 'contact':'Contact', 'priority':'Priority', 'best_time_to_contact_start':'Best Time To Contact Start', 'best_time_to_contact_end':'Best Time To Contact End', 'active_from_date':'Active From Date', 'active_to_date':'Active To Date', 'for_business_use':'For Business Use', 'for_personal_use':'For Personal Use', 'do_not_use':'Do Not Use', 'is_active':'Is Active', 'is_blocked':'Is Blocked', 'is_verified':'Is Verified', 'notes':'Notes'}
+    label_columns = {'srid':'Srid', 'auth_name':'Auth Name', 'auth_srid':'Auth Srid', 'srtext':'Srtext', 'proj4text':'Proj4text'}
     # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
     # base_order = ("name", "asc")
     # page_size = 100 
-#    list_columns = ['person', 'agent', 'contact_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
-class DocModelView(ModelView):
-    datamodel = SQLAInterface(Doc)
-    list_title = 'List Doc'
-    show_title = 'Show Doc'
-    edit_title = 'Edit Doc'
-    add_title  = 'Add Doc'
+#    list_columns = ['srid', 'auth_name', 'auth_srid', 'srtext', 'proj4text']
+class TopologyModelView(ModelView):
+    datamodel = SQLAInterface(Topology)
+    list_title = 'List Topology'
+    show_title = 'Show Topology'
+    edit_title = 'Edit Topology'
+    add_title  = 'Add Topology'
  
-    list_columns = ['doc_type', 'person', 'agent', 'doc_front_img', 'doc_back_img', 'doc_name', 'doc_content_type', 'doc_url', 'doc_length', 'doc_text', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'issued_on', 'issued_by_authority', 'issued_at', 'expires_on', 'is_expired', 'verified', 'verification_date', 'verification_code', 'uploaded_on', 'updated_on']
-    # show_columns = ['doc_type', 'person', 'agent', 'doc_front_img', 'doc_back_img', 'doc_name', 'doc_content_type', 'doc_url', 'doc_length', 'doc_text', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'issued_on', 'issued_by_authority', 'issued_at', 'expires_on', 'is_expired', 'verified', 'verification_date', 'verification_code', 'uploaded_on', 'updated_on']
-    # edit_columns = ['doc_type', 'person', 'agent', 'doc_front_img', 'doc_back_img', 'doc_name', 'doc_content_type', 'doc_url', 'doc_length', 'doc_text', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'issued_on', 'issued_by_authority', 'issued_at', 'expires_on', 'is_expired', 'verified', 'verification_date', 'verification_code', 'uploaded_on', 'updated_on']
-    add_columns = ['doc_type', 'person', 'agent', 'doc_front_img', 'doc_back_img', 'doc_name', 'doc_content_type', 'doc_url', 'doc_length', 'doc_text', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'issued_on', 'issued_by_authority', 'issued_at', 'expires_on', 'is_expired', 'verified', 'verification_date', 'verification_code', 'uploaded_on', 'updated_on']
-    # search_columns = ['doc_type', 'person', 'agent', 'doc_front_img', 'doc_back_img', 'doc_name', 'doc_content_type', 'doc_url', 'doc_length', 'doc_text', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'issued_on', 'issued_by_authority', 'issued_at', 'expires_on', 'is_expired', 'verified', 'verification_date', 'verification_code', 'uploaded_on', 'updated_on']
+    list_columns = ['name', 'srid', 'precision', 'hasz']
+    # show_columns = ['name', 'srid', 'precision', 'hasz']
+    # edit_columns = ['name', 'srid', 'precision', 'hasz']
+    add_columns = ['name', 'srid', 'precision', 'hasz']
+    # search_columns = ['name', 'srid', 'precision', 'hasz']
     description_columns = {
-        'id' : 'Unique identifier for the document.',
-        'doc_type_id_fk' : 'References the type of document e.g. passport, license.',
-        'person_id_fk' : 'The person to whom the document belongs.',
-        'agent_id_fk' : 'The organization associated with the document.',
-        'doc_front_img' : 'Image of the front of the document',
-        'doc_back_img' : 'Image of the back of the document',
-        'doc_name' : 'Name or title of the document.',
-        'doc_content_type_id_fk' : 'MIME type of the document content e.g. application/pdf, image/jpeg.',
-        'doc_url' : 'Actual doc in pdf or other format',
-        'doc_length' : 'Size of the document in bytes or another measure.',
-        'doc_text' : 'Text content extracted from the document. Useful for search and analytics. May be stored in another database for scalability.',
-        'identification_number' : 'Unique identification number, e.g., passport number.',
-        'serial_number' : 'Serial number of the document if applicable.',
-        'description' : 'Detailed description or remarks about the document.',
-        'file_name' : 'Name of the file if stored digitally.',
-        'page_count' : 'Number of pages in the document, if applicable.',
-        'issued_on' : 'The date when the document was issued.',
-        'issued_by_authority' : 'Authority or organization that issued the document.',
-        'issued_at' : 'Place or location where the document was issued.',
-        'expires_on' : 'Expiration date of the document.',
-        'is_expired' : 'Flag to indicate if the document has expired.',
-        'verified' : 'None',
-        'verification_date' : 'The date when the document was verified.',
-        'verification_code' : 'None',
-        'uploaded_on' : 'Timestamp when the document was uploaded into the system.',
-        'updated_on' : 'Timestamp when the document record was last updated.',
+        'id' : 'None',
+        'name' : 'None',
+        'srid' : 'None',
+        'precision' : 'None',
+        'hasz' : 'None',
     }
-    # list_exclude_columns = ['doc_type', 'person', 'agent', 'doc_front_img', 'doc_back_img', 'doc_name', 'doc_content_type', 'doc_url', 'doc_length', 'doc_text', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'issued_on', 'issued_by_authority', 'issued_at', 'expires_on', 'is_expired', 'verified', 'verification_date', 'verification_code', 'uploaded_on', 'updated_on']
-    # show_exclude_columns = ['doc_type', 'person', 'agent', 'doc_front_img', 'doc_back_img', 'doc_name', 'doc_content_type', 'doc_url', 'doc_length', 'doc_text', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'issued_on', 'issued_by_authority', 'issued_at', 'expires_on', 'is_expired', 'verified', 'verification_date', 'verification_code', 'uploaded_on', 'updated_on']
-    # edit_exclude_columns = ['doc_type', 'person', 'agent', 'doc_front_img', 'doc_back_img', 'doc_name', 'doc_content_type', 'doc_url', 'doc_length', 'doc_text', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'issued_on', 'issued_by_authority', 'issued_at', 'expires_on', 'is_expired', 'verified', 'verification_date', 'verification_code', 'uploaded_on', 'updated_on']
-    # add_exclude_columns = ['doc_type', 'person', 'agent', 'doc_front_img', 'doc_back_img', 'doc_name', 'doc_content_type', 'doc_url', 'doc_length', 'doc_text', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'issued_on', 'issued_by_authority', 'issued_at', 'expires_on', 'is_expired', 'verified', 'verification_date', 'verification_code', 'uploaded_on', 'updated_on']
-    # search_exclude_columns = ['doc_type', 'person', 'agent', 'doc_front_img', 'doc_back_img', 'doc_name', 'doc_content_type', 'doc_url', 'doc_length', 'doc_text', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'issued_on', 'issued_by_authority', 'issued_at', 'expires_on', 'is_expired', 'verified', 'verification_date', 'verification_code', 'uploaded_on', 'updated_on']
-    # order_columns = ['doc_type', 'person', 'agent', 'doc_front_img', 'doc_back_img', 'doc_name', 'doc_content_type', 'doc_url', 'doc_length', 'doc_text', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'issued_on', 'issued_by_authority', 'issued_at', 'expires_on', 'is_expired', 'verified', 'verification_date', 'verification_code', 'uploaded_on', 'updated_on']
-    # add_columns = ['doc_type', 'person', 'agent', 'doc_front_img', 'doc_back_img', 'doc_name', 'doc_content_type', 'doc_url', 'doc_length', 'doc_text', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'issued_on', 'issued_by_authority', 'issued_at', 'expires_on', 'is_expired', 'verified', 'verification_date', 'verification_code', 'uploaded_on', 'updated_on']
-    # add_columns = ['doc_type', 'person', 'agent', 'doc_front_img', 'doc_back_img', 'doc_name', 'doc_content_type', 'doc_url', 'doc_length', 'doc_text', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'issued_on', 'issued_by_authority', 'issued_at', 'expires_on', 'is_expired', 'verified', 'verification_date', 'verification_code', 'uploaded_on', 'updated_on']
-    # add_columns = ['doc_type', 'person', 'agent', 'doc_front_img', 'doc_back_img', 'doc_name', 'doc_content_type', 'doc_url', 'doc_length', 'doc_text', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'issued_on', 'issued_by_authority', 'issued_at', 'expires_on', 'is_expired', 'verified', 'verification_date', 'verification_code', 'uploaded_on', 'updated_on']
+    # list_exclude_columns = ['name', 'srid', 'precision', 'hasz']
+    # show_exclude_columns = ['name', 'srid', 'precision', 'hasz']
+    # edit_exclude_columns = ['name', 'srid', 'precision', 'hasz']
+    # add_exclude_columns = ['name', 'srid', 'precision', 'hasz']
+    # search_exclude_columns = ['name', 'srid', 'precision', 'hasz']
+    # order_columns = ['name', 'srid', 'precision', 'hasz']
+    # add_columns = ['name', 'srid', 'precision', 'hasz']
+    # add_columns = ['name', 'srid', 'precision', 'hasz']
+    # add_columns = ['name', 'srid', 'precision', 'hasz']
     
-    label_columns = {'doc_type':'Doc Type', 'person':'Person', 'agent':'Agent', 'doc_front_img':'Doc Front Img', 'doc_back_img':'Doc Back Img', 'doc_name':'Doc Name', 'doc_content_type':'Doc Content Type', 'doc_url':'Doc Url', 'doc_length':'Doc Length', 'doc_text':'Doc Text', 'identification_number':'Identification Number', 'serial_number':'Serial Number', 'description':'Description', 'file_name':'File Name', 'page_count':'Page Count', 'issued_on':'Issued On', 'issued_by_authority':'Issued By Authority', 'issued_at':'Issued At', 'expires_on':'Expires On', 'is_expired':'Is Expired', 'verified':'Verified', 'verification_date':'Verification Date', 'verification_code':'Verification Code', 'uploaded_on':'Uploaded On', 'updated_on':'Updated On'}
+    label_columns = {'name':'Name', 'srid':'Srid', 'precision':'Precision', 'hasz':'Hasz'}
     # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
     # base_order = ("name", "asc")
     # page_size = 100 
-#    list_columns = ['doc_type', 'person', 'agent', 'doc_front_img', 'doc_back_img', 'doc_name', 'doc_content_type', 'doc_url', 'doc_length', 'doc_text', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'issued_on', 'issued_by_authority', 'issued_at', 'expires_on', 'is_expired', 'verified', 'verification_date', 'verification_code', 'uploaded_on', 'updated_on']
+#    list_columns = ['name', 'srid', 'precision', 'hasz']
+class UsGazModelView(ModelView):
+    datamodel = SQLAInterface(UsGaz)
+    list_title = 'List Us Gaz'
+    show_title = 'Show Us Gaz'
+    edit_title = 'Edit Us Gaz'
+    add_title  = 'Add Us Gaz'
+ 
+    list_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # show_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # edit_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    add_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # search_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    description_columns = {
+        'id' : 'None',
+        'seq' : 'None',
+        'word' : 'None',
+        'stdword' : 'None',
+        'token' : 'None',
+        'is_custom' : 'None',
+    }
+    # list_exclude_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # show_exclude_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # edit_exclude_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # add_exclude_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # search_exclude_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # order_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # add_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # add_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # add_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    
+    label_columns = {'seq':'Seq', 'word':'Word', 'stdword':'Stdword', 'token':'Token', 'is_custom':'Is Custom'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+class UsLexModelView(ModelView):
+    datamodel = SQLAInterface(UsLex)
+    list_title = 'List Us Lex'
+    show_title = 'Show Us Lex'
+    edit_title = 'Edit Us Lex'
+    add_title  = 'Add Us Lex'
+ 
+    list_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # show_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # edit_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    add_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # search_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    description_columns = {
+        'id' : 'None',
+        'seq' : 'None',
+        'word' : 'None',
+        'stdword' : 'None',
+        'token' : 'None',
+        'is_custom' : 'None',
+    }
+    # list_exclude_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # show_exclude_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # edit_exclude_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # add_exclude_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # search_exclude_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # order_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # add_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # add_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    # add_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+    
+    label_columns = {'seq':'Seq', 'word':'Word', 'stdword':'Stdword', 'token':'Token', 'is_custom':'Is Custom'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['seq', 'word', 'stdword', 'token', 'is_custom']
+class UsRulesModelView(ModelView):
+    datamodel = SQLAInterface(UsRules)
+    list_title = 'List Us Rules'
+    show_title = 'Show Us Rules'
+    edit_title = 'Edit Us Rules'
+    add_title  = 'Add Us Rules'
+ 
+    list_columns = ['rule', 'is_custom']
+    # show_columns = ['rule', 'is_custom']
+    # edit_columns = ['rule', 'is_custom']
+    add_columns = ['rule', 'is_custom']
+    # search_columns = ['rule', 'is_custom']
+    description_columns = {
+        'id' : 'None',
+        'rule' : 'None',
+        'is_custom' : 'None',
+    }
+    # list_exclude_columns = ['rule', 'is_custom']
+    # show_exclude_columns = ['rule', 'is_custom']
+    # edit_exclude_columns = ['rule', 'is_custom']
+    # add_exclude_columns = ['rule', 'is_custom']
+    # search_exclude_columns = ['rule', 'is_custom']
+    # order_columns = ['rule', 'is_custom']
+    # add_columns = ['rule', 'is_custom']
+    # add_columns = ['rule', 'is_custom']
+    # add_columns = ['rule', 'is_custom']
+    
+    label_columns = {'rule':'Rule', 'is_custom':'Is Custom'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['rule', 'is_custom']
+class PersonLearnerModelView(ModelView):
+    datamodel = SQLAInterface(PersonLearner)
+    list_title = 'List Person Learner'
+    show_title = 'Show Person Learner'
+    edit_title = 'Edit Person Learner'
+    add_title  = 'Add Person Learner'
+ 
+    list_columns = ['person', 'learning_style', 'strengths', 'weaknesses']
+    # show_columns = ['person', 'learning_style', 'strengths', 'weaknesses']
+    # edit_columns = ['person', 'learning_style', 'strengths', 'weaknesses']
+    add_columns = ['person', 'learning_style', 'strengths', 'weaknesses']
+    # search_columns = ['person', 'learning_style', 'strengths', 'weaknesses']
+    description_columns = {
+        'id' : 'None',
+        'person_id_fk' : 'None',
+        'learning_style' : 'None',
+        'strengths' : 'None',
+        'weaknesses' : 'None',
+    }
+    # list_exclude_columns = ['person', 'learning_style', 'strengths', 'weaknesses']
+    # show_exclude_columns = ['person', 'learning_style', 'strengths', 'weaknesses']
+    # edit_exclude_columns = ['person', 'learning_style', 'strengths', 'weaknesses']
+    # add_exclude_columns = ['person', 'learning_style', 'strengths', 'weaknesses']
+    # search_exclude_columns = ['person', 'learning_style', 'strengths', 'weaknesses']
+    # order_columns = ['person', 'learning_style', 'strengths', 'weaknesses']
+    # add_columns = ['person', 'learning_style', 'strengths', 'weaknesses']
+    # add_columns = ['person', 'learning_style', 'strengths', 'weaknesses']
+    # add_columns = ['person', 'learning_style', 'strengths', 'weaknesses']
+    
+    label_columns = {'person':'Person', 'learning_style':'Learning Style', 'strengths':'Strengths', 'weaknesses':'Weaknesses'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['person', 'learning_style', 'strengths', 'weaknesses']
+class AlternatenameModelView(ModelView):
+    datamodel = SQLAInterface(Alternatename)
+    list_title = 'List Alternatename'
+    show_title = 'Show Alternatename'
+    edit_title = 'Edit Alternatename'
+    add_title  = 'Add Alternatename'
+ 
+    list_columns = ['geo', 'isolanguage', 'alternatename', 'ispreferredname', 'isshortname', 'iscolloquial', 'ishistoric', 'name_from', 'name_to']
+    # show_columns = ['geo', 'isolanguage', 'alternatename', 'ispreferredname', 'isshortname', 'iscolloquial', 'ishistoric', 'name_from', 'name_to']
+    # edit_columns = ['geo', 'isolanguage', 'alternatename', 'ispreferredname', 'isshortname', 'iscolloquial', 'ishistoric', 'name_from', 'name_to']
+    add_columns = ['geo', 'isolanguage', 'alternatename', 'ispreferredname', 'isshortname', 'iscolloquial', 'ishistoric', 'name_from', 'name_to']
+    # search_columns = ['geo', 'isolanguage', 'alternatename', 'ispreferredname', 'isshortname', 'iscolloquial', 'ishistoric', 'name_from', 'name_to']
+    description_columns = {
+        'id' : 'Unique identifier for each alternate name entry',
+        'geo_id_fk' : 'Reference to the geoname table; denotes which location this alternate name pertains to',
+        'isolanguage' : 'ISO language code denoting the language of this alternate name, e.g., en for English',
+        'alternatename' : 'The alternate name itself in the specified language',
+        'ispreferredname' : 'Indicates if this is the preferred name in the associated language',
+        'isshortname' : 'Indicates if this name is a short version or abbreviation',
+        'iscolloquial' : 'Indicates if this name is colloquial or informal',
+        'ishistoric' : 'Indicates if this name is historic and no longer widely in use',
+        'name_from' : 'Used for transliterations; the script or system from which the name was derived',
+        'name_to' : 'Used for transliterations; the script or system to which the name was translated',
+    }
+    # list_exclude_columns = ['geo', 'isolanguage', 'alternatename', 'ispreferredname', 'isshortname', 'iscolloquial', 'ishistoric', 'name_from', 'name_to']
+    # show_exclude_columns = ['geo', 'isolanguage', 'alternatename', 'ispreferredname', 'isshortname', 'iscolloquial', 'ishistoric', 'name_from', 'name_to']
+    # edit_exclude_columns = ['geo', 'isolanguage', 'alternatename', 'ispreferredname', 'isshortname', 'iscolloquial', 'ishistoric', 'name_from', 'name_to']
+    # add_exclude_columns = ['geo', 'isolanguage', 'alternatename', 'ispreferredname', 'isshortname', 'iscolloquial', 'ishistoric', 'name_from', 'name_to']
+    # search_exclude_columns = ['geo', 'isolanguage', 'alternatename', 'ispreferredname', 'isshortname', 'iscolloquial', 'ishistoric', 'name_from', 'name_to']
+    # order_columns = ['geo', 'isolanguage', 'alternatename', 'ispreferredname', 'isshortname', 'iscolloquial', 'ishistoric', 'name_from', 'name_to']
+    # add_columns = ['geo', 'isolanguage', 'alternatename', 'ispreferredname', 'isshortname', 'iscolloquial', 'ishistoric', 'name_from', 'name_to']
+    # add_columns = ['geo', 'isolanguage', 'alternatename', 'ispreferredname', 'isshortname', 'iscolloquial', 'ishistoric', 'name_from', 'name_to']
+    # add_columns = ['geo', 'isolanguage', 'alternatename', 'ispreferredname', 'isshortname', 'iscolloquial', 'ishistoric', 'name_from', 'name_to']
+    
+    label_columns = {'geo':'Geo', 'isolanguage':'Isolanguage', 'alternatename':'Alternatename', 'ispreferredname':'Ispreferredname', 'isshortname':'Isshortname', 'iscolloquial':'Iscolloquial', 'ishistoric':'Ishistoric', 'name_from':'Name From', 'name_to':'Name To'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['geo', 'isolanguage', 'alternatename', 'ispreferredname', 'isshortname', 'iscolloquial', 'ishistoric', 'name_from', 'name_to']
+class CountryModelView(ModelView):
+    datamodel = SQLAInterface(Country)
+    list_title = 'List Country'
+    show_title = 'Show Country'
+    edit_title = 'Edit Country'
+    add_title  = 'Add Country'
+ 
+    list_columns = ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo', 'neighbors', 'equivfipscode', 'flag']
+    # show_columns = ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo', 'neighbors', 'equivfipscode', 'flag']
+    # edit_columns = ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo', 'neighbors', 'equivfipscode', 'flag']
+    add_columns = ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo', 'neighbors', 'equivfipscode', 'flag']
+    # search_columns = ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo', 'neighbors', 'equivfipscode', 'flag']
+    description_columns = {
+        'id' : 'None',
+        'iso_alpha2' : '2-letter ISO 3166-1 alpha code e.g., US for the United States',
+        'iso_alpha3' : '3-letter ISO 3166-1 alpha code e.g., USA for the United States',
+        'iso_numeric' : 'ISO 3166-1 numeric code e.g., 840 for the United States',
+        'fips_code' : 'Federal Information Processing Standard code, used by the US government',
+        'name' : 'Full name of the country',
+        'capital' : 'Capital city of the country',
+        'areainsqkm' : 'Total area of the country in square kilometers',
+        'population' : 'Estimated population of the country',
+        'continent' : 'Abbreviation of the continent the country is located in',
+        'tld' : 'Top Level Domain for the country e.g., .us for the United States',
+        'currencycode' : 'ISO code of the country’s currency e.g., USD for US Dollar',
+        'currencyname' : 'Full name of the country’s currency e.g., Dollar for US Dollar',
+        'phone' : 'Country dialing code e.g., +1 for the United States',
+        'postalcode' : 'Template or format of postal codes in the country',
+        'postalcoderegex' : 'Regular expression pattern to validate postal codes',
+        'languages' : 'Commonly spoken languages in the country, represented as ISO codes',
+        'geo_id_fk' : 'Reference to geoname table; linking country data with geographical name data',
+        'neighbors' : 'Neighboring countries, usually represented as ISO codes',
+        'equivfipscode' : 'Equivalent FIPS code in cases where it might differ from the primary FIPS code',
+        'flag' : 'Field to store a link or representation of the country’s flag',
+    }
+    # list_exclude_columns = ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo', 'neighbors', 'equivfipscode', 'flag']
+    # show_exclude_columns = ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo', 'neighbors', 'equivfipscode', 'flag']
+    # edit_exclude_columns = ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo', 'neighbors', 'equivfipscode', 'flag']
+    # add_exclude_columns = ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo', 'neighbors', 'equivfipscode', 'flag']
+    # search_exclude_columns = ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo', 'neighbors', 'equivfipscode', 'flag']
+    # order_columns = ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo', 'neighbors', 'equivfipscode', 'flag']
+    # add_columns = ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo', 'neighbors', 'equivfipscode', 'flag']
+    # add_columns = ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo', 'neighbors', 'equivfipscode', 'flag']
+    # add_columns = ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo', 'neighbors', 'equivfipscode', 'flag']
+    
+    label_columns = {'iso_alpha2':'Iso Alpha2', 'iso_alpha3':'Iso Alpha3', 'iso_numeric':'Iso Numeric', 'fips_code':'Fips Code', 'name':'Name', 'capital':'Capital', 'areainsqkm':'Areainsqkm', 'population':'Population', 'continent':'Continent', 'tld':'Tld', 'currencycode':'Currencycode', 'currencyname':'Currencyname', 'phone':'Phone', 'postalcode':'Postalcode', 'postalcoderegex':'Postalcoderegex', 'languages':'Languages', 'geo':'Geo', 'neighbors':'Neighbors', 'equivfipscode':'Equivfipscode', 'flag':'Flag'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo', 'neighbors', 'equivfipscode', 'flag']
+class CropDiseaseLinkModelView(ModelView):
+    datamodel = SQLAInterface(CropDiseaseLink)
+    list_title = 'List Crop Disease Link'
+    show_title = 'Show Crop Disease Link'
+    edit_title = 'Edit Crop Disease Link'
+    add_title  = 'Add Crop Disease Link'
+ 
+    list_columns = ['crop', 'disease', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # show_columns = ['crop', 'disease', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # edit_columns = ['crop', 'disease', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    add_columns = ['crop', 'disease', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # search_columns = ['crop', 'disease', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    description_columns = {
+        'id' : 'Unique identifier for each crop-disease association',
+        'crop_id_fk' : 'Reference to the affected crop',
+        'disease_id_fk' : 'Reference to the disease affecting the crop',
+        'presentation' : 'Initial visible signs and symptoms of the disease on the crop',
+        'diagnosis' : 'How to diagnose or confirm the presence of the disease in the crop',
+        'test' : 'Specific tests or methods to detect the presence of the disease',
+        'remediation' : 'Methods or treatments to remove or control the disease',
+        'remedial_efficacy' : 'Effectiveness of the recommended remedial actions',
+        'severity' : 'Level of damage or threat posed by the disease to the crop',
+        'model_name' : 'Name of the AI/ML model used for diagnosis',
+        'model_version' : 'Version of the AI/ML model used',
+        'dataset_reference' : 'Reference to the dataset used to train/test the model',
+        'detection_threshold' : 'Threshold value above which disease presence is confirmed',
+        'image_sample_url' : 'URL for sample images which can be used for detection reference',
+        'model_accuracy' : 'Accuracy of the model on a validation/test dataset',
+        'last_model_training_date' : 'Date when the model was last trained',
+        'model_description' : 'Description or notes about the model, its architecture, training data, etc.',
+    }
+    # list_exclude_columns = ['crop', 'disease', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # show_exclude_columns = ['crop', 'disease', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # edit_exclude_columns = ['crop', 'disease', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # add_exclude_columns = ['crop', 'disease', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # search_exclude_columns = ['crop', 'disease', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # order_columns = ['crop', 'disease', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # add_columns = ['crop', 'disease', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # add_columns = ['crop', 'disease', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # add_columns = ['crop', 'disease', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    
+    label_columns = {'crop':'Crop', 'disease':'Disease', 'presentation':'Presentation', 'diagnosis':'Diagnosis', 'test':'Test', 'remediation':'Remediation', 'remedial_efficacy':'Remedial Efficacy', 'severity':'Severity', 'model_name':'Model Name', 'model_version':'Model Version', 'dataset_reference':'Dataset Reference', 'detection_threshold':'Detection Threshold', 'image_sample_url':'Image Sample Url', 'model_accuracy':'Model Accuracy', 'last_model_training_date':'Last Model Training Date', 'model_description':'Model Description'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['crop', 'disease', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+class CropPestLinkModelView(ModelView):
+    datamodel = SQLAInterface(CropPestLink)
+    list_title = 'List Crop Pest Link'
+    show_title = 'Show Crop Pest Link'
+    edit_title = 'Edit Crop Pest Link'
+    add_title  = 'Add Crop Pest Link'
+ 
+    list_columns = ['crop', 'pest', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # show_columns = ['crop', 'pest', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # edit_columns = ['crop', 'pest', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    add_columns = ['crop', 'pest', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # search_columns = ['crop', 'pest', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    description_columns = {
+        'id' : 'Unique identifier for each crop-pest association',
+        'crop_id_fk' : 'Reference to the affected crop',
+        'pest_id_fk' : 'Reference to the pest causing harm',
+        'presentation' : 'Initial visible signs and symptoms of pest damage on the crop',
+        'diagnosis' : 'How to diagnose or confirm the presence of the pest in the crop',
+        'test' : 'Specific tests or methods to detect the presence of the pest',
+        'remediation' : 'Methods or treatments to remove or control the pest',
+        'remedial_efficacy' : 'Effectiveness of the recommended remedial actions',
+        'severity' : 'Level of damage or threat posed by the pest to the crop',
+        'model_name' : 'Name of the AI/ML model used for diagnosis',
+        'model_version' : 'Version of the AI/ML model used',
+        'dataset_reference' : 'Reference to the dataset used to train/test the model',
+        'detection_threshold' : 'Threshold value above which pest presence is confirmed',
+        'image_sample_url' : 'URL for sample images which can be used for detection reference',
+        'model_accuracy' : 'Accuracy of the model on a validation/test dataset',
+        'last_model_training_date' : 'Date when the model was last trained',
+        'model_description' : 'Description or notes about the model, its architecture, training data, etc.',
+    }
+    # list_exclude_columns = ['crop', 'pest', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # show_exclude_columns = ['crop', 'pest', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # edit_exclude_columns = ['crop', 'pest', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # add_exclude_columns = ['crop', 'pest', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # search_exclude_columns = ['crop', 'pest', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # order_columns = ['crop', 'pest', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # add_columns = ['crop', 'pest', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # add_columns = ['crop', 'pest', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    # add_columns = ['crop', 'pest', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+    
+    label_columns = {'crop':'Crop', 'pest':'Pest', 'presentation':'Presentation', 'diagnosis':'Diagnosis', 'test':'Test', 'remediation':'Remediation', 'remedial_efficacy':'Remedial Efficacy', 'severity':'Severity', 'model_name':'Model Name', 'model_version':'Model Version', 'dataset_reference':'Dataset Reference', 'detection_threshold':'Detection Threshold', 'image_sample_url':'Image Sample Url', 'model_accuracy':'Model Accuracy', 'last_model_training_date':'Last Model Training Date', 'model_description':'Model Description'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['crop', 'pest', 'presentation', 'diagnosis', 'test', 'remediation', 'remedial_efficacy', 'severity', 'model_name', 'model_version', 'dataset_reference', 'detection_threshold', 'image_sample_url', 'model_accuracy', 'last_model_training_date', 'model_description']
+class CropVarietyModelView(ModelView):
+    datamodel = SQLAInterface(CropVariety)
+    list_title = 'List Crop Variety'
+    show_title = 'Show Crop Variety'
+    edit_title = 'Edit Crop Variety'
+    add_title  = 'Add Crop Variety'
+ 
+    list_columns = ['crop', 'variety_name', 'optimal_soil_ph', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temperature_range', 'is_gmo', 'seed_price', 'drought_tolerance', 'drought_tolerance_notes', 'salinity_tolerance', 'herbicide_tolerance', 'yield_shape', 'yield_size', 'yield_color', 'yield_taste', 'yield_texture', 'average_yield_per_plant', 'storage_life', 'growth_duration', 'climate_adaptation', 'altitude_range', 'water_requirement', 'improvement_history', 'commercial_availability', 'frost_tolerance', 'salt_tolerance', 'high_nutritional_value', 'long_shelf_life', 'low_thorniness', 'color', 'taste_profile', 'seedless', 'pollination_method']
+    # show_columns = ['crop', 'variety_name', 'optimal_soil_ph', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temperature_range', 'is_gmo', 'seed_price', 'drought_tolerance', 'drought_tolerance_notes', 'salinity_tolerance', 'herbicide_tolerance', 'yield_shape', 'yield_size', 'yield_color', 'yield_taste', 'yield_texture', 'average_yield_per_plant', 'storage_life', 'growth_duration', 'climate_adaptation', 'altitude_range', 'water_requirement', 'improvement_history', 'commercial_availability', 'frost_tolerance', 'salt_tolerance', 'high_nutritional_value', 'long_shelf_life', 'low_thorniness', 'color', 'taste_profile', 'seedless', 'pollination_method']
+    # edit_columns = ['crop', 'variety_name', 'optimal_soil_ph', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temperature_range', 'is_gmo', 'seed_price', 'drought_tolerance', 'drought_tolerance_notes', 'salinity_tolerance', 'herbicide_tolerance', 'yield_shape', 'yield_size', 'yield_color', 'yield_taste', 'yield_texture', 'average_yield_per_plant', 'storage_life', 'growth_duration', 'climate_adaptation', 'altitude_range', 'water_requirement', 'improvement_history', 'commercial_availability', 'frost_tolerance', 'salt_tolerance', 'high_nutritional_value', 'long_shelf_life', 'low_thorniness', 'color', 'taste_profile', 'seedless', 'pollination_method']
+    add_columns = ['crop', 'variety_name', 'optimal_soil_ph', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temperature_range', 'is_gmo', 'seed_price', 'drought_tolerance', 'drought_tolerance_notes', 'salinity_tolerance', 'herbicide_tolerance', 'yield_shape', 'yield_size', 'yield_color', 'yield_taste', 'yield_texture', 'average_yield_per_plant', 'storage_life', 'growth_duration', 'climate_adaptation', 'altitude_range', 'water_requirement', 'improvement_history', 'commercial_availability', 'frost_tolerance', 'salt_tolerance', 'high_nutritional_value', 'long_shelf_life', 'low_thorniness', 'color', 'taste_profile', 'seedless', 'pollination_method']
+    # search_columns = ['crop', 'variety_name', 'optimal_soil_ph', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temperature_range', 'is_gmo', 'seed_price', 'drought_tolerance', 'drought_tolerance_notes', 'salinity_tolerance', 'herbicide_tolerance', 'yield_shape', 'yield_size', 'yield_color', 'yield_taste', 'yield_texture', 'average_yield_per_plant', 'storage_life', 'growth_duration', 'climate_adaptation', 'altitude_range', 'water_requirement', 'improvement_history', 'commercial_availability', 'frost_tolerance', 'salt_tolerance', 'high_nutritional_value', 'long_shelf_life', 'low_thorniness', 'color', 'taste_profile', 'seedless', 'pollination_method']
+    description_columns = {
+        'id' : 'None',
+        'crop_id_fk' : 'Reference to the generic crop type',
+        'variety_name' : 'Specific name of the crop variety',
+        'optimal_soil_ph' : 'Optimal soil pH for this variety',
+        'optimal_nitrogen_level' : 'Optimal nitrogen level in the soil',
+        'optimal_phosphorus_level' : 'Optimal phosphorus level in the soil',
+        'optimal_potassium_level' : 'Optimal potassium level in the soil',
+        'optimal_temperature_range' : 'Optimal temperature range for growth',
+        'is_gmo' : 'Indicates whether the variety is Genetically Modified',
+        'seed_price' : 'Price of the seed per unit weight/volume',
+        'drought_tolerance' : 'Level of drought tolerance; Low, Medium, High',
+        'drought_tolerance_notes' : 'None',
+        'salinity_tolerance' : 'Level of salinity tolerance; Low, Medium, High',
+        'herbicide_tolerance' : 'Level of herbicide tolerance; Low, Medium, High',
+        'yield_shape' : 'Shape characteristics of the yield (e.g., round, oblong)',
+        'yield_size' : 'Size characteristics of the yield (e.g., small, medium, large)',
+        'yield_color' : 'Color of the mature yield',
+        'yield_taste' : 'Taste characteristics of the yield (e.g., sweet, bitter)',
+        'yield_texture' : 'Texture of the yield (e.g., crunchy, soft)',
+        'average_yield_per_plant' : 'Average yield per plant in kg',
+        'storage_life' : 'Storage life of the yield in days',
+        'growth_duration' : 'Average growth duration in days',
+        'climate_adaptation' : 'Climatic zones where the variety is best suited',
+        'altitude_range' : 'Altitude range where the variety can grow optimally',
+        'water_requirement' : 'Average water requirement in mm per season',
+        'improvement_history' : 'Description of improvements made to this variety over time',
+        'commercial_availability' : 'Indicates whether the variety is commercially available',
+        'frost_tolerance' : 'Indicates if the variety is frost-tolerant',
+        'salt_tolerance' : 'Indicates if the variety is salt-tolerant',
+        'high_nutritional_value' : 'Indicates if the variety has a high nutritional value',
+        'long_shelf_life' : 'Indicates if the variety has a long shelf life',
+        'low_thorniness' : 'Indicates if the variety has low thorniness for easy handling',
+        'color' : 'Color of the mature crop or its edible part',
+        'taste_profile' : 'Taste profile like sweet, sour, etc.',
+        'seedless' : 'Indicates if the variety is seedless',
+        'pollination_method' : 'Method of pollination, e.g., self, wind, insect',
+    }
+    # list_exclude_columns = ['crop', 'variety_name', 'optimal_soil_ph', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temperature_range', 'is_gmo', 'seed_price', 'drought_tolerance', 'drought_tolerance_notes', 'salinity_tolerance', 'herbicide_tolerance', 'yield_shape', 'yield_size', 'yield_color', 'yield_taste', 'yield_texture', 'average_yield_per_plant', 'storage_life', 'growth_duration', 'climate_adaptation', 'altitude_range', 'water_requirement', 'improvement_history', 'commercial_availability', 'frost_tolerance', 'salt_tolerance', 'high_nutritional_value', 'long_shelf_life', 'low_thorniness', 'color', 'taste_profile', 'seedless', 'pollination_method']
+    # show_exclude_columns = ['crop', 'variety_name', 'optimal_soil_ph', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temperature_range', 'is_gmo', 'seed_price', 'drought_tolerance', 'drought_tolerance_notes', 'salinity_tolerance', 'herbicide_tolerance', 'yield_shape', 'yield_size', 'yield_color', 'yield_taste', 'yield_texture', 'average_yield_per_plant', 'storage_life', 'growth_duration', 'climate_adaptation', 'altitude_range', 'water_requirement', 'improvement_history', 'commercial_availability', 'frost_tolerance', 'salt_tolerance', 'high_nutritional_value', 'long_shelf_life', 'low_thorniness', 'color', 'taste_profile', 'seedless', 'pollination_method']
+    # edit_exclude_columns = ['crop', 'variety_name', 'optimal_soil_ph', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temperature_range', 'is_gmo', 'seed_price', 'drought_tolerance', 'drought_tolerance_notes', 'salinity_tolerance', 'herbicide_tolerance', 'yield_shape', 'yield_size', 'yield_color', 'yield_taste', 'yield_texture', 'average_yield_per_plant', 'storage_life', 'growth_duration', 'climate_adaptation', 'altitude_range', 'water_requirement', 'improvement_history', 'commercial_availability', 'frost_tolerance', 'salt_tolerance', 'high_nutritional_value', 'long_shelf_life', 'low_thorniness', 'color', 'taste_profile', 'seedless', 'pollination_method']
+    # add_exclude_columns = ['crop', 'variety_name', 'optimal_soil_ph', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temperature_range', 'is_gmo', 'seed_price', 'drought_tolerance', 'drought_tolerance_notes', 'salinity_tolerance', 'herbicide_tolerance', 'yield_shape', 'yield_size', 'yield_color', 'yield_taste', 'yield_texture', 'average_yield_per_plant', 'storage_life', 'growth_duration', 'climate_adaptation', 'altitude_range', 'water_requirement', 'improvement_history', 'commercial_availability', 'frost_tolerance', 'salt_tolerance', 'high_nutritional_value', 'long_shelf_life', 'low_thorniness', 'color', 'taste_profile', 'seedless', 'pollination_method']
+    # search_exclude_columns = ['crop', 'variety_name', 'optimal_soil_ph', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temperature_range', 'is_gmo', 'seed_price', 'drought_tolerance', 'drought_tolerance_notes', 'salinity_tolerance', 'herbicide_tolerance', 'yield_shape', 'yield_size', 'yield_color', 'yield_taste', 'yield_texture', 'average_yield_per_plant', 'storage_life', 'growth_duration', 'climate_adaptation', 'altitude_range', 'water_requirement', 'improvement_history', 'commercial_availability', 'frost_tolerance', 'salt_tolerance', 'high_nutritional_value', 'long_shelf_life', 'low_thorniness', 'color', 'taste_profile', 'seedless', 'pollination_method']
+    # order_columns = ['crop', 'variety_name', 'optimal_soil_ph', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temperature_range', 'is_gmo', 'seed_price', 'drought_tolerance', 'drought_tolerance_notes', 'salinity_tolerance', 'herbicide_tolerance', 'yield_shape', 'yield_size', 'yield_color', 'yield_taste', 'yield_texture', 'average_yield_per_plant', 'storage_life', 'growth_duration', 'climate_adaptation', 'altitude_range', 'water_requirement', 'improvement_history', 'commercial_availability', 'frost_tolerance', 'salt_tolerance', 'high_nutritional_value', 'long_shelf_life', 'low_thorniness', 'color', 'taste_profile', 'seedless', 'pollination_method']
+    # add_columns = ['crop', 'variety_name', 'optimal_soil_ph', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temperature_range', 'is_gmo', 'seed_price', 'drought_tolerance', 'drought_tolerance_notes', 'salinity_tolerance', 'herbicide_tolerance', 'yield_shape', 'yield_size', 'yield_color', 'yield_taste', 'yield_texture', 'average_yield_per_plant', 'storage_life', 'growth_duration', 'climate_adaptation', 'altitude_range', 'water_requirement', 'improvement_history', 'commercial_availability', 'frost_tolerance', 'salt_tolerance', 'high_nutritional_value', 'long_shelf_life', 'low_thorniness', 'color', 'taste_profile', 'seedless', 'pollination_method']
+    # add_columns = ['crop', 'variety_name', 'optimal_soil_ph', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temperature_range', 'is_gmo', 'seed_price', 'drought_tolerance', 'drought_tolerance_notes', 'salinity_tolerance', 'herbicide_tolerance', 'yield_shape', 'yield_size', 'yield_color', 'yield_taste', 'yield_texture', 'average_yield_per_plant', 'storage_life', 'growth_duration', 'climate_adaptation', 'altitude_range', 'water_requirement', 'improvement_history', 'commercial_availability', 'frost_tolerance', 'salt_tolerance', 'high_nutritional_value', 'long_shelf_life', 'low_thorniness', 'color', 'taste_profile', 'seedless', 'pollination_method']
+    # add_columns = ['crop', 'variety_name', 'optimal_soil_ph', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temperature_range', 'is_gmo', 'seed_price', 'drought_tolerance', 'drought_tolerance_notes', 'salinity_tolerance', 'herbicide_tolerance', 'yield_shape', 'yield_size', 'yield_color', 'yield_taste', 'yield_texture', 'average_yield_per_plant', 'storage_life', 'growth_duration', 'climate_adaptation', 'altitude_range', 'water_requirement', 'improvement_history', 'commercial_availability', 'frost_tolerance', 'salt_tolerance', 'high_nutritional_value', 'long_shelf_life', 'low_thorniness', 'color', 'taste_profile', 'seedless', 'pollination_method']
+    
+    label_columns = {'crop':'Crop', 'variety_name':'Variety Name', 'optimal_soil_ph':'Optimal Soil Ph', 'optimal_nitrogen_level':'Optimal Nitrogen Level', 'optimal_phosphorus_level':'Optimal Phosphorus Level', 'optimal_potassium_level':'Optimal Potassium Level', 'optimal_temperature_range':'Optimal Temperature Range', 'is_gmo':'Is Gmo', 'seed_price':'Seed Price', 'drought_tolerance':'Drought Tolerance', 'drought_tolerance_notes':'Drought Tolerance Notes', 'salinity_tolerance':'Salinity Tolerance', 'herbicide_tolerance':'Herbicide Tolerance', 'yield_shape':'Yield Shape', 'yield_size':'Yield Size', 'yield_color':'Yield Color', 'yield_taste':'Yield Taste', 'yield_texture':'Yield Texture', 'average_yield_per_plant':'Average Yield Per Plant', 'storage_life':'Storage Life', 'growth_duration':'Growth Duration', 'climate_adaptation':'Climate Adaptation', 'altitude_range':'Altitude Range', 'water_requirement':'Water Requirement', 'improvement_history':'Improvement History', 'commercial_availability':'Commercial Availability', 'frost_tolerance':'Frost Tolerance', 'salt_tolerance':'Salt Tolerance', 'high_nutritional_value':'High Nutritional Value', 'long_shelf_life':'Long Shelf Life', 'low_thorniness':'Low Thorniness', 'color':'Color', 'taste_profile':'Taste Profile', 'seedless':'Seedless', 'pollination_method':'Pollination Method'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['crop', 'variety_name', 'optimal_soil_ph', 'optimal_nitrogen_level', 'optimal_phosphorus_level', 'optimal_potassium_level', 'optimal_temperature_range', 'is_gmo', 'seed_price', 'drought_tolerance', 'drought_tolerance_notes', 'salinity_tolerance', 'herbicide_tolerance', 'yield_shape', 'yield_size', 'yield_color', 'yield_taste', 'yield_texture', 'average_yield_per_plant', 'storage_life', 'growth_duration', 'climate_adaptation', 'altitude_range', 'water_requirement', 'improvement_history', 'commercial_availability', 'frost_tolerance', 'salt_tolerance', 'high_nutritional_value', 'long_shelf_life', 'low_thorniness', 'color', 'taste_profile', 'seedless', 'pollination_method']
+class HerdModelView(ModelView):
+    datamodel = SQLAInterface(Herd)
+    list_title = 'List Herd'
+    show_title = 'Show Herd'
+    edit_title = 'Edit Herd'
+    add_title  = 'Add Herd'
+ 
+    list_columns = ['name', 'herder', 'herd_notes', 'herd_size', 'dominant_species', 'last_location', 'movement_frequency', 'last_health_check', 'common_feed', 'water_source', 'breeding_status', 'tags']
+    # show_columns = ['name', 'herder', 'herd_notes', 'herd_size', 'dominant_species', 'last_location', 'movement_frequency', 'last_health_check', 'common_feed', 'water_source', 'breeding_status', 'tags']
+    # edit_columns = ['name', 'herder', 'herd_notes', 'herd_size', 'dominant_species', 'last_location', 'movement_frequency', 'last_health_check', 'common_feed', 'water_source', 'breeding_status', 'tags']
+    add_columns = ['name', 'herder', 'herd_notes', 'herd_size', 'dominant_species', 'last_location', 'movement_frequency', 'last_health_check', 'common_feed', 'water_source', 'breeding_status', 'tags']
+    # search_columns = ['name', 'herder', 'herd_notes', 'herd_size', 'dominant_species', 'last_location', 'movement_frequency', 'last_health_check', 'common_feed', 'water_source', 'breeding_status', 'tags']
+    description_columns = {
+        'id' : 'Unique identifier for each herd',
+        'name' : 'Name or designation for the herd. Useful for management purposes.',
+        'herder_id_fk' : 'Reference to the primary herder or caretaker of the herd.',
+        'herd_notes' : 'Any additional information or details about the herd, its history, or management practices.',
+        'herd_size' : 'Total number of livestock in the herd. Useful for quick reference.',
+        'dominant_species' : 'The primary species of livestock in the herd, e.g., cattle, sheep, etc.',
+        'last_location_id_fk' : 'Last known location or grazing area of the herd. Useful for tracking movements.',
+        'movement_frequency' : 'How often the herd typically moves, e.g.,  daily , weekly, seasonally.',
+        'last_health_check' : 'Date of the last general health check for the herd.',
+        'common_feed' : 'What the herd primarily feeds on, e.g., grass, hay, supplements.',
+        'water_source' : 'Primary water source for the herd, e.g., river, well, tank.',
+        'breeding_status' : 'Whether the herd is being used for breeding purposes.',
+        'tags' : 'Tags to categorize or label the herd, e.g., dairy, beef, organic.',
+    }
+    # list_exclude_columns = ['name', 'herder', 'herd_notes', 'herd_size', 'dominant_species', 'last_location', 'movement_frequency', 'last_health_check', 'common_feed', 'water_source', 'breeding_status', 'tags']
+    # show_exclude_columns = ['name', 'herder', 'herd_notes', 'herd_size', 'dominant_species', 'last_location', 'movement_frequency', 'last_health_check', 'common_feed', 'water_source', 'breeding_status', 'tags']
+    # edit_exclude_columns = ['name', 'herder', 'herd_notes', 'herd_size', 'dominant_species', 'last_location', 'movement_frequency', 'last_health_check', 'common_feed', 'water_source', 'breeding_status', 'tags']
+    # add_exclude_columns = ['name', 'herder', 'herd_notes', 'herd_size', 'dominant_species', 'last_location', 'movement_frequency', 'last_health_check', 'common_feed', 'water_source', 'breeding_status', 'tags']
+    # search_exclude_columns = ['name', 'herder', 'herd_notes', 'herd_size', 'dominant_species', 'last_location', 'movement_frequency', 'last_health_check', 'common_feed', 'water_source', 'breeding_status', 'tags']
+    # order_columns = ['name', 'herder', 'herd_notes', 'herd_size', 'dominant_species', 'last_location', 'movement_frequency', 'last_health_check', 'common_feed', 'water_source', 'breeding_status', 'tags']
+    # add_columns = ['name', 'herder', 'herd_notes', 'herd_size', 'dominant_species', 'last_location', 'movement_frequency', 'last_health_check', 'common_feed', 'water_source', 'breeding_status', 'tags']
+    # add_columns = ['name', 'herder', 'herd_notes', 'herd_size', 'dominant_species', 'last_location', 'movement_frequency', 'last_health_check', 'common_feed', 'water_source', 'breeding_status', 'tags']
+    # add_columns = ['name', 'herder', 'herd_notes', 'herd_size', 'dominant_species', 'last_location', 'movement_frequency', 'last_health_check', 'common_feed', 'water_source', 'breeding_status', 'tags']
+    
+    label_columns = {'name':'Name', 'herder':'Herder', 'herd_notes':'Herd Notes', 'herd_size':'Herd Size', 'dominant_species':'Dominant Species', 'last_location':'Last Location', 'movement_frequency':'Movement Frequency', 'last_health_check':'Last Health Check', 'common_feed':'Common Feed', 'water_source':'Water Source', 'breeding_status':'Breeding Status', 'tags':'Tags'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['name', 'herder', 'herd_notes', 'herd_size', 'dominant_species', 'last_location', 'movement_frequency', 'last_health_check', 'common_feed', 'water_source', 'breeding_status', 'tags']
+class IsicDivisionModelView(ModelView):
+    datamodel = SQLAInterface(IsicDivision)
+    list_title = 'List Isic Division'
+    show_title = 'Show Isic Division'
+    edit_title = 'Edit Isic Division'
+    add_title  = 'Add Isic Division'
+ 
+    list_columns = ['division_id', 'section', 'division_name']
+    # show_columns = ['division_id', 'section', 'division_name']
+    # edit_columns = ['division_id', 'section', 'division_name']
+    add_columns = ['division_id', 'section', 'division_name']
+    # search_columns = ['division_id', 'section', 'division_name']
+    description_columns = {
+        'id' : 'None',
+        'division_id' : 'Unique identifier for each ISIC division.',
+        'section_id_fk' : 'Reference to the parent ISIC section.',
+        'division_name' : 'Name or description of the ISIC division.',
+    }
+    # list_exclude_columns = ['division_id', 'section', 'division_name']
+    # show_exclude_columns = ['division_id', 'section', 'division_name']
+    # edit_exclude_columns = ['division_id', 'section', 'division_name']
+    # add_exclude_columns = ['division_id', 'section', 'division_name']
+    # search_exclude_columns = ['division_id', 'section', 'division_name']
+    # order_columns = ['division_id', 'section', 'division_name']
+    # add_columns = ['division_id', 'section', 'division_name']
+    # add_columns = ['division_id', 'section', 'division_name']
+    # add_columns = ['division_id', 'section', 'division_name']
+    
+    label_columns = {'division_id':'Division Id', 'section':'Section', 'division_name':'Division Name'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['division_id', 'section', 'division_name']
+class LayerModelView(ModelView):
+    datamodel = SQLAInterface(Layer)
+    list_title = 'List Layer'
+    show_title = 'Show Layer'
+    edit_title = 'Edit Layer'
+    add_title  = 'Add Layer'
+ 
+    list_columns = ['topology_id', 'layer_id', 'schema_name', 'table_name', 'feature_column', 'feature_type', 'level', 'child_id']
+    # show_columns = ['topology_id', 'layer_id', 'schema_name', 'table_name', 'feature_column', 'feature_type', 'level', 'child_id']
+    # edit_columns = ['topology_id', 'layer_id', 'schema_name', 'table_name', 'feature_column', 'feature_type', 'level', 'child_id']
+    add_columns = ['topology_id', 'layer_id', 'schema_name', 'table_name', 'feature_column', 'feature_type', 'level', 'child_id']
+    # search_columns = ['topology_id', 'layer_id', 'schema_name', 'table_name', 'feature_column', 'feature_type', 'level', 'child_id']
+    description_columns = {
+        'topology_id' : 'None',
+        'layer_id' : 'None',
+        'schema_name' : 'None',
+        'table_name' : 'None',
+        'feature_column' : 'None',
+        'feature_type' : 'None',
+        'level' : 'None',
+        'child_id' : 'None',
+    }
+    # list_exclude_columns = ['topology_id', 'layer_id', 'schema_name', 'table_name', 'feature_column', 'feature_type', 'level', 'child_id']
+    # show_exclude_columns = ['topology_id', 'layer_id', 'schema_name', 'table_name', 'feature_column', 'feature_type', 'level', 'child_id']
+    # edit_exclude_columns = ['topology_id', 'layer_id', 'schema_name', 'table_name', 'feature_column', 'feature_type', 'level', 'child_id']
+    # add_exclude_columns = ['topology_id', 'layer_id', 'schema_name', 'table_name', 'feature_column', 'feature_type', 'level', 'child_id']
+    # search_exclude_columns = ['topology_id', 'layer_id', 'schema_name', 'table_name', 'feature_column', 'feature_type', 'level', 'child_id']
+    # order_columns = ['topology_id', 'layer_id', 'schema_name', 'table_name', 'feature_column', 'feature_type', 'level', 'child_id']
+    # add_columns = ['topology_id', 'layer_id', 'schema_name', 'table_name', 'feature_column', 'feature_type', 'level', 'child_id']
+    # add_columns = ['topology_id', 'layer_id', 'schema_name', 'table_name', 'feature_column', 'feature_type', 'level', 'child_id']
+    # add_columns = ['topology_id', 'layer_id', 'schema_name', 'table_name', 'feature_column', 'feature_type', 'level', 'child_id']
+    
+    label_columns = {'topology_id':'Topology Id', 'layer_id':'Layer Id', 'schema_name':'Schema Name', 'table_name':'Table Name', 'feature_column':'Feature Column', 'feature_type':'Feature Type', 'level':'Level', 'child_id':'Child Id'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['topology_id', 'layer_id', 'schema_name', 'table_name', 'feature_column', 'feature_type', 'level', 'child_id']
+class LeaderboardModelView(ModelView):
+    datamodel = SQLAInterface(Leaderboard)
+    list_title = 'List Leaderboard'
+    show_title = 'Show Leaderboard'
+    edit_title = 'Edit Leaderboard'
+    add_title  = 'Add Leaderboard'
+ 
+    list_columns = ['person', 'total_points', 'last_updated', 'rank']
+    # show_columns = ['person', 'total_points', 'last_updated', 'rank']
+    # edit_columns = ['person', 'total_points', 'last_updated', 'rank']
+    add_columns = ['person', 'total_points', 'last_updated', 'rank']
+    # search_columns = ['person', 'total_points', 'last_updated', 'rank']
+    description_columns = {
+        'id' : 'None',
+        'person_id_fk' : 'None',
+        'total_points' : 'None',
+        'last_updated' : 'None',
+        'rank' : 'None',
+    }
+    # list_exclude_columns = ['person', 'total_points', 'last_updated', 'rank']
+    # show_exclude_columns = ['person', 'total_points', 'last_updated', 'rank']
+    # edit_exclude_columns = ['person', 'total_points', 'last_updated', 'rank']
+    # add_exclude_columns = ['person', 'total_points', 'last_updated', 'rank']
+    # search_exclude_columns = ['person', 'total_points', 'last_updated', 'rank']
+    # order_columns = ['person', 'total_points', 'last_updated', 'rank']
+    # add_columns = ['person', 'total_points', 'last_updated', 'rank']
+    # add_columns = ['person', 'total_points', 'last_updated', 'rank']
+    # add_columns = ['person', 'total_points', 'last_updated', 'rank']
+    
+    label_columns = {'person':'Person', 'total_points':'Total Points', 'last_updated':'Last Updated', 'rank':'Rank'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['person', 'total_points', 'last_updated', 'rank']
+class LearningPathModelView(ModelView):
+    datamodel = SQLAInterface(LearningPath)
+    list_title = 'List Learning Path'
+    show_title = 'Show Learning Path'
+    edit_title = 'Edit Learning Path'
+    add_title  = 'Add Learning Path'
+ 
+    list_columns = ['person', 'name']
+    # show_columns = ['person', 'name']
+    # edit_columns = ['person', 'name']
+    add_columns = ['person', 'name']
+    # search_columns = ['person', 'name']
+    description_columns = {
+        'id' : 'None',
+        'person_id_fk' : 'None',
+        'name' : 'None',
+    }
+    # list_exclude_columns = ['person', 'name']
+    # show_exclude_columns = ['person', 'name']
+    # edit_exclude_columns = ['person', 'name']
+    # add_exclude_columns = ['person', 'name']
+    # search_exclude_columns = ['person', 'name']
+    # order_columns = ['person', 'name']
+    # add_columns = ['person', 'name']
+    # add_columns = ['person', 'name']
+    # add_columns = ['person', 'name']
+    
+    label_columns = {'person':'Person', 'name':'Name'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['person', 'name']
+class LessonModelView(ModelView):
+    datamodel = SQLAInterface(Lesson)
+    list_title = 'List Lesson'
+    show_title = 'Show Lesson'
+    edit_title = 'Edit Lesson'
+    add_title  = 'Add Lesson'
+ 
+    list_columns = ['module', 'language', 'title', 'description', 'layout', 'order_in_module', 'lesson_level']
+    # show_columns = ['module', 'language', 'title', 'description', 'layout', 'order_in_module', 'lesson_level']
+    # edit_columns = ['module', 'language', 'title', 'description', 'layout', 'order_in_module', 'lesson_level']
+    add_columns = ['module', 'language', 'title', 'description', 'layout', 'order_in_module', 'lesson_level']
+    # search_columns = ['module', 'language', 'title', 'description', 'layout', 'order_in_module', 'lesson_level']
+    description_columns = {
+        'id' : 'None',
+        'module_id_fk' : 'None',
+        'language_id_fk' : 'None',
+        'title' : 'None',
+        'description' : 'None',
+        'layout' : 'possibly  html to organize the pieces of content',
+        'order_in_module' : 'Order of this lesson within the module',
+        'lesson_level' : 'None',
+    }
+    # list_exclude_columns = ['module', 'language', 'title', 'description', 'layout', 'order_in_module', 'lesson_level']
+    # show_exclude_columns = ['module', 'language', 'title', 'description', 'layout', 'order_in_module', 'lesson_level']
+    # edit_exclude_columns = ['module', 'language', 'title', 'description', 'layout', 'order_in_module', 'lesson_level']
+    # add_exclude_columns = ['module', 'language', 'title', 'description', 'layout', 'order_in_module', 'lesson_level']
+    # search_exclude_columns = ['module', 'language', 'title', 'description', 'layout', 'order_in_module', 'lesson_level']
+    # order_columns = ['module', 'language', 'title', 'description', 'layout', 'order_in_module', 'lesson_level']
+    # add_columns = ['module', 'language', 'title', 'description', 'layout', 'order_in_module', 'lesson_level']
+    # add_columns = ['module', 'language', 'title', 'description', 'layout', 'order_in_module', 'lesson_level']
+    # add_columns = ['module', 'language', 'title', 'description', 'layout', 'order_in_module', 'lesson_level']
+    
+    label_columns = {'module':'Module', 'language':'Language', 'title':'Title', 'description':'Description', 'layout':'Layout', 'order_in_module':'Order In Module', 'lesson_level':'Lesson Level'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['module', 'language', 'title', 'description', 'layout', 'order_in_module', 'lesson_level']
+class LoanTransactionRuleModelView(ModelView):
+    datamodel = SQLAInterface(LoanTransactionRule)
+    list_title = 'List Loan Transaction Rule'
+    show_title = 'Show Loan Transaction Rule'
+    edit_title = 'Edit Loan Transaction Rule'
+    add_title  = 'Add Loan Transaction Rule'
+ 
+    list_columns = ['strategy', 'rule_order', 'rule_type', 'amount_percentage', 'min_amount', 'max_amount', 'note']
+    # show_columns = ['strategy', 'rule_order', 'rule_type', 'amount_percentage', 'min_amount', 'max_amount', 'note']
+    # edit_columns = ['strategy', 'rule_order', 'rule_type', 'amount_percentage', 'min_amount', 'max_amount', 'note']
+    add_columns = ['strategy', 'rule_order', 'rule_type', 'amount_percentage', 'min_amount', 'max_amount', 'note']
+    # search_columns = ['strategy', 'rule_order', 'rule_type', 'amount_percentage', 'min_amount', 'max_amount', 'note']
+    description_columns = {
+        'id' : 'Primary key, auto-incremented',
+        'strategy_id_fk' : 'Foreign Key linking to the loan_transaction_strategy table',
+        'rule_order' : 'Order in which this rule is to be applied within the strategy',
+        'rule_type' : 'Type of rule, determines how payments are applied',
+        'amount_percentage' : 'Percentage of payment amount to apply for this rule',
+        'min_amount' : 'Minimum amount to apply in specific currency, if applicable',
+        'max_amount' : 'Maximum amount to apply in specific currency, if applicable',
+        'note' : 'None',
+    }
+    # list_exclude_columns = ['strategy', 'rule_order', 'rule_type', 'amount_percentage', 'min_amount', 'max_amount', 'note']
+    # show_exclude_columns = ['strategy', 'rule_order', 'rule_type', 'amount_percentage', 'min_amount', 'max_amount', 'note']
+    # edit_exclude_columns = ['strategy', 'rule_order', 'rule_type', 'amount_percentage', 'min_amount', 'max_amount', 'note']
+    # add_exclude_columns = ['strategy', 'rule_order', 'rule_type', 'amount_percentage', 'min_amount', 'max_amount', 'note']
+    # search_exclude_columns = ['strategy', 'rule_order', 'rule_type', 'amount_percentage', 'min_amount', 'max_amount', 'note']
+    # order_columns = ['strategy', 'rule_order', 'rule_type', 'amount_percentage', 'min_amount', 'max_amount', 'note']
+    # add_columns = ['strategy', 'rule_order', 'rule_type', 'amount_percentage', 'min_amount', 'max_amount', 'note']
+    # add_columns = ['strategy', 'rule_order', 'rule_type', 'amount_percentage', 'min_amount', 'max_amount', 'note']
+    # add_columns = ['strategy', 'rule_order', 'rule_type', 'amount_percentage', 'min_amount', 'max_amount', 'note']
+    
+    label_columns = {'strategy':'Strategy', 'rule_order':'Rule Order', 'rule_type':'Rule Type', 'amount_percentage':'Amount Percentage', 'min_amount':'Min Amount', 'max_amount':'Max Amount', 'note':'Note'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['strategy', 'rule_order', 'rule_type', 'amount_percentage', 'min_amount', 'max_amount', 'note']
 class PersonAdminDataModelView(ModelView):
     datamodel = SQLAInterface(PersonAdminData)
     list_title = 'List Person Admin Data'
@@ -1439,43 +1517,44 @@ class PersonAdminDataModelView(ModelView):
     add_columns = ['person', 'creation_time', 'failed_login_count', 'failed_login_timestamp', 'password_last_set_time', 'profile_picture', 'awatar', 'screen_name', 'user_priv_cert', 'user_pub_cert', 'alt_security_identities', 'generated_UID', 'do_not_email', 'do_not_phone', 'do_not_mail', 'do_not_sms', 'do_not_trade', 'opted_out', 'do_not_track_update_date', 'do_not_process_from_update_date', 'do_not_market_from_update_date', 'do_not_track_location_update_date', 'do_not_profile_from_update_date', 'do_forget_me_from_update_date', 'do_not_process_reason', 'no_merge_reason', 'do_extract_my_data_update_date', 'should_forget', 'consumer_credit_score_provider_name', 'web_site_url', 'ordering_name', 'hospitalizations_last5_years_count', 'surgeries_last5_years_count', 'dependent_count', 'account_locked', 'send_individual_data', 'influencer_rating']
     # search_columns = ['person', 'creation_time', 'failed_login_count', 'failed_login_timestamp', 'password_last_set_time', 'profile_picture', 'awatar', 'screen_name', 'user_priv_cert', 'user_pub_cert', 'alt_security_identities', 'generated_UID', 'do_not_email', 'do_not_phone', 'do_not_mail', 'do_not_sms', 'do_not_trade', 'opted_out', 'do_not_track_update_date', 'do_not_process_from_update_date', 'do_not_market_from_update_date', 'do_not_track_location_update_date', 'do_not_profile_from_update_date', 'do_forget_me_from_update_date', 'do_not_process_reason', 'no_merge_reason', 'do_extract_my_data_update_date', 'should_forget', 'consumer_credit_score_provider_name', 'web_site_url', 'ordering_name', 'hospitalizations_last5_years_count', 'surgeries_last5_years_count', 'dependent_count', 'account_locked', 'send_individual_data', 'influencer_rating']
     description_columns = {
-        'person_id_fk' : 'References the associated person.',
-        'creation_time' : 'Timestamp when the data was created.',
-        'failed_login_count' : 'Count of failed login attempts.',
-        'failed_login_timestamp' : 'Timestamp of the last failed login attempt.',
-        'password_last_set_time' : 'Timestamp when the password was last set.',
-        'profile_picture' : 'URL or path to the profile picture.',
-        'awatar' : 'URL or path to the avatar.',
-        'screen_name' : 'Screen name or username.',
-        'user_priv_cert' : 'Users private certificate.',
-        'user_pub_cert' : 'Users public certificate.',
-        'alt_security_identities' : 'Alternate security identities.',
-        'generated_UID' : 'Generated unique identifier.',
-        'do_not_email' : 'Indicates if email communication is prohibited.',
-        'do_not_phone' : 'Indicates if phone communication is prohibited.',
-        'do_not_mail' : 'Indicates if physical mail communication is prohibited.',
-        'do_not_sms' : 'Indicates if SMS communication is prohibited.',
-        'do_not_trade' : 'Indicates if trading is prohibited.',
-        'opted_out' : 'Indicates if the user has opted out of certain activities.',
-        'do_not_track_update_date' : 'Date when tracking was disabled.',
-        'do_not_process_from_update_date' : 'Date when processing was disabled.',
-        'do_not_market_from_update_date' : 'Date when marketing was disabled.',
-        'do_not_track_location_update_date' : 'Date when location tracking was disabled.',
-        'do_not_profile_from_update_date' : 'Date when profiling was disabled.',
-        'do_forget_me_from_update_date' : 'Date when -forget me- request was processed.',
-        'do_not_process_reason' : 'Reason for not processing data.',
-        'no_merge_reason' : 'Reason for not merging data.',
-        'do_extract_my_data_update_date' : 'Date when data extraction request was processed.',
-        'should_forget' : 'Indicates if data should be forgotten.',
-        'consumer_credit_score_provider_name' : 'Name of the consumer credit score provider.',
-        'web_site_url' : 'URL of the website.',
-        'ordering_name' : 'Name used for ordering.',
-        'hospitalizations_last5_years_count' : 'Count of hospitalizations in the last 5 years.',
-        'surgeries_last5_years_count' : 'Count of surgeries in the last 5 years.',
-        'dependent_count' : 'Count of dependents.',
-        'account_locked' : 'Indicates if the account is locked.',
-        'send_individual_data' : 'Indicates if individual data should be sent.',
-        'influencer_rating' : 'Influencer rating.',
+        'id' : 'None',
+        'person_id_fk' : 'None',
+        'creation_time' : 'None',
+        'failed_login_count' : 'None',
+        'failed_login_timestamp' : 'None',
+        'password_last_set_time' : 'None',
+        'profile_picture' : 'None',
+        'awatar' : 'None',
+        'screen_name' : 'None',
+        'user_priv_cert' : 'None',
+        'user_pub_cert' : 'None',
+        'alt_security_identities' : 'None',
+        'generated_UID' : 'None',
+        'do_not_email' : 'None',
+        'do_not_phone' : 'None',
+        'do_not_mail' : 'None',
+        'do_not_sms' : 'None',
+        'do_not_trade' : 'None',
+        'opted_out' : 'None',
+        'do_not_track_update_date' : 'None',
+        'do_not_process_from_update_date' : 'None',
+        'do_not_market_from_update_date' : 'None',
+        'do_not_track_location_update_date' : 'None',
+        'do_not_profile_from_update_date' : 'None',
+        'do_forget_me_from_update_date' : 'None',
+        'do_not_process_reason' : 'None',
+        'no_merge_reason' : 'None',
+        'do_extract_my_data_update_date' : 'None',
+        'should_forget' : 'None',
+        'consumer_credit_score_provider_name' : 'None',
+        'web_site_url' : 'None',
+        'ordering_name' : 'None',
+        'hospitalizations_last5_years_count' : 'None',
+        'surgeries_last5_years_count' : 'None',
+        'dependent_count' : 'None',
+        'account_locked' : 'None',
+        'send_individual_data' : 'None',
+        'influencer_rating' : 'None',
     }
     # list_exclude_columns = ['person', 'creation_time', 'failed_login_count', 'failed_login_timestamp', 'password_last_set_time', 'profile_picture', 'awatar', 'screen_name', 'user_priv_cert', 'user_pub_cert', 'alt_security_identities', 'generated_UID', 'do_not_email', 'do_not_phone', 'do_not_mail', 'do_not_sms', 'do_not_trade', 'opted_out', 'do_not_track_update_date', 'do_not_process_from_update_date', 'do_not_market_from_update_date', 'do_not_track_location_update_date', 'do_not_profile_from_update_date', 'do_forget_me_from_update_date', 'do_not_process_reason', 'no_merge_reason', 'do_extract_my_data_update_date', 'should_forget', 'consumer_credit_score_provider_name', 'web_site_url', 'ordering_name', 'hospitalizations_last5_years_count', 'surgeries_last5_years_count', 'dependent_count', 'account_locked', 'send_individual_data', 'influencer_rating']
     # show_exclude_columns = ['person', 'creation_time', 'failed_login_count', 'failed_login_timestamp', 'password_last_set_time', 'profile_picture', 'awatar', 'screen_name', 'user_priv_cert', 'user_pub_cert', 'alt_security_identities', 'generated_UID', 'do_not_email', 'do_not_phone', 'do_not_mail', 'do_not_sms', 'do_not_trade', 'opted_out', 'do_not_track_update_date', 'do_not_process_from_update_date', 'do_not_market_from_update_date', 'do_not_track_location_update_date', 'do_not_profile_from_update_date', 'do_forget_me_from_update_date', 'do_not_process_reason', 'no_merge_reason', 'do_extract_my_data_update_date', 'should_forget', 'consumer_credit_score_provider_name', 'web_site_url', 'ordering_name', 'hospitalizations_last5_years_count', 'surgeries_last5_years_count', 'dependent_count', 'account_locked', 'send_individual_data', 'influencer_rating']
@@ -1492,367 +1571,4660 @@ class PersonAdminDataModelView(ModelView):
     # base_order = ("name", "asc")
     # page_size = 100 
 #    list_columns = ['person', 'creation_time', 'failed_login_count', 'failed_login_timestamp', 'password_last_set_time', 'profile_picture', 'awatar', 'screen_name', 'user_priv_cert', 'user_pub_cert', 'alt_security_identities', 'generated_UID', 'do_not_email', 'do_not_phone', 'do_not_mail', 'do_not_sms', 'do_not_trade', 'opted_out', 'do_not_track_update_date', 'do_not_process_from_update_date', 'do_not_market_from_update_date', 'do_not_track_location_update_date', 'do_not_profile_from_update_date', 'do_forget_me_from_update_date', 'do_not_process_reason', 'no_merge_reason', 'do_extract_my_data_update_date', 'should_forget', 'consumer_credit_score_provider_name', 'web_site_url', 'ordering_name', 'hospitalizations_last5_years_count', 'surgeries_last5_years_count', 'dependent_count', 'account_locked', 'send_individual_data', 'influencer_rating']
-class TransModelView(ModelView):
-    datamodel = SQLAInterface(Trans)
-    list_title = 'List Trans'
-    show_title = 'Show Trans'
-    edit_title = 'Edit Trans'
-    add_title  = 'Add Trans'
+class PersonBadgesModelView(ModelView):
+    datamodel = SQLAInterface(PersonBadges)
+    list_title = 'List Person Badges'
+    show_title = 'Show Person Badges'
+    edit_title = 'Edit Person Badges'
+    add_title  = 'Add Person Badges'
  
-    list_columns = ['coupon', 'customer_name', 'trans_purpose', 'customer_id', 'transaction_type', 'card_trans_type', 'agent', 'payment_card', 'pos', 'wallet', 'biller', 'biller_offering', 'trans_time', 'currency', 'trans_status', 'trans_route', 'origin_source', 'origin_ref_code', 'origin_trans_notes', 'origin_bank', 'origin_institution_code', 'origin_account_num', 'origin_account_name', 'origin_KYC_Level', 'origin_Bank_Verification_Number', 'origin_bvn', 'session_ref', 'transaction_ref', 'channelCode', 'name_enquiry_ref', 'api_transactionid', 'receipt_no', 'pin_based', 'pin_code', 'pin_option', 'authorization_code', 'acquirer_name', 'currency', 'transaction_location', 'payment_reference', 'response_code', 'trans_dest', 'bene_ref_code', 'bene_trans_notes', 'bene_bank', 'bene_account_num', 'bene_institution_code', 'bene_bank_verification_number', 'bene_KYC_Level', 'bene_account_name', 'bene_phone_number', 'bene_phone_denom', 'bene_phone_product', 'transaction_amount', 'available_balance', 'svc_fees', 'comm_total', 'comm_agent', 'comm_aggr', 'comm_ours', 'comm_other', 'comm_net_pct', 'tax', 'excise_duty', 'vat', 'transmit_amount', 'comm_narration', 'trans_currency', 'trans_convert_currency', 'trans_currency_exchange_rate', 'trans_date', 'customer_segment', 'agent_tier_level', 'special_promotions', 'risk_profile', 'fraud_marker', 'fraud_eval_outcome', 'fraud_risk_score', 'fraud_prediction_explanations', 'fraud_rule_evaluations', 'fraud_event_num', 'trans_narration']
-    # show_columns = ['coupon', 'customer_name', 'trans_purpose', 'customer_id', 'transaction_type', 'card_trans_type', 'agent', 'payment_card', 'pos', 'wallet', 'biller', 'biller_offering', 'trans_time', 'currency', 'trans_status', 'trans_route', 'origin_source', 'origin_ref_code', 'origin_trans_notes', 'origin_bank', 'origin_institution_code', 'origin_account_num', 'origin_account_name', 'origin_KYC_Level', 'origin_Bank_Verification_Number', 'origin_bvn', 'session_ref', 'transaction_ref', 'channelCode', 'name_enquiry_ref', 'api_transactionid', 'receipt_no', 'pin_based', 'pin_code', 'pin_option', 'authorization_code', 'acquirer_name', 'currency', 'transaction_location', 'payment_reference', 'response_code', 'trans_dest', 'bene_ref_code', 'bene_trans_notes', 'bene_bank', 'bene_account_num', 'bene_institution_code', 'bene_bank_verification_number', 'bene_KYC_Level', 'bene_account_name', 'bene_phone_number', 'bene_phone_denom', 'bene_phone_product', 'transaction_amount', 'available_balance', 'svc_fees', 'comm_total', 'comm_agent', 'comm_aggr', 'comm_ours', 'comm_other', 'comm_net_pct', 'tax', 'excise_duty', 'vat', 'transmit_amount', 'comm_narration', 'trans_currency', 'trans_convert_currency', 'trans_currency_exchange_rate', 'trans_date', 'customer_segment', 'agent_tier_level', 'special_promotions', 'risk_profile', 'fraud_marker', 'fraud_eval_outcome', 'fraud_risk_score', 'fraud_prediction_explanations', 'fraud_rule_evaluations', 'fraud_event_num', 'trans_narration']
-    # edit_columns = ['coupon', 'customer_name', 'trans_purpose', 'customer_id', 'transaction_type', 'card_trans_type', 'agent', 'payment_card', 'pos', 'wallet', 'biller', 'biller_offering', 'trans_time', 'currency', 'trans_status', 'trans_route', 'origin_source', 'origin_ref_code', 'origin_trans_notes', 'origin_bank', 'origin_institution_code', 'origin_account_num', 'origin_account_name', 'origin_KYC_Level', 'origin_Bank_Verification_Number', 'origin_bvn', 'session_ref', 'transaction_ref', 'channelCode', 'name_enquiry_ref', 'api_transactionid', 'receipt_no', 'pin_based', 'pin_code', 'pin_option', 'authorization_code', 'acquirer_name', 'currency', 'transaction_location', 'payment_reference', 'response_code', 'trans_dest', 'bene_ref_code', 'bene_trans_notes', 'bene_bank', 'bene_account_num', 'bene_institution_code', 'bene_bank_verification_number', 'bene_KYC_Level', 'bene_account_name', 'bene_phone_number', 'bene_phone_denom', 'bene_phone_product', 'transaction_amount', 'available_balance', 'svc_fees', 'comm_total', 'comm_agent', 'comm_aggr', 'comm_ours', 'comm_other', 'comm_net_pct', 'tax', 'excise_duty', 'vat', 'transmit_amount', 'comm_narration', 'trans_currency', 'trans_convert_currency', 'trans_currency_exchange_rate', 'trans_date', 'customer_segment', 'agent_tier_level', 'special_promotions', 'risk_profile', 'fraud_marker', 'fraud_eval_outcome', 'fraud_risk_score', 'fraud_prediction_explanations', 'fraud_rule_evaluations', 'fraud_event_num', 'trans_narration']
-    add_columns = ['coupon', 'customer_name', 'trans_purpose', 'customer_id', 'transaction_type', 'card_trans_type', 'agent', 'payment_card', 'pos', 'wallet', 'biller', 'biller_offering', 'trans_time', 'currency', 'trans_status', 'trans_route', 'origin_source', 'origin_ref_code', 'origin_trans_notes', 'origin_bank', 'origin_institution_code', 'origin_account_num', 'origin_account_name', 'origin_KYC_Level', 'origin_Bank_Verification_Number', 'origin_bvn', 'session_ref', 'transaction_ref', 'channelCode', 'name_enquiry_ref', 'api_transactionid', 'receipt_no', 'pin_based', 'pin_code', 'pin_option', 'authorization_code', 'acquirer_name', 'currency', 'transaction_location', 'payment_reference', 'response_code', 'trans_dest', 'bene_ref_code', 'bene_trans_notes', 'bene_bank', 'bene_account_num', 'bene_institution_code', 'bene_bank_verification_number', 'bene_KYC_Level', 'bene_account_name', 'bene_phone_number', 'bene_phone_denom', 'bene_phone_product', 'transaction_amount', 'available_balance', 'svc_fees', 'comm_total', 'comm_agent', 'comm_aggr', 'comm_ours', 'comm_other', 'comm_net_pct', 'tax', 'excise_duty', 'vat', 'transmit_amount', 'comm_narration', 'trans_currency', 'trans_convert_currency', 'trans_currency_exchange_rate', 'trans_date', 'customer_segment', 'agent_tier_level', 'special_promotions', 'risk_profile', 'fraud_marker', 'fraud_eval_outcome', 'fraud_risk_score', 'fraud_prediction_explanations', 'fraud_rule_evaluations', 'fraud_event_num', 'trans_narration']
-    # search_columns = ['coupon', 'customer_name', 'trans_purpose', 'customer_id', 'transaction_type', 'card_trans_type', 'agent', 'payment_card', 'pos', 'wallet', 'biller', 'biller_offering', 'trans_time', 'currency', 'trans_status', 'trans_route', 'origin_source', 'origin_ref_code', 'origin_trans_notes', 'origin_bank', 'origin_institution_code', 'origin_account_num', 'origin_account_name', 'origin_KYC_Level', 'origin_Bank_Verification_Number', 'origin_bvn', 'session_ref', 'transaction_ref', 'channelCode', 'name_enquiry_ref', 'api_transactionid', 'receipt_no', 'pin_based', 'pin_code', 'pin_option', 'authorization_code', 'acquirer_name', 'currency', 'transaction_location', 'payment_reference', 'response_code', 'trans_dest', 'bene_ref_code', 'bene_trans_notes', 'bene_bank', 'bene_account_num', 'bene_institution_code', 'bene_bank_verification_number', 'bene_KYC_Level', 'bene_account_name', 'bene_phone_number', 'bene_phone_denom', 'bene_phone_product', 'transaction_amount', 'available_balance', 'svc_fees', 'comm_total', 'comm_agent', 'comm_aggr', 'comm_ours', 'comm_other', 'comm_net_pct', 'tax', 'excise_duty', 'vat', 'transmit_amount', 'comm_narration', 'trans_currency', 'trans_convert_currency', 'trans_currency_exchange_rate', 'trans_date', 'customer_segment', 'agent_tier_level', 'special_promotions', 'risk_profile', 'fraud_marker', 'fraud_eval_outcome', 'fraud_risk_score', 'fraud_prediction_explanations', 'fraud_rule_evaluations', 'fraud_event_num', 'trans_narration']
+    list_columns = ['person', 'badge', 'date_earned']
+    # show_columns = ['person', 'badge', 'date_earned']
+    # edit_columns = ['person', 'badge', 'date_earned']
+    add_columns = ['person', 'badge', 'date_earned']
+    # search_columns = ['person', 'badge', 'date_earned']
     description_columns = {
-        'id' : 'Unique identifier for the transaction.',
-        'coupon_id_fk' : 'Reference to the associated coupon, if applicable.',
-        'customer_name' : 'Name of the customer involved in the transaction.',
-        'trans_purpose' : 'Description of the transaction purpose.',
-        'customer_id' : 'Identifier for the customer.',
-        'transaction_type' : 'Type of transaction (e.g., withdrawal, deposit).',
-        'card_trans_type' : 'Type of card transaction (e.g., purchase).',
-        'agent_id_fk' : 'Merchant ID.',
-        'payment_card_id_fk' : 'Reference to the payment card used.',
-        'pos_id_fk' : 'Point of Sale (PoS) ID.',
-        'wallet_id_fk' : 'Reference to the wallet used.',
-        'biller_id_fk' : 'Reference to the biller involved.',
-        'biller_offering_id_fk' : 'Reference to the biller offering used.',
-        'trans_time' : 'Timestamp of the transaction.',
-        'currency_id_fk' : 'Reference to the currency used.',
-        'trans_status' : 'Status of the transaction (e.g., pending, completed).',
-        'trans_route_id_fk' : 'Reference to the routing threshold used.',
-        'origin_source' : 'Source of funds for the transaction.',
-        'origin_ref_code' : 'Reference code associated with the origin of the transaction.',
-        'origin_trans_notes' : 'Additional notes about the origin of the transaction.',
-        'origin_bank_id_fk' : 'Reference to the originating bank, if applicable.',
-        'origin_institution_code' : 'Institution code for the origin.',
-        'origin_account_num' : 'Account number associated with the origin.',
-        'origin_account_name' : 'Account name associated with the origin.',
-        'origin_KYC_Level' : 'KYC (Know Your Customer) level of the origin.',
-        'origin_Bank_Verification_Number' : 'Bank Verification Number associated with the origin.',
-        'origin_bvn' : 'Used for checking balance of the origin.',
-        'session_ref' : 'Reference to the session related to the transaction.',
-        'transaction_ref' : 'Reference code for the transaction.',
-        'channelCode' : 'Code identifying the transaction channel.',
-        'name_enquiry_ref' : 'Reference code for name inquiry related to the transaction.',
-        'api_transactionid' : 'API transaction ID.',
-        'receipt_no' : 'Receipt number associated with the transaction.',
-        'pin_based' : 'Whether the transaction is PIN-based.',
-        'pin_code' : 'PIN code associated with the transaction.',
-        'pin_option' : 'PIN option for the transaction.',
-        'authorization_code' : 'Authorization code for the transaction.',
-        'acquirer_name' : 'Name of the acquirer.',
-        'currency' : 'Currency used for the transaction.',
-        'transaction_location' : 'Location where the transaction occurred.',
-        'payment_reference' : 'Reference code for the payment.',
-        'response_code' : 'Response code related to the transaction.',
-        'trans_dest' : 'Destination of funds for the transaction.',
-        'bene_ref_code' : 'Reference code associated with the beneficiary.',
-        'bene_trans_notes' : 'Additional notes about the beneficiary.',
-        'bene_bank_id_fk' : 'Reference to the beneficiary bank, if applicable.',
-        'bene_account_num' : 'Account number associated with the beneficiary.',
-        'bene_institution_code' : 'Institution code for the beneficiary.',
-        'bene_bank_verification_number' : 'Bank Verification Number associated with the beneficiary.',
-        'bene_KYC_Level' : 'KYC (Know Your Customer) level of the beneficiary.',
-        'bene_account_name' : 'Account name associated with the beneficiary.',
-        'bene_phone_number' : 'Phone number associated with the beneficiary.',
-        'bene_phone_denom' : 'Denomination of the beneficiary phone.',
-        'bene_phone_product' : 'Product associated with the beneficiary phone.',
-        'transaction_amount' : 'Amount of the transaction.',
-        'available_balance' : 'Available balance for the transaction.',
-        'svc_fees' : 'Service fees associated with the transaction.',
-        'comm_total' : 'Total commission amount for the transaction.',
-        'comm_agent' : 'Commission amount for the agent.',
-        'comm_aggr' : 'Commission amount for the aggregator.',
-        'comm_ours' : 'Commission amount for us.',
-        'comm_other' : 'Payments to others associated with the transaction.',
-        'comm_net_pct' : 'Net commission percentage.',
-        'tax' : 'Tax amount associated with the transaction.',
-        'excise_duty' : 'Excise duty amount.',
-        'vat' : 'Value-added tax (VAT) amount.',
-        'transmit_amount' : 'Transmit amount for the transaction.',
-        'comm_narration' : 'Narration describing how the commission was calculated.',
-        'trans_currency' : 'Currency code for the transaction.',
-        'trans_convert_currency' : 'Currency for currency conversion, if applicable.',
-        'trans_currency_exchange_rate' : 'Exchange rate for currency conversion.',
-        'trans_date' : 'Timestamp of the transaction date.',
-        'customer_segment_id_fk' : 'Reference to the customer segment.',
-        'agent_tier_level_id_fk' : 'Reference to the agent tier level.',
-        'special_promotions_id_fk' : 'Reference to special promotions associated with the transaction.',
-        'risk_profile_id_fk' : 'Risk associated with financial transactions',
-        'fraud_marker' : 'Indicates whether the transaction is marked as fraudulent.',
-        'fraud_eval_outcome' : 'Outcome of fraud evaluation (e.g., Fraud, Not Fraud, Unknown).',
-        'fraud_risk_score' : 'Fraud risk score (values 1-1000).',
-        'fraud_prediction_explanations' : 'List of explanations for how each event variable impacted the fraud prediction score.',
-        'fraud_rule_evaluations' : 'Evaluations of the rules that were included in the detector version.',
-        'fraud_event_num' : 'Event number returned by AWS Fraud Detector.',
-        'trans_narration' : 'Narration containing details about the transaction.',
+        'id' : 'None',
+        'person_id_fk' : 'None',
+        'badge_id_fk' : 'None',
+        'date_earned' : 'None',
     }
-    # list_exclude_columns = ['coupon', 'customer_name', 'trans_purpose', 'customer_id', 'transaction_type', 'card_trans_type', 'agent', 'payment_card', 'pos', 'wallet', 'biller', 'biller_offering', 'trans_time', 'currency', 'trans_status', 'trans_route', 'origin_source', 'origin_ref_code', 'origin_trans_notes', 'origin_bank', 'origin_institution_code', 'origin_account_num', 'origin_account_name', 'origin_KYC_Level', 'origin_Bank_Verification_Number', 'origin_bvn', 'session_ref', 'transaction_ref', 'channelCode', 'name_enquiry_ref', 'api_transactionid', 'receipt_no', 'pin_based', 'pin_code', 'pin_option', 'authorization_code', 'acquirer_name', 'currency', 'transaction_location', 'payment_reference', 'response_code', 'trans_dest', 'bene_ref_code', 'bene_trans_notes', 'bene_bank', 'bene_account_num', 'bene_institution_code', 'bene_bank_verification_number', 'bene_KYC_Level', 'bene_account_name', 'bene_phone_number', 'bene_phone_denom', 'bene_phone_product', 'transaction_amount', 'available_balance', 'svc_fees', 'comm_total', 'comm_agent', 'comm_aggr', 'comm_ours', 'comm_other', 'comm_net_pct', 'tax', 'excise_duty', 'vat', 'transmit_amount', 'comm_narration', 'trans_currency', 'trans_convert_currency', 'trans_currency_exchange_rate', 'trans_date', 'customer_segment', 'agent_tier_level', 'special_promotions', 'risk_profile', 'fraud_marker', 'fraud_eval_outcome', 'fraud_risk_score', 'fraud_prediction_explanations', 'fraud_rule_evaluations', 'fraud_event_num', 'trans_narration']
-    # show_exclude_columns = ['coupon', 'customer_name', 'trans_purpose', 'customer_id', 'transaction_type', 'card_trans_type', 'agent', 'payment_card', 'pos', 'wallet', 'biller', 'biller_offering', 'trans_time', 'currency', 'trans_status', 'trans_route', 'origin_source', 'origin_ref_code', 'origin_trans_notes', 'origin_bank', 'origin_institution_code', 'origin_account_num', 'origin_account_name', 'origin_KYC_Level', 'origin_Bank_Verification_Number', 'origin_bvn', 'session_ref', 'transaction_ref', 'channelCode', 'name_enquiry_ref', 'api_transactionid', 'receipt_no', 'pin_based', 'pin_code', 'pin_option', 'authorization_code', 'acquirer_name', 'currency', 'transaction_location', 'payment_reference', 'response_code', 'trans_dest', 'bene_ref_code', 'bene_trans_notes', 'bene_bank', 'bene_account_num', 'bene_institution_code', 'bene_bank_verification_number', 'bene_KYC_Level', 'bene_account_name', 'bene_phone_number', 'bene_phone_denom', 'bene_phone_product', 'transaction_amount', 'available_balance', 'svc_fees', 'comm_total', 'comm_agent', 'comm_aggr', 'comm_ours', 'comm_other', 'comm_net_pct', 'tax', 'excise_duty', 'vat', 'transmit_amount', 'comm_narration', 'trans_currency', 'trans_convert_currency', 'trans_currency_exchange_rate', 'trans_date', 'customer_segment', 'agent_tier_level', 'special_promotions', 'risk_profile', 'fraud_marker', 'fraud_eval_outcome', 'fraud_risk_score', 'fraud_prediction_explanations', 'fraud_rule_evaluations', 'fraud_event_num', 'trans_narration']
-    # edit_exclude_columns = ['coupon', 'customer_name', 'trans_purpose', 'customer_id', 'transaction_type', 'card_trans_type', 'agent', 'payment_card', 'pos', 'wallet', 'biller', 'biller_offering', 'trans_time', 'currency', 'trans_status', 'trans_route', 'origin_source', 'origin_ref_code', 'origin_trans_notes', 'origin_bank', 'origin_institution_code', 'origin_account_num', 'origin_account_name', 'origin_KYC_Level', 'origin_Bank_Verification_Number', 'origin_bvn', 'session_ref', 'transaction_ref', 'channelCode', 'name_enquiry_ref', 'api_transactionid', 'receipt_no', 'pin_based', 'pin_code', 'pin_option', 'authorization_code', 'acquirer_name', 'currency', 'transaction_location', 'payment_reference', 'response_code', 'trans_dest', 'bene_ref_code', 'bene_trans_notes', 'bene_bank', 'bene_account_num', 'bene_institution_code', 'bene_bank_verification_number', 'bene_KYC_Level', 'bene_account_name', 'bene_phone_number', 'bene_phone_denom', 'bene_phone_product', 'transaction_amount', 'available_balance', 'svc_fees', 'comm_total', 'comm_agent', 'comm_aggr', 'comm_ours', 'comm_other', 'comm_net_pct', 'tax', 'excise_duty', 'vat', 'transmit_amount', 'comm_narration', 'trans_currency', 'trans_convert_currency', 'trans_currency_exchange_rate', 'trans_date', 'customer_segment', 'agent_tier_level', 'special_promotions', 'risk_profile', 'fraud_marker', 'fraud_eval_outcome', 'fraud_risk_score', 'fraud_prediction_explanations', 'fraud_rule_evaluations', 'fraud_event_num', 'trans_narration']
-    # add_exclude_columns = ['coupon', 'customer_name', 'trans_purpose', 'customer_id', 'transaction_type', 'card_trans_type', 'agent', 'payment_card', 'pos', 'wallet', 'biller', 'biller_offering', 'trans_time', 'currency', 'trans_status', 'trans_route', 'origin_source', 'origin_ref_code', 'origin_trans_notes', 'origin_bank', 'origin_institution_code', 'origin_account_num', 'origin_account_name', 'origin_KYC_Level', 'origin_Bank_Verification_Number', 'origin_bvn', 'session_ref', 'transaction_ref', 'channelCode', 'name_enquiry_ref', 'api_transactionid', 'receipt_no', 'pin_based', 'pin_code', 'pin_option', 'authorization_code', 'acquirer_name', 'currency', 'transaction_location', 'payment_reference', 'response_code', 'trans_dest', 'bene_ref_code', 'bene_trans_notes', 'bene_bank', 'bene_account_num', 'bene_institution_code', 'bene_bank_verification_number', 'bene_KYC_Level', 'bene_account_name', 'bene_phone_number', 'bene_phone_denom', 'bene_phone_product', 'transaction_amount', 'available_balance', 'svc_fees', 'comm_total', 'comm_agent', 'comm_aggr', 'comm_ours', 'comm_other', 'comm_net_pct', 'tax', 'excise_duty', 'vat', 'transmit_amount', 'comm_narration', 'trans_currency', 'trans_convert_currency', 'trans_currency_exchange_rate', 'trans_date', 'customer_segment', 'agent_tier_level', 'special_promotions', 'risk_profile', 'fraud_marker', 'fraud_eval_outcome', 'fraud_risk_score', 'fraud_prediction_explanations', 'fraud_rule_evaluations', 'fraud_event_num', 'trans_narration']
-    # search_exclude_columns = ['coupon', 'customer_name', 'trans_purpose', 'customer_id', 'transaction_type', 'card_trans_type', 'agent', 'payment_card', 'pos', 'wallet', 'biller', 'biller_offering', 'trans_time', 'currency', 'trans_status', 'trans_route', 'origin_source', 'origin_ref_code', 'origin_trans_notes', 'origin_bank', 'origin_institution_code', 'origin_account_num', 'origin_account_name', 'origin_KYC_Level', 'origin_Bank_Verification_Number', 'origin_bvn', 'session_ref', 'transaction_ref', 'channelCode', 'name_enquiry_ref', 'api_transactionid', 'receipt_no', 'pin_based', 'pin_code', 'pin_option', 'authorization_code', 'acquirer_name', 'currency', 'transaction_location', 'payment_reference', 'response_code', 'trans_dest', 'bene_ref_code', 'bene_trans_notes', 'bene_bank', 'bene_account_num', 'bene_institution_code', 'bene_bank_verification_number', 'bene_KYC_Level', 'bene_account_name', 'bene_phone_number', 'bene_phone_denom', 'bene_phone_product', 'transaction_amount', 'available_balance', 'svc_fees', 'comm_total', 'comm_agent', 'comm_aggr', 'comm_ours', 'comm_other', 'comm_net_pct', 'tax', 'excise_duty', 'vat', 'transmit_amount', 'comm_narration', 'trans_currency', 'trans_convert_currency', 'trans_currency_exchange_rate', 'trans_date', 'customer_segment', 'agent_tier_level', 'special_promotions', 'risk_profile', 'fraud_marker', 'fraud_eval_outcome', 'fraud_risk_score', 'fraud_prediction_explanations', 'fraud_rule_evaluations', 'fraud_event_num', 'trans_narration']
-    # order_columns = ['coupon', 'customer_name', 'trans_purpose', 'customer_id', 'transaction_type', 'card_trans_type', 'agent', 'payment_card', 'pos', 'wallet', 'biller', 'biller_offering', 'trans_time', 'currency', 'trans_status', 'trans_route', 'origin_source', 'origin_ref_code', 'origin_trans_notes', 'origin_bank', 'origin_institution_code', 'origin_account_num', 'origin_account_name', 'origin_KYC_Level', 'origin_Bank_Verification_Number', 'origin_bvn', 'session_ref', 'transaction_ref', 'channelCode', 'name_enquiry_ref', 'api_transactionid', 'receipt_no', 'pin_based', 'pin_code', 'pin_option', 'authorization_code', 'acquirer_name', 'currency', 'transaction_location', 'payment_reference', 'response_code', 'trans_dest', 'bene_ref_code', 'bene_trans_notes', 'bene_bank', 'bene_account_num', 'bene_institution_code', 'bene_bank_verification_number', 'bene_KYC_Level', 'bene_account_name', 'bene_phone_number', 'bene_phone_denom', 'bene_phone_product', 'transaction_amount', 'available_balance', 'svc_fees', 'comm_total', 'comm_agent', 'comm_aggr', 'comm_ours', 'comm_other', 'comm_net_pct', 'tax', 'excise_duty', 'vat', 'transmit_amount', 'comm_narration', 'trans_currency', 'trans_convert_currency', 'trans_currency_exchange_rate', 'trans_date', 'customer_segment', 'agent_tier_level', 'special_promotions', 'risk_profile', 'fraud_marker', 'fraud_eval_outcome', 'fraud_risk_score', 'fraud_prediction_explanations', 'fraud_rule_evaluations', 'fraud_event_num', 'trans_narration']
-    # add_columns = ['coupon', 'customer_name', 'trans_purpose', 'customer_id', 'transaction_type', 'card_trans_type', 'agent', 'payment_card', 'pos', 'wallet', 'biller', 'biller_offering', 'trans_time', 'currency', 'trans_status', 'trans_route', 'origin_source', 'origin_ref_code', 'origin_trans_notes', 'origin_bank', 'origin_institution_code', 'origin_account_num', 'origin_account_name', 'origin_KYC_Level', 'origin_Bank_Verification_Number', 'origin_bvn', 'session_ref', 'transaction_ref', 'channelCode', 'name_enquiry_ref', 'api_transactionid', 'receipt_no', 'pin_based', 'pin_code', 'pin_option', 'authorization_code', 'acquirer_name', 'currency', 'transaction_location', 'payment_reference', 'response_code', 'trans_dest', 'bene_ref_code', 'bene_trans_notes', 'bene_bank', 'bene_account_num', 'bene_institution_code', 'bene_bank_verification_number', 'bene_KYC_Level', 'bene_account_name', 'bene_phone_number', 'bene_phone_denom', 'bene_phone_product', 'transaction_amount', 'available_balance', 'svc_fees', 'comm_total', 'comm_agent', 'comm_aggr', 'comm_ours', 'comm_other', 'comm_net_pct', 'tax', 'excise_duty', 'vat', 'transmit_amount', 'comm_narration', 'trans_currency', 'trans_convert_currency', 'trans_currency_exchange_rate', 'trans_date', 'customer_segment', 'agent_tier_level', 'special_promotions', 'risk_profile', 'fraud_marker', 'fraud_eval_outcome', 'fraud_risk_score', 'fraud_prediction_explanations', 'fraud_rule_evaluations', 'fraud_event_num', 'trans_narration']
-    # add_columns = ['coupon', 'customer_name', 'trans_purpose', 'customer_id', 'transaction_type', 'card_trans_type', 'agent', 'payment_card', 'pos', 'wallet', 'biller', 'biller_offering', 'trans_time', 'currency', 'trans_status', 'trans_route', 'origin_source', 'origin_ref_code', 'origin_trans_notes', 'origin_bank', 'origin_institution_code', 'origin_account_num', 'origin_account_name', 'origin_KYC_Level', 'origin_Bank_Verification_Number', 'origin_bvn', 'session_ref', 'transaction_ref', 'channelCode', 'name_enquiry_ref', 'api_transactionid', 'receipt_no', 'pin_based', 'pin_code', 'pin_option', 'authorization_code', 'acquirer_name', 'currency', 'transaction_location', 'payment_reference', 'response_code', 'trans_dest', 'bene_ref_code', 'bene_trans_notes', 'bene_bank', 'bene_account_num', 'bene_institution_code', 'bene_bank_verification_number', 'bene_KYC_Level', 'bene_account_name', 'bene_phone_number', 'bene_phone_denom', 'bene_phone_product', 'transaction_amount', 'available_balance', 'svc_fees', 'comm_total', 'comm_agent', 'comm_aggr', 'comm_ours', 'comm_other', 'comm_net_pct', 'tax', 'excise_duty', 'vat', 'transmit_amount', 'comm_narration', 'trans_currency', 'trans_convert_currency', 'trans_currency_exchange_rate', 'trans_date', 'customer_segment', 'agent_tier_level', 'special_promotions', 'risk_profile', 'fraud_marker', 'fraud_eval_outcome', 'fraud_risk_score', 'fraud_prediction_explanations', 'fraud_rule_evaluations', 'fraud_event_num', 'trans_narration']
-    # add_columns = ['coupon', 'customer_name', 'trans_purpose', 'customer_id', 'transaction_type', 'card_trans_type', 'agent', 'payment_card', 'pos', 'wallet', 'biller', 'biller_offering', 'trans_time', 'currency', 'trans_status', 'trans_route', 'origin_source', 'origin_ref_code', 'origin_trans_notes', 'origin_bank', 'origin_institution_code', 'origin_account_num', 'origin_account_name', 'origin_KYC_Level', 'origin_Bank_Verification_Number', 'origin_bvn', 'session_ref', 'transaction_ref', 'channelCode', 'name_enquiry_ref', 'api_transactionid', 'receipt_no', 'pin_based', 'pin_code', 'pin_option', 'authorization_code', 'acquirer_name', 'currency', 'transaction_location', 'payment_reference', 'response_code', 'trans_dest', 'bene_ref_code', 'bene_trans_notes', 'bene_bank', 'bene_account_num', 'bene_institution_code', 'bene_bank_verification_number', 'bene_KYC_Level', 'bene_account_name', 'bene_phone_number', 'bene_phone_denom', 'bene_phone_product', 'transaction_amount', 'available_balance', 'svc_fees', 'comm_total', 'comm_agent', 'comm_aggr', 'comm_ours', 'comm_other', 'comm_net_pct', 'tax', 'excise_duty', 'vat', 'transmit_amount', 'comm_narration', 'trans_currency', 'trans_convert_currency', 'trans_currency_exchange_rate', 'trans_date', 'customer_segment', 'agent_tier_level', 'special_promotions', 'risk_profile', 'fraud_marker', 'fraud_eval_outcome', 'fraud_risk_score', 'fraud_prediction_explanations', 'fraud_rule_evaluations', 'fraud_event_num', 'trans_narration']
+    # list_exclude_columns = ['person', 'badge', 'date_earned']
+    # show_exclude_columns = ['person', 'badge', 'date_earned']
+    # edit_exclude_columns = ['person', 'badge', 'date_earned']
+    # add_exclude_columns = ['person', 'badge', 'date_earned']
+    # search_exclude_columns = ['person', 'badge', 'date_earned']
+    # order_columns = ['person', 'badge', 'date_earned']
+    # add_columns = ['person', 'badge', 'date_earned']
+    # add_columns = ['person', 'badge', 'date_earned']
+    # add_columns = ['person', 'badge', 'date_earned']
     
-    label_columns = {'coupon':'Coupon', 'customer_name':'Customer Name', 'trans_purpose':'Trans Purpose', 'customer_id':'Customer Id', 'transaction_type':'Transaction Type', 'card_trans_type':'Card Trans Type', 'agent':'Agent', 'payment_card':'Payment Card', 'pos':'Pos', 'wallet':'Wallet', 'biller':'Biller', 'biller_offering':'Biller Offering', 'trans_time':'Trans Time', 'currency':'Currency', 'trans_status':'Trans Status', 'trans_route':'Trans Route', 'origin_source':'Origin Source', 'origin_ref_code':'Origin Ref Code', 'origin_trans_notes':'Origin Trans Notes', 'origin_bank':'Origin Bank', 'origin_institution_code':'Origin Institution Code', 'origin_account_num':'Origin Account Num', 'origin_account_name':'Origin Account Name', 'origin_KYC_Level':'Origin Kyc Level', 'origin_Bank_Verification_Number':'Origin Bank Verification Number', 'origin_bvn':'Origin Bvn', 'session_ref':'Session Ref', 'transaction_ref':'Transaction Ref', 'channelCode':'Channelcode', 'name_enquiry_ref':'Name Enquiry Ref', 'api_transactionid':'Api Transactionid', 'receipt_no':'Receipt No', 'pin_based':'Pin Based', 'pin_code':'Pin Code', 'pin_option':'Pin Option', 'authorization_code':'Authorization Code', 'acquirer_name':'Acquirer Name', 'currency':'Currency', 'transaction_location':'Transaction Location', 'payment_reference':'Payment Reference', 'response_code':'Response Code', 'trans_dest':'Trans Dest', 'bene_ref_code':'Bene Ref Code', 'bene_trans_notes':'Bene Trans Notes', 'bene_bank':'Bene Bank', 'bene_account_num':'Bene Account Num', 'bene_institution_code':'Bene Institution Code', 'bene_bank_verification_number':'Bene Bank Verification Number', 'bene_KYC_Level':'Bene Kyc Level', 'bene_account_name':'Bene Account Name', 'bene_phone_number':'Bene Phone Number', 'bene_phone_denom':'Bene Phone Denom', 'bene_phone_product':'Bene Phone Product', 'transaction_amount':'Transaction Amount', 'available_balance':'Available Balance', 'svc_fees':'Svc Fees', 'comm_total':'Comm Total', 'comm_agent':'Comm Agent', 'comm_aggr':'Comm Aggr', 'comm_ours':'Comm Ours', 'comm_other':'Comm Other', 'comm_net_pct':'Comm Net Pct', 'tax':'Tax', 'excise_duty':'Excise Duty', 'vat':'Vat', 'transmit_amount':'Transmit Amount', 'comm_narration':'Comm Narration', 'trans_currency':'Trans Currency', 'trans_convert_currency':'Trans Convert Currency', 'trans_currency_exchange_rate':'Trans Currency Exchange Rate', 'trans_date':'Trans Date', 'customer_segment':'Customer Segment', 'agent_tier_level':'Agent Tier Level', 'special_promotions':'Special Promotions', 'risk_profile':'Risk Profile', 'fraud_marker':'Fraud Marker', 'fraud_eval_outcome':'Fraud Eval Outcome', 'fraud_risk_score':'Fraud Risk Score', 'fraud_prediction_explanations':'Fraud Prediction Explanations', 'fraud_rule_evaluations':'Fraud Rule Evaluations', 'fraud_event_num':'Fraud Event Num', 'trans_narration':'Trans Narration'}
+    label_columns = {'person':'Person', 'badge':'Badge', 'date_earned':'Date Earned'}
     # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
     # base_order = ("name", "asc")
     # page_size = 100 
-#    list_columns = ['coupon', 'customer_name', 'trans_purpose', 'customer_id', 'transaction_type', 'card_trans_type', 'agent', 'payment_card', 'pos', 'wallet', 'biller', 'biller_offering', 'trans_time', 'currency', 'trans_status', 'trans_route', 'origin_source', 'origin_ref_code', 'origin_trans_notes', 'origin_bank', 'origin_institution_code', 'origin_account_num', 'origin_account_name', 'origin_KYC_Level', 'origin_Bank_Verification_Number', 'origin_bvn', 'session_ref', 'transaction_ref', 'channelCode', 'name_enquiry_ref', 'api_transactionid', 'receipt_no', 'pin_based', 'pin_code', 'pin_option', 'authorization_code', 'acquirer_name', 'currency', 'transaction_location', 'payment_reference', 'response_code', 'trans_dest', 'bene_ref_code', 'bene_trans_notes', 'bene_bank', 'bene_account_num', 'bene_institution_code', 'bene_bank_verification_number', 'bene_KYC_Level', 'bene_account_name', 'bene_phone_number', 'bene_phone_denom', 'bene_phone_product', 'transaction_amount', 'available_balance', 'svc_fees', 'comm_total', 'comm_agent', 'comm_aggr', 'comm_ours', 'comm_other', 'comm_net_pct', 'tax', 'excise_duty', 'vat', 'transmit_amount', 'comm_narration', 'trans_currency', 'trans_convert_currency', 'trans_currency_exchange_rate', 'trans_date', 'customer_segment', 'agent_tier_level', 'special_promotions', 'risk_profile', 'fraud_marker', 'fraud_eval_outcome', 'fraud_risk_score', 'fraud_prediction_explanations', 'fraud_rule_evaluations', 'fraud_event_num', 'trans_narration']
-class AgentDocLinkModelView(ModelView):
-    datamodel = SQLAInterface(AgentDocLink)
-    list_title = 'List Agent Doc Link'
-    show_title = 'Show Agent Doc Link'
-    edit_title = 'Edit Agent Doc Link'
-    add_title  = 'Add Agent Doc Link'
+#    list_columns = ['person', 'badge', 'date_earned']
+class PersonEducationModelView(ModelView):
+    datamodel = SQLAInterface(PersonEducation)
+    list_title = 'List Person Education'
+    show_title = 'Show Person Education'
+    edit_title = 'Edit Person Education'
+    add_title  = 'Add Person Education'
  
-    list_columns = ['agent', 'doc', 'verification_status', 'submit_date', 'notes']
-    # show_columns = ['agent', 'doc', 'verification_status', 'submit_date', 'notes']
-    # edit_columns = ['agent', 'doc', 'verification_status', 'submit_date', 'notes']
-    add_columns = ['agent', 'doc', 'verification_status', 'submit_date', 'notes']
-    # search_columns = ['agent', 'doc', 'verification_status', 'submit_date', 'notes']
+    list_columns = ['person', 'ed_level', 'field_of_study', 'attainment', 'started_on', 'graduated_on', 'institution_name', 'institution_type', 'institution_accreditation', 'geo', 'institution_website', 'gpa', 'standardized_test_scores', 'house_section', 'class_rank', 'honors', 'extracurricular_activities', 'sports_activities', 'scholarship_awarded', 'scholarship_detail', 'school_projects', 'notable_achievements', 'thesis_title', 'thesis_abstract', 'mentors_advisors', 'is_current', 'documents']
+    # show_columns = ['person', 'ed_level', 'field_of_study', 'attainment', 'started_on', 'graduated_on', 'institution_name', 'institution_type', 'institution_accreditation', 'geo', 'institution_website', 'gpa', 'standardized_test_scores', 'house_section', 'class_rank', 'honors', 'extracurricular_activities', 'sports_activities', 'scholarship_awarded', 'scholarship_detail', 'school_projects', 'notable_achievements', 'thesis_title', 'thesis_abstract', 'mentors_advisors', 'is_current', 'documents']
+    # edit_columns = ['person', 'ed_level', 'field_of_study', 'attainment', 'started_on', 'graduated_on', 'institution_name', 'institution_type', 'institution_accreditation', 'geo', 'institution_website', 'gpa', 'standardized_test_scores', 'house_section', 'class_rank', 'honors', 'extracurricular_activities', 'sports_activities', 'scholarship_awarded', 'scholarship_detail', 'school_projects', 'notable_achievements', 'thesis_title', 'thesis_abstract', 'mentors_advisors', 'is_current', 'documents']
+    add_columns = ['person', 'ed_level', 'field_of_study', 'attainment', 'started_on', 'graduated_on', 'institution_name', 'institution_type', 'institution_accreditation', 'geo', 'institution_website', 'gpa', 'standardized_test_scores', 'house_section', 'class_rank', 'honors', 'extracurricular_activities', 'sports_activities', 'scholarship_awarded', 'scholarship_detail', 'school_projects', 'notable_achievements', 'thesis_title', 'thesis_abstract', 'mentors_advisors', 'is_current', 'documents']
+    # search_columns = ['person', 'ed_level', 'field_of_study', 'attainment', 'started_on', 'graduated_on', 'institution_name', 'institution_type', 'institution_accreditation', 'geo', 'institution_website', 'gpa', 'standardized_test_scores', 'house_section', 'class_rank', 'honors', 'extracurricular_activities', 'sports_activities', 'scholarship_awarded', 'scholarship_detail', 'school_projects', 'notable_achievements', 'thesis_title', 'thesis_abstract', 'mentors_advisors', 'is_current', 'documents']
     description_columns = {
-        'agent_id_fk' : 'Foreign key reference to the agent whose document is linked.',
-        'doc_id_fk' : 'Foreign key reference to the document being linked.',
-        'verification_status' : 'Status of document verification, with a default value of _pending_.',
-        'submit_date' : 'Timestamp when the document is submitted, with a default value of the current timestamp.',
-        'notes' : 'Additional notes or comments related to the document link.',
+        'id' : 'Unique identifier for the education record',
+        'person_id_fk' : 'Foreign key referencing the person associated with this education record',
+        'ed_level' : 'Educational level e.g., Primary, Secondary, Bachelor’s, Master’s, etc.',
+        'field_of_study' : 'Field or major of study, relevant for higher education',
+        'attainment' : 'Specific degree, certification, or grade attained',
+        'started_on' : 'Date when the person started this educational program',
+        'graduated_on' : 'Date when the person graduated or completed this program',
+        'institution_name' : 'Name of the educational institution',
+        'institution_type' : 'Type of the institution e.g., School, University, College, etc.',
+        'institution_accreditation' : 'Accreditation body or standard, if applicable',
+        'geo_id_fk' : 'Foreign key referencing the location of the educational institution',
+        'institution_website' : 'Website or link to the institution’s portal',
+        'gpa' : 'Grade Point Average or its equivalent, if applicable',
+        'standardized_test_scores' : 'Standardized test scores, e.g., SAT, GCSE results',
+        'house_section' : 'House or section in the school, common in many primary and secondary institutions',
+        'class_rank' : 'Position or rank in class, if available',
+        'honors' : 'Honors received upon graduation',
+        'extracurricular_activities' : 'Extracurricular activities or clubs the person was involved in',
+        'sports_activities' : 'Sports or athletic activities participated in',
+        'scholarship_awarded' : 'Indicates if the person received any scholarship',
+        'scholarship_detail' : 'Details about the scholarship if it was awarded',
+        'school_projects' : 'Details about significant school projects or assignments',
+        'notable_achievements' : 'Any notable achievements or awards received during this educational period',
+        'thesis_title' : 'Title of the thesis or dissertation, if applicable',
+        'thesis_abstract' : 'Brief summary or abstract of the thesis or dissertation, if applicable',
+        'mentors_advisors' : 'Names of mentors, advisors, or favorite teachers during this education',
+        'is_current' : 'Indicates if this is the person’s current educational program',
+        'documents' : 'Attachments or documents like report cards, certificates, etc.',
     }
-    # list_exclude_columns = ['agent', 'doc', 'verification_status', 'submit_date', 'notes']
-    # show_exclude_columns = ['agent', 'doc', 'verification_status', 'submit_date', 'notes']
-    # edit_exclude_columns = ['agent', 'doc', 'verification_status', 'submit_date', 'notes']
-    # add_exclude_columns = ['agent', 'doc', 'verification_status', 'submit_date', 'notes']
-    # search_exclude_columns = ['agent', 'doc', 'verification_status', 'submit_date', 'notes']
-    # order_columns = ['agent', 'doc', 'verification_status', 'submit_date', 'notes']
-    # add_columns = ['agent', 'doc', 'verification_status', 'submit_date', 'notes']
-    # add_columns = ['agent', 'doc', 'verification_status', 'submit_date', 'notes']
-    # add_columns = ['agent', 'doc', 'verification_status', 'submit_date', 'notes']
+    # list_exclude_columns = ['person', 'ed_level', 'field_of_study', 'attainment', 'started_on', 'graduated_on', 'institution_name', 'institution_type', 'institution_accreditation', 'geo', 'institution_website', 'gpa', 'standardized_test_scores', 'house_section', 'class_rank', 'honors', 'extracurricular_activities', 'sports_activities', 'scholarship_awarded', 'scholarship_detail', 'school_projects', 'notable_achievements', 'thesis_title', 'thesis_abstract', 'mentors_advisors', 'is_current', 'documents']
+    # show_exclude_columns = ['person', 'ed_level', 'field_of_study', 'attainment', 'started_on', 'graduated_on', 'institution_name', 'institution_type', 'institution_accreditation', 'geo', 'institution_website', 'gpa', 'standardized_test_scores', 'house_section', 'class_rank', 'honors', 'extracurricular_activities', 'sports_activities', 'scholarship_awarded', 'scholarship_detail', 'school_projects', 'notable_achievements', 'thesis_title', 'thesis_abstract', 'mentors_advisors', 'is_current', 'documents']
+    # edit_exclude_columns = ['person', 'ed_level', 'field_of_study', 'attainment', 'started_on', 'graduated_on', 'institution_name', 'institution_type', 'institution_accreditation', 'geo', 'institution_website', 'gpa', 'standardized_test_scores', 'house_section', 'class_rank', 'honors', 'extracurricular_activities', 'sports_activities', 'scholarship_awarded', 'scholarship_detail', 'school_projects', 'notable_achievements', 'thesis_title', 'thesis_abstract', 'mentors_advisors', 'is_current', 'documents']
+    # add_exclude_columns = ['person', 'ed_level', 'field_of_study', 'attainment', 'started_on', 'graduated_on', 'institution_name', 'institution_type', 'institution_accreditation', 'geo', 'institution_website', 'gpa', 'standardized_test_scores', 'house_section', 'class_rank', 'honors', 'extracurricular_activities', 'sports_activities', 'scholarship_awarded', 'scholarship_detail', 'school_projects', 'notable_achievements', 'thesis_title', 'thesis_abstract', 'mentors_advisors', 'is_current', 'documents']
+    # search_exclude_columns = ['person', 'ed_level', 'field_of_study', 'attainment', 'started_on', 'graduated_on', 'institution_name', 'institution_type', 'institution_accreditation', 'geo', 'institution_website', 'gpa', 'standardized_test_scores', 'house_section', 'class_rank', 'honors', 'extracurricular_activities', 'sports_activities', 'scholarship_awarded', 'scholarship_detail', 'school_projects', 'notable_achievements', 'thesis_title', 'thesis_abstract', 'mentors_advisors', 'is_current', 'documents']
+    # order_columns = ['person', 'ed_level', 'field_of_study', 'attainment', 'started_on', 'graduated_on', 'institution_name', 'institution_type', 'institution_accreditation', 'geo', 'institution_website', 'gpa', 'standardized_test_scores', 'house_section', 'class_rank', 'honors', 'extracurricular_activities', 'sports_activities', 'scholarship_awarded', 'scholarship_detail', 'school_projects', 'notable_achievements', 'thesis_title', 'thesis_abstract', 'mentors_advisors', 'is_current', 'documents']
+    # add_columns = ['person', 'ed_level', 'field_of_study', 'attainment', 'started_on', 'graduated_on', 'institution_name', 'institution_type', 'institution_accreditation', 'geo', 'institution_website', 'gpa', 'standardized_test_scores', 'house_section', 'class_rank', 'honors', 'extracurricular_activities', 'sports_activities', 'scholarship_awarded', 'scholarship_detail', 'school_projects', 'notable_achievements', 'thesis_title', 'thesis_abstract', 'mentors_advisors', 'is_current', 'documents']
+    # add_columns = ['person', 'ed_level', 'field_of_study', 'attainment', 'started_on', 'graduated_on', 'institution_name', 'institution_type', 'institution_accreditation', 'geo', 'institution_website', 'gpa', 'standardized_test_scores', 'house_section', 'class_rank', 'honors', 'extracurricular_activities', 'sports_activities', 'scholarship_awarded', 'scholarship_detail', 'school_projects', 'notable_achievements', 'thesis_title', 'thesis_abstract', 'mentors_advisors', 'is_current', 'documents']
+    # add_columns = ['person', 'ed_level', 'field_of_study', 'attainment', 'started_on', 'graduated_on', 'institution_name', 'institution_type', 'institution_accreditation', 'geo', 'institution_website', 'gpa', 'standardized_test_scores', 'house_section', 'class_rank', 'honors', 'extracurricular_activities', 'sports_activities', 'scholarship_awarded', 'scholarship_detail', 'school_projects', 'notable_achievements', 'thesis_title', 'thesis_abstract', 'mentors_advisors', 'is_current', 'documents']
     
-    label_columns = {'agent':'Agent', 'doc':'Doc', 'verification_status':'Verification Status', 'submit_date':'Submit Date', 'notes':'Notes'}
+    label_columns = {'person':'Person', 'ed_level':'Ed Level', 'field_of_study':'Field Of Study', 'attainment':'Attainment', 'started_on':'Started On', 'graduated_on':'Graduated On', 'institution_name':'Institution Name', 'institution_type':'Institution Type', 'institution_accreditation':'Institution Accreditation', 'geo':'Geo', 'institution_website':'Institution Website', 'gpa':'Gpa', 'standardized_test_scores':'Standardized Test Scores', 'house_section':'House Section', 'class_rank':'Class Rank', 'honors':'Honors', 'extracurricular_activities':'Extracurricular Activities', 'sports_activities':'Sports Activities', 'scholarship_awarded':'Scholarship Awarded', 'scholarship_detail':'Scholarship Detail', 'school_projects':'School Projects', 'notable_achievements':'Notable Achievements', 'thesis_title':'Thesis Title', 'thesis_abstract':'Thesis Abstract', 'mentors_advisors':'Mentors Advisors', 'is_current':'Is Current', 'documents':'Documents'}
     # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
     # base_order = ("name", "asc")
     # page_size = 100 
-#    list_columns = ['agent', 'doc', 'verification_status', 'submit_date', 'notes']
-class PersonDocLinkModelView(ModelView):
-    datamodel = SQLAInterface(PersonDocLink)
-    list_title = 'List Person Doc Link'
-    show_title = 'Show Person Doc Link'
-    edit_title = 'Edit Person Doc Link'
-    add_title  = 'Add Person Doc Link'
+#    list_columns = ['person', 'ed_level', 'field_of_study', 'attainment', 'started_on', 'graduated_on', 'institution_name', 'institution_type', 'institution_accreditation', 'geo', 'institution_website', 'gpa', 'standardized_test_scores', 'house_section', 'class_rank', 'honors', 'extracurricular_activities', 'sports_activities', 'scholarship_awarded', 'scholarship_detail', 'school_projects', 'notable_achievements', 'thesis_title', 'thesis_abstract', 'mentors_advisors', 'is_current', 'documents']
+class PersonHouseholdModelView(ModelView):
+    datamodel = SQLAInterface(PersonHousehold)
+    list_title = 'List Person Household'
+    show_title = 'Show Person Household'
+    edit_title = 'Edit Person Household'
+    add_title  = 'Add Person Household'
  
-    list_columns = ['person', 'doc', 'verification_status', 'submit_date']
-    # show_columns = ['person', 'doc', 'verification_status', 'submit_date']
-    # edit_columns = ['person', 'doc', 'verification_status', 'submit_date']
-    add_columns = ['person', 'doc', 'verification_status', 'submit_date']
-    # search_columns = ['person', 'doc', 'verification_status', 'submit_date']
+    list_columns = ['person', 'marital_status', 'wedding_anniversary_date', 'children_count', 'household_member_count', 'household_formed_date', 'household_dissolved_date', 'party_type', 'global_party', 'no_merge_reason']
+    # show_columns = ['person', 'marital_status', 'wedding_anniversary_date', 'children_count', 'household_member_count', 'household_formed_date', 'household_dissolved_date', 'party_type', 'global_party', 'no_merge_reason']
+    # edit_columns = ['person', 'marital_status', 'wedding_anniversary_date', 'children_count', 'household_member_count', 'household_formed_date', 'household_dissolved_date', 'party_type', 'global_party', 'no_merge_reason']
+    add_columns = ['person', 'marital_status', 'wedding_anniversary_date', 'children_count', 'household_member_count', 'household_formed_date', 'household_dissolved_date', 'party_type', 'global_party', 'no_merge_reason']
+    # search_columns = ['person', 'marital_status', 'wedding_anniversary_date', 'children_count', 'household_member_count', 'household_formed_date', 'household_dissolved_date', 'party_type', 'global_party', 'no_merge_reason']
     description_columns = {
-        'person_id_fk' : 'Foreign key reference to the person whose document is linked.',
-        'doc_id_fk' : 'Foreign key reference to the document being linked.',
-        'verification_status' : 'Status of document verification, with a default value of _pending_.',
-        'submit_date' : 'Timestamp when the document is submitted, with a default value of the current timestamp.',
+        'id' : 'None',
+        'person_id_fk' : 'None',
+        'marital_status' : 'None',
+        'wedding_anniversary_date' : 'None',
+        'children_count' : 'None',
+        'household_member_count' : 'None',
+        'household_formed_date' : 'None',
+        'household_dissolved_date' : 'None',
+        'party_type' : 'None',
+        'global_party' : 'None',
+        'no_merge_reason' : 'None',
     }
-    # list_exclude_columns = ['person', 'doc', 'verification_status', 'submit_date']
-    # show_exclude_columns = ['person', 'doc', 'verification_status', 'submit_date']
-    # edit_exclude_columns = ['person', 'doc', 'verification_status', 'submit_date']
-    # add_exclude_columns = ['person', 'doc', 'verification_status', 'submit_date']
-    # search_exclude_columns = ['person', 'doc', 'verification_status', 'submit_date']
-    # order_columns = ['person', 'doc', 'verification_status', 'submit_date']
-    # add_columns = ['person', 'doc', 'verification_status', 'submit_date']
-    # add_columns = ['person', 'doc', 'verification_status', 'submit_date']
-    # add_columns = ['person', 'doc', 'verification_status', 'submit_date']
+    # list_exclude_columns = ['person', 'marital_status', 'wedding_anniversary_date', 'children_count', 'household_member_count', 'household_formed_date', 'household_dissolved_date', 'party_type', 'global_party', 'no_merge_reason']
+    # show_exclude_columns = ['person', 'marital_status', 'wedding_anniversary_date', 'children_count', 'household_member_count', 'household_formed_date', 'household_dissolved_date', 'party_type', 'global_party', 'no_merge_reason']
+    # edit_exclude_columns = ['person', 'marital_status', 'wedding_anniversary_date', 'children_count', 'household_member_count', 'household_formed_date', 'household_dissolved_date', 'party_type', 'global_party', 'no_merge_reason']
+    # add_exclude_columns = ['person', 'marital_status', 'wedding_anniversary_date', 'children_count', 'household_member_count', 'household_formed_date', 'household_dissolved_date', 'party_type', 'global_party', 'no_merge_reason']
+    # search_exclude_columns = ['person', 'marital_status', 'wedding_anniversary_date', 'children_count', 'household_member_count', 'household_formed_date', 'household_dissolved_date', 'party_type', 'global_party', 'no_merge_reason']
+    # order_columns = ['person', 'marital_status', 'wedding_anniversary_date', 'children_count', 'household_member_count', 'household_formed_date', 'household_dissolved_date', 'party_type', 'global_party', 'no_merge_reason']
+    # add_columns = ['person', 'marital_status', 'wedding_anniversary_date', 'children_count', 'household_member_count', 'household_formed_date', 'household_dissolved_date', 'party_type', 'global_party', 'no_merge_reason']
+    # add_columns = ['person', 'marital_status', 'wedding_anniversary_date', 'children_count', 'household_member_count', 'household_formed_date', 'household_dissolved_date', 'party_type', 'global_party', 'no_merge_reason']
+    # add_columns = ['person', 'marital_status', 'wedding_anniversary_date', 'children_count', 'household_member_count', 'household_formed_date', 'household_dissolved_date', 'party_type', 'global_party', 'no_merge_reason']
     
-    label_columns = {'person':'Person', 'doc':'Doc', 'verification_status':'Verification Status', 'submit_date':'Submit Date'}
+    label_columns = {'person':'Person', 'marital_status':'Marital Status', 'wedding_anniversary_date':'Wedding Anniversary Date', 'children_count':'Children Count', 'household_member_count':'Household Member Count', 'household_formed_date':'Household Formed Date', 'household_dissolved_date':'Household Dissolved Date', 'party_type':'Party Type', 'global_party':'Global Party', 'no_merge_reason':'No Merge Reason'}
     # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
     # base_order = ("name", "asc")
     # page_size = 100 
-#    list_columns = ['person', 'doc', 'verification_status', 'submit_date']
-class UserExt_UserExtMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(UserExt)
-    related_views = [UserExtModelView]
+#    list_columns = ['person', 'marital_status', 'wedding_anniversary_date', 'children_count', 'household_member_count', 'household_formed_date', 'household_dissolved_date', 'party_type', 'global_party', 'no_merge_reason']
+class PersonLanguageModelView(ModelView):
+    datamodel = SQLAInterface(PersonLanguage)
+    list_title = 'List Person Language'
+    show_title = 'Show Person Language'
+    edit_title = 'Edit Person Language'
+    add_title  = 'Add Person Language'
+ 
+    list_columns = ['person', 'language', 'listening_proficiency_level', 'spoken_proficiency_level', 'written_proficiency_level']
+    # show_columns = ['person', 'language', 'listening_proficiency_level', 'spoken_proficiency_level', 'written_proficiency_level']
+    # edit_columns = ['person', 'language', 'listening_proficiency_level', 'spoken_proficiency_level', 'written_proficiency_level']
+    add_columns = ['person', 'language', 'listening_proficiency_level', 'spoken_proficiency_level', 'written_proficiency_level']
+    # search_columns = ['person', 'language', 'listening_proficiency_level', 'spoken_proficiency_level', 'written_proficiency_level']
+    description_columns = {
+        'id' : 'Unique identifier for the language-proficiency record of a person.',
+        'person_id_fk' : 'Reference to the individual associated with this language proficiency.',
+        'language_id_fk' : 'ISO 639-3 code representing the language.',
+        'listening_proficiency_level' : 'Proficiency level of the person in listening to the language.',
+        'spoken_proficiency_level' : 'Proficiency level of the person in speaking the language.',
+        'written_proficiency_level' : 'Proficiency level of the person in writing in the language.',
+    }
+    # list_exclude_columns = ['person', 'language', 'listening_proficiency_level', 'spoken_proficiency_level', 'written_proficiency_level']
+    # show_exclude_columns = ['person', 'language', 'listening_proficiency_level', 'spoken_proficiency_level', 'written_proficiency_level']
+    # edit_exclude_columns = ['person', 'language', 'listening_proficiency_level', 'spoken_proficiency_level', 'written_proficiency_level']
+    # add_exclude_columns = ['person', 'language', 'listening_proficiency_level', 'spoken_proficiency_level', 'written_proficiency_level']
+    # search_exclude_columns = ['person', 'language', 'listening_proficiency_level', 'spoken_proficiency_level', 'written_proficiency_level']
+    # order_columns = ['person', 'language', 'listening_proficiency_level', 'spoken_proficiency_level', 'written_proficiency_level']
+    # add_columns = ['person', 'language', 'listening_proficiency_level', 'spoken_proficiency_level', 'written_proficiency_level']
+    # add_columns = ['person', 'language', 'listening_proficiency_level', 'spoken_proficiency_level', 'written_proficiency_level']
+    # add_columns = ['person', 'language', 'listening_proficiency_level', 'spoken_proficiency_level', 'written_proficiency_level']
+    
+    label_columns = {'person':'Person', 'language':'Language', 'listening_proficiency_level':'Listening Proficiency Level', 'spoken_proficiency_level':'Spoken Proficiency Level', 'written_proficiency_level':'Written Proficiency Level'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['person', 'language', 'listening_proficiency_level', 'spoken_proficiency_level', 'written_proficiency_level']
+class PersonLevelModelView(ModelView):
+    datamodel = SQLAInterface(PersonLevel)
+    list_title = 'List Person Level'
+    show_title = 'Show Person Level'
+    edit_title = 'Edit Person Level'
+    add_title  = 'Add Person Level'
+ 
+    list_columns = ['person', 'level', 'points_required_for_next_level']
+    # show_columns = ['person', 'level', 'points_required_for_next_level']
+    # edit_columns = ['person', 'level', 'points_required_for_next_level']
+    add_columns = ['person', 'level', 'points_required_for_next_level']
+    # search_columns = ['person', 'level', 'points_required_for_next_level']
+    description_columns = {
+        'id' : 'None',
+        'person_id_fk' : 'None',
+        'level' : 'None',
+        'points_required_for_next_level' : 'Points needed to level up',
+    }
+    # list_exclude_columns = ['person', 'level', 'points_required_for_next_level']
+    # show_exclude_columns = ['person', 'level', 'points_required_for_next_level']
+    # edit_exclude_columns = ['person', 'level', 'points_required_for_next_level']
+    # add_exclude_columns = ['person', 'level', 'points_required_for_next_level']
+    # search_exclude_columns = ['person', 'level', 'points_required_for_next_level']
+    # order_columns = ['person', 'level', 'points_required_for_next_level']
+    # add_columns = ['person', 'level', 'points_required_for_next_level']
+    # add_columns = ['person', 'level', 'points_required_for_next_level']
+    # add_columns = ['person', 'level', 'points_required_for_next_level']
+    
+    label_columns = {'person':'Person', 'level':'Level', 'points_required_for_next_level':'Points Required For Next Level'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['person', 'level', 'points_required_for_next_level']
+class PersonLifeEventModelView(ModelView):
+    datamodel = SQLAInterface(PersonLifeEvent)
+    list_title = 'List Person Life Event'
+    show_title = 'Show Person Life Event'
+    edit_title = 'Edit Person Life Event'
+    add_title  = 'Add Person Life Event'
+ 
+    list_columns = ['person', 'event_on', 'event_type', 'event_description', 'location', 'geo', 'involved_parties', 'witnesses', 'event_photos_url', 'event_documents_url', 'event_details', 'gifts_received', 'emotions_felt', 'life_impact', 'immediate_aftermath', 'is_public', 'added_by', 'added_on']
+    # show_columns = ['person', 'event_on', 'event_type', 'event_description', 'location', 'geo', 'involved_parties', 'witnesses', 'event_photos_url', 'event_documents_url', 'event_details', 'gifts_received', 'emotions_felt', 'life_impact', 'immediate_aftermath', 'is_public', 'added_by', 'added_on']
+    # edit_columns = ['person', 'event_on', 'event_type', 'event_description', 'location', 'geo', 'involved_parties', 'witnesses', 'event_photos_url', 'event_documents_url', 'event_details', 'gifts_received', 'emotions_felt', 'life_impact', 'immediate_aftermath', 'is_public', 'added_by', 'added_on']
+    add_columns = ['person', 'event_on', 'event_type', 'event_description', 'location', 'geo', 'involved_parties', 'witnesses', 'event_photos_url', 'event_documents_url', 'event_details', 'gifts_received', 'emotions_felt', 'life_impact', 'immediate_aftermath', 'is_public', 'added_by', 'added_on']
+    # search_columns = ['person', 'event_on', 'event_type', 'event_description', 'location', 'geo', 'involved_parties', 'witnesses', 'event_photos_url', 'event_documents_url', 'event_details', 'gifts_received', 'emotions_felt', 'life_impact', 'immediate_aftermath', 'is_public', 'added_by', 'added_on']
+    description_columns = {
+        'id' : 'Unique identifier for the life event record',
+        'person_id_fk' : 'Foreign key referencing the person associated with this life event',
+        'event_on' : 'Date and time when the event occurred',
+        'event_type' : 'Type or category of the life event e.g., Birth, Marriage, Graduation, etc.',
+        'event_description' : 'Detailed description of the event',
+        'location' : 'Location where the event took place',
+        'geo_id_fk' : 'Foreign key referencing the geographical location of the event',
+        'involved_parties' : 'Names or list of other individuals involved or present during the event',
+        'witnesses' : 'Names or list of witnesses, if any, especially relevant for legal or ceremonial events',
+        'event_photos_url' : 'Photos or images associated with the event',
+        'event_documents_url' : 'Relevant documents or certificates associated with the event',
+        'event_details' : 'Details of any celebration or function associated with the event',
+        'gifts_received' : 'Details of gifts or presents received during the event, if applicable',
+        'emotions_felt' : 'Emotions or feelings associated with the event, as described by the person',
+        'life_impact' : 'Significance or impact of the event on the person’s life, if any',
+        'immediate_aftermath' : 'Events or actions that immediately followed the life event',
+        'is_public' : 'Indicates if the event details can be shared or are private',
+        'added_by_id_fk' : 'Person or user who added this event record, if different from the primary person',
+        'added_on' : 'Date and time when the record was added to the system',
+    }
+    # list_exclude_columns = ['person', 'event_on', 'event_type', 'event_description', 'location', 'geo', 'involved_parties', 'witnesses', 'event_photos_url', 'event_documents_url', 'event_details', 'gifts_received', 'emotions_felt', 'life_impact', 'immediate_aftermath', 'is_public', 'added_by', 'added_on']
+    # show_exclude_columns = ['person', 'event_on', 'event_type', 'event_description', 'location', 'geo', 'involved_parties', 'witnesses', 'event_photos_url', 'event_documents_url', 'event_details', 'gifts_received', 'emotions_felt', 'life_impact', 'immediate_aftermath', 'is_public', 'added_by', 'added_on']
+    # edit_exclude_columns = ['person', 'event_on', 'event_type', 'event_description', 'location', 'geo', 'involved_parties', 'witnesses', 'event_photos_url', 'event_documents_url', 'event_details', 'gifts_received', 'emotions_felt', 'life_impact', 'immediate_aftermath', 'is_public', 'added_by', 'added_on']
+    # add_exclude_columns = ['person', 'event_on', 'event_type', 'event_description', 'location', 'geo', 'involved_parties', 'witnesses', 'event_photos_url', 'event_documents_url', 'event_details', 'gifts_received', 'emotions_felt', 'life_impact', 'immediate_aftermath', 'is_public', 'added_by', 'added_on']
+    # search_exclude_columns = ['person', 'event_on', 'event_type', 'event_description', 'location', 'geo', 'involved_parties', 'witnesses', 'event_photos_url', 'event_documents_url', 'event_details', 'gifts_received', 'emotions_felt', 'life_impact', 'immediate_aftermath', 'is_public', 'added_by', 'added_on']
+    # order_columns = ['person', 'event_on', 'event_type', 'event_description', 'location', 'geo', 'involved_parties', 'witnesses', 'event_photos_url', 'event_documents_url', 'event_details', 'gifts_received', 'emotions_felt', 'life_impact', 'immediate_aftermath', 'is_public', 'added_by', 'added_on']
+    # add_columns = ['person', 'event_on', 'event_type', 'event_description', 'location', 'geo', 'involved_parties', 'witnesses', 'event_photos_url', 'event_documents_url', 'event_details', 'gifts_received', 'emotions_felt', 'life_impact', 'immediate_aftermath', 'is_public', 'added_by', 'added_on']
+    # add_columns = ['person', 'event_on', 'event_type', 'event_description', 'location', 'geo', 'involved_parties', 'witnesses', 'event_photos_url', 'event_documents_url', 'event_details', 'gifts_received', 'emotions_felt', 'life_impact', 'immediate_aftermath', 'is_public', 'added_by', 'added_on']
+    # add_columns = ['person', 'event_on', 'event_type', 'event_description', 'location', 'geo', 'involved_parties', 'witnesses', 'event_photos_url', 'event_documents_url', 'event_details', 'gifts_received', 'emotions_felt', 'life_impact', 'immediate_aftermath', 'is_public', 'added_by', 'added_on']
+    
+    label_columns = {'person':'Person', 'event_on':'Event On', 'event_type':'Event Type', 'event_description':'Event Description', 'location':'Location', 'geo':'Geo', 'involved_parties':'Involved Parties', 'witnesses':'Witnesses', 'event_photos_url':'Event Photos Url', 'event_documents_url':'Event Documents Url', 'event_details':'Event Details', 'gifts_received':'Gifts Received', 'emotions_felt':'Emotions Felt', 'life_impact':'Life Impact', 'immediate_aftermath':'Immediate Aftermath', 'is_public':'Is Public', 'added_by':'Added By', 'added_on':'Added On'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['person', 'event_on', 'event_type', 'event_description', 'location', 'geo', 'involved_parties', 'witnesses', 'event_photos_url', 'event_documents_url', 'event_details', 'gifts_received', 'emotions_felt', 'life_impact', 'immediate_aftermath', 'is_public', 'added_by', 'added_on']
+class PersonLocationLogModelView(ModelView):
+    datamodel = SQLAInterface(PersonLocationLog)
+    list_title = 'List Person Location Log'
+    show_title = 'Show Person Location Log'
+    edit_title = 'Edit Person Location Log'
+    add_title  = 'Add Person Location Log'
+ 
+    list_columns = ['person', 'logged_at', 'location_source', 'geo', 'latitude', 'longitude', 'altitude', 'direction', 'speed', 'rate_of_climb', 'geo_accuracy', 'notes', 'alerted', 'device_id', 'device_brand', 'device_model', 'os_name', 'os_version', 'app_version', 'battery_level', 'network_type', 'signal_strength', 'device_orientation', 'gps_provider', 'satellite_count']
+    # show_columns = ['person', 'logged_at', 'location_source', 'geo', 'latitude', 'longitude', 'altitude', 'direction', 'speed', 'rate_of_climb', 'geo_accuracy', 'notes', 'alerted', 'device_id', 'device_brand', 'device_model', 'os_name', 'os_version', 'app_version', 'battery_level', 'network_type', 'signal_strength', 'device_orientation', 'gps_provider', 'satellite_count']
+    # edit_columns = ['person', 'logged_at', 'location_source', 'geo', 'latitude', 'longitude', 'altitude', 'direction', 'speed', 'rate_of_climb', 'geo_accuracy', 'notes', 'alerted', 'device_id', 'device_brand', 'device_model', 'os_name', 'os_version', 'app_version', 'battery_level', 'network_type', 'signal_strength', 'device_orientation', 'gps_provider', 'satellite_count']
+    add_columns = ['person', 'logged_at', 'location_source', 'geo', 'latitude', 'longitude', 'altitude', 'direction', 'speed', 'rate_of_climb', 'geo_accuracy', 'notes', 'alerted', 'device_id', 'device_brand', 'device_model', 'os_name', 'os_version', 'app_version', 'battery_level', 'network_type', 'signal_strength', 'device_orientation', 'gps_provider', 'satellite_count']
+    # search_columns = ['person', 'logged_at', 'location_source', 'geo', 'latitude', 'longitude', 'altitude', 'direction', 'speed', 'rate_of_climb', 'geo_accuracy', 'notes', 'alerted', 'device_id', 'device_brand', 'device_model', 'os_name', 'os_version', 'app_version', 'battery_level', 'network_type', 'signal_strength', 'device_orientation', 'gps_provider', 'satellite_count']
+    description_columns = {
+        'id' : 'Unique identifier for each location log entry',
+        'person_id_fk' : 'Foreign key referencing the associated person',
+        'logged_at' : 'Date and time when this location data was added or logged into the system',
+        'location_source' : 'Source of the geolocation data e.g., GPS, WiFi, Manual',
+        'geo_id_fk' : 'Foreign key referencing the location from the geonames table, if applicable',
+        'latitude' : 'Latitude coordinate of the person’s location',
+        'longitude' : 'Longitude coordinate of the person’s location',
+        'altitude' : 'Altitude of the location, if available from the geolocation source',
+        'direction' : 'Direction of movement in degrees',
+        'speed' : 'Speed of the person at the time of logging, relevant if they were in a vehicle or moving fast',
+        'rate_of_climb' : 'Rate at which altitude is changing',
+        'geo_accuracy' : 'Accuracy of the geolocation data',
+        'notes' : 'Any additional information or context about the location log',
+        'alerted' : 'Indicates if the person triggered an alert or SOS from this location',
+        'device_id' : 'Unique ID or identifier of the device used for logging the location',
+        'device_brand' : 'Brand of the device, e.g., Apple, Samsung, etc.',
+        'device_model' : 'Specific model of the device, e.g., iPhone 12, Galaxy S21, etc.',
+        'os_name' : 'Operating system name, e.g., iOS, Android, etc.',
+        'os_version' : 'Version of the devices operating system',
+        'app_version' : 'Version of the app used to log the location, if applicable',
+        'battery_level' : 'Battery level of the device at the time of logging, usually a value between 0 and 1 representing the percentage',
+        'network_type' : 'Type of network used during logging, e.g., WiFi, 4G, 5G, etc.',
+        'signal_strength' : 'Signal strength of the network, can be in dBm or ASU',
+        'device_orientation' : 'Orientation of the device when the log was captured, e.g., Portrait, Landscape, etc.',
+        'gps_provider' : 'GPS provider if there are multiple providers, e.g., internal, external, network-based',
+        'satellite_count' : 'Number of satellites the device was connected to, if applicable',
+    }
+    # list_exclude_columns = ['person', 'logged_at', 'location_source', 'geo', 'latitude', 'longitude', 'altitude', 'direction', 'speed', 'rate_of_climb', 'geo_accuracy', 'notes', 'alerted', 'device_id', 'device_brand', 'device_model', 'os_name', 'os_version', 'app_version', 'battery_level', 'network_type', 'signal_strength', 'device_orientation', 'gps_provider', 'satellite_count']
+    # show_exclude_columns = ['person', 'logged_at', 'location_source', 'geo', 'latitude', 'longitude', 'altitude', 'direction', 'speed', 'rate_of_climb', 'geo_accuracy', 'notes', 'alerted', 'device_id', 'device_brand', 'device_model', 'os_name', 'os_version', 'app_version', 'battery_level', 'network_type', 'signal_strength', 'device_orientation', 'gps_provider', 'satellite_count']
+    # edit_exclude_columns = ['person', 'logged_at', 'location_source', 'geo', 'latitude', 'longitude', 'altitude', 'direction', 'speed', 'rate_of_climb', 'geo_accuracy', 'notes', 'alerted', 'device_id', 'device_brand', 'device_model', 'os_name', 'os_version', 'app_version', 'battery_level', 'network_type', 'signal_strength', 'device_orientation', 'gps_provider', 'satellite_count']
+    # add_exclude_columns = ['person', 'logged_at', 'location_source', 'geo', 'latitude', 'longitude', 'altitude', 'direction', 'speed', 'rate_of_climb', 'geo_accuracy', 'notes', 'alerted', 'device_id', 'device_brand', 'device_model', 'os_name', 'os_version', 'app_version', 'battery_level', 'network_type', 'signal_strength', 'device_orientation', 'gps_provider', 'satellite_count']
+    # search_exclude_columns = ['person', 'logged_at', 'location_source', 'geo', 'latitude', 'longitude', 'altitude', 'direction', 'speed', 'rate_of_climb', 'geo_accuracy', 'notes', 'alerted', 'device_id', 'device_brand', 'device_model', 'os_name', 'os_version', 'app_version', 'battery_level', 'network_type', 'signal_strength', 'device_orientation', 'gps_provider', 'satellite_count']
+    # order_columns = ['person', 'logged_at', 'location_source', 'geo', 'latitude', 'longitude', 'altitude', 'direction', 'speed', 'rate_of_climb', 'geo_accuracy', 'notes', 'alerted', 'device_id', 'device_brand', 'device_model', 'os_name', 'os_version', 'app_version', 'battery_level', 'network_type', 'signal_strength', 'device_orientation', 'gps_provider', 'satellite_count']
+    # add_columns = ['person', 'logged_at', 'location_source', 'geo', 'latitude', 'longitude', 'altitude', 'direction', 'speed', 'rate_of_climb', 'geo_accuracy', 'notes', 'alerted', 'device_id', 'device_brand', 'device_model', 'os_name', 'os_version', 'app_version', 'battery_level', 'network_type', 'signal_strength', 'device_orientation', 'gps_provider', 'satellite_count']
+    # add_columns = ['person', 'logged_at', 'location_source', 'geo', 'latitude', 'longitude', 'altitude', 'direction', 'speed', 'rate_of_climb', 'geo_accuracy', 'notes', 'alerted', 'device_id', 'device_brand', 'device_model', 'os_name', 'os_version', 'app_version', 'battery_level', 'network_type', 'signal_strength', 'device_orientation', 'gps_provider', 'satellite_count']
+    # add_columns = ['person', 'logged_at', 'location_source', 'geo', 'latitude', 'longitude', 'altitude', 'direction', 'speed', 'rate_of_climb', 'geo_accuracy', 'notes', 'alerted', 'device_id', 'device_brand', 'device_model', 'os_name', 'os_version', 'app_version', 'battery_level', 'network_type', 'signal_strength', 'device_orientation', 'gps_provider', 'satellite_count']
+    
+    label_columns = {'person':'Person', 'logged_at':'Logged At', 'location_source':'Location Source', 'geo':'Geo', 'latitude':'Latitude', 'longitude':'Longitude', 'altitude':'Altitude', 'direction':'Direction', 'speed':'Speed', 'rate_of_climb':'Rate Of Climb', 'geo_accuracy':'Geo Accuracy', 'notes':'Notes', 'alerted':'Alerted', 'device_id':'Device Id', 'device_brand':'Device Brand', 'device_model':'Device Model', 'os_name':'Os Name', 'os_version':'Os Version', 'app_version':'App Version', 'battery_level':'Battery Level', 'network_type':'Network Type', 'signal_strength':'Signal Strength', 'device_orientation':'Device Orientation', 'gps_provider':'Gps Provider', 'satellite_count':'Satellite Count'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['person', 'logged_at', 'location_source', 'geo', 'latitude', 'longitude', 'altitude', 'direction', 'speed', 'rate_of_climb', 'geo_accuracy', 'notes', 'alerted', 'device_id', 'device_brand', 'device_model', 'os_name', 'os_version', 'app_version', 'battery_level', 'network_type', 'signal_strength', 'device_orientation', 'gps_provider', 'satellite_count']
+class PersonRelationshipsLinkModelView(ModelView):
+    datamodel = SQLAInterface(PersonRelationshipsLink)
+    list_title = 'List Person Relationships Link'
+    show_title = 'Show Person Relationships Link'
+    edit_title = 'Edit Person Relationships Link'
+    add_title  = 'Add Person Relationships Link'
+ 
+    list_columns = ['person', 'relative', 'relationship_type', 'related_from_date', 'related_to_date', 'notes', 'is_bidirectional', 'near_relation', 'far_relation']
+    # show_columns = ['person', 'relative', 'relationship_type', 'related_from_date', 'related_to_date', 'notes', 'is_bidirectional', 'near_relation', 'far_relation']
+    # edit_columns = ['person', 'relative', 'relationship_type', 'related_from_date', 'related_to_date', 'notes', 'is_bidirectional', 'near_relation', 'far_relation']
+    add_columns = ['person', 'relative', 'relationship_type', 'related_from_date', 'related_to_date', 'notes', 'is_bidirectional', 'near_relation', 'far_relation']
+    # search_columns = ['person', 'relative', 'relationship_type', 'related_from_date', 'related_to_date', 'notes', 'is_bidirectional', 'near_relation', 'far_relation']
+    description_columns = {
+        'person_id_fk' : 'None',
+        'relative_id_fk' : 'None',
+        'relationship_type' : 'None',
+        'related_from_date' : 'None',
+        'related_to_date' : 'None',
+        'notes' : 'None',
+        'is_bidirectional' : 'None',
+        'near_relation' : 'None',
+        'far_relation' : 'None',
+    }
+    # list_exclude_columns = ['person', 'relative', 'relationship_type', 'related_from_date', 'related_to_date', 'notes', 'is_bidirectional', 'near_relation', 'far_relation']
+    # show_exclude_columns = ['person', 'relative', 'relationship_type', 'related_from_date', 'related_to_date', 'notes', 'is_bidirectional', 'near_relation', 'far_relation']
+    # edit_exclude_columns = ['person', 'relative', 'relationship_type', 'related_from_date', 'related_to_date', 'notes', 'is_bidirectional', 'near_relation', 'far_relation']
+    # add_exclude_columns = ['person', 'relative', 'relationship_type', 'related_from_date', 'related_to_date', 'notes', 'is_bidirectional', 'near_relation', 'far_relation']
+    # search_exclude_columns = ['person', 'relative', 'relationship_type', 'related_from_date', 'related_to_date', 'notes', 'is_bidirectional', 'near_relation', 'far_relation']
+    # order_columns = ['person', 'relative', 'relationship_type', 'related_from_date', 'related_to_date', 'notes', 'is_bidirectional', 'near_relation', 'far_relation']
+    # add_columns = ['person', 'relative', 'relationship_type', 'related_from_date', 'related_to_date', 'notes', 'is_bidirectional', 'near_relation', 'far_relation']
+    # add_columns = ['person', 'relative', 'relationship_type', 'related_from_date', 'related_to_date', 'notes', 'is_bidirectional', 'near_relation', 'far_relation']
+    # add_columns = ['person', 'relative', 'relationship_type', 'related_from_date', 'related_to_date', 'notes', 'is_bidirectional', 'near_relation', 'far_relation']
+    
+    label_columns = {'person':'Person', 'relative':'Relative', 'relationship_type':'Relationship Type', 'related_from_date':'Related From Date', 'related_to_date':'Related To Date', 'notes':'Notes', 'is_bidirectional':'Is Bidirectional', 'near_relation':'Near Relation', 'far_relation':'Far Relation'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['person', 'relative', 'relationship_type', 'related_from_date', 'related_to_date', 'notes', 'is_bidirectional', 'near_relation', 'far_relation']
+class PersonTodoModelView(ModelView):
+    datamodel = SQLAInterface(PersonTodo)
+    list_title = 'List Person Todo'
+    show_title = 'Show Person Todo'
+    edit_title = 'Edit Person Todo'
+    add_title  = 'Add Person Todo'
+ 
+    list_columns = ['person', 'parent_todo', 'title', 'description', 'due_date', 'priority_level', 'status', 'created_at', 'updated_at', 'completed_at', 'assigned_to', 'geofence', 'geofence_trigger']
+    # show_columns = ['person', 'parent_todo', 'title', 'description', 'due_date', 'priority_level', 'status', 'created_at', 'updated_at', 'completed_at', 'assigned_to', 'geofence', 'geofence_trigger']
+    # edit_columns = ['person', 'parent_todo', 'title', 'description', 'due_date', 'priority_level', 'status', 'created_at', 'updated_at', 'completed_at', 'assigned_to', 'geofence', 'geofence_trigger']
+    add_columns = ['person', 'parent_todo', 'title', 'description', 'due_date', 'priority_level', 'status', 'created_at', 'updated_at', 'completed_at', 'assigned_to', 'geofence', 'geofence_trigger']
+    # search_columns = ['person', 'parent_todo', 'title', 'description', 'due_date', 'priority_level', 'status', 'created_at', 'updated_at', 'completed_at', 'assigned_to', 'geofence', 'geofence_trigger']
+    description_columns = {
+        'id' : 'None',
+        'person_id_fk' : 'Link to the person the task is associated with',
+        'parent_todo_id_fk' : 'None',
+        'title' : 'Title or brief description of the task',
+        'description' : 'Detailed description of the task',
+        'due_date' : 'Due date for the task',
+        'priority_level' : 'Priority level of the task',
+        'status' : 'Current status of the task',
+        'created_at' : 'Time the task was created',
+        'updated_at' : 'Time the task was last updated',
+        'completed_at' : 'Time the task was completed',
+        'assigned_to_id_fk' : 'Person responsible for the task. Can be the same as the associated person or another individual.',
+        'geofence_id_fk' : 'Link to the geofenced area',
+        'geofence_trigger' : 'The geofence event that triggers the reminder',
+    }
+    # list_exclude_columns = ['person', 'parent_todo', 'title', 'description', 'due_date', 'priority_level', 'status', 'created_at', 'updated_at', 'completed_at', 'assigned_to', 'geofence', 'geofence_trigger']
+    # show_exclude_columns = ['person', 'parent_todo', 'title', 'description', 'due_date', 'priority_level', 'status', 'created_at', 'updated_at', 'completed_at', 'assigned_to', 'geofence', 'geofence_trigger']
+    # edit_exclude_columns = ['person', 'parent_todo', 'title', 'description', 'due_date', 'priority_level', 'status', 'created_at', 'updated_at', 'completed_at', 'assigned_to', 'geofence', 'geofence_trigger']
+    # add_exclude_columns = ['person', 'parent_todo', 'title', 'description', 'due_date', 'priority_level', 'status', 'created_at', 'updated_at', 'completed_at', 'assigned_to', 'geofence', 'geofence_trigger']
+    # search_exclude_columns = ['person', 'parent_todo', 'title', 'description', 'due_date', 'priority_level', 'status', 'created_at', 'updated_at', 'completed_at', 'assigned_to', 'geofence', 'geofence_trigger']
+    # order_columns = ['person', 'parent_todo', 'title', 'description', 'due_date', 'priority_level', 'status', 'created_at', 'updated_at', 'completed_at', 'assigned_to', 'geofence', 'geofence_trigger']
+    # add_columns = ['person', 'parent_todo', 'title', 'description', 'due_date', 'priority_level', 'status', 'created_at', 'updated_at', 'completed_at', 'assigned_to', 'geofence', 'geofence_trigger']
+    # add_columns = ['person', 'parent_todo', 'title', 'description', 'due_date', 'priority_level', 'status', 'created_at', 'updated_at', 'completed_at', 'assigned_to', 'geofence', 'geofence_trigger']
+    # add_columns = ['person', 'parent_todo', 'title', 'description', 'due_date', 'priority_level', 'status', 'created_at', 'updated_at', 'completed_at', 'assigned_to', 'geofence', 'geofence_trigger']
+    
+    label_columns = {'person':'Person', 'parent_todo':'Parent Todo', 'title':'Title', 'description':'Description', 'due_date':'Due Date', 'priority_level':'Priority Level', 'status':'Status', 'created_at':'Created At', 'updated_at':'Updated At', 'completed_at':'Completed At', 'assigned_to':'Assigned To', 'geofence':'Geofence', 'geofence_trigger':'Geofence Trigger'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['person', 'parent_todo', 'title', 'description', 'due_date', 'priority_level', 'status', 'created_at', 'updated_at', 'completed_at', 'assigned_to', 'geofence', 'geofence_trigger']
+class SourceDocumentModelView(ModelView):
+    datamodel = SQLAInterface(SourceDocument)
+    list_title = 'List Source Document'
+    show_title = 'Show Source Document'
+    edit_title = 'Edit Source Document'
+    add_title  = 'Add Source Document'
+ 
+    list_columns = ['mime_type', 'language', 'doc_url', 'doc_text', 'doc_binary_url', 'doc_title', 'source_url', 'subject', 'author', 'keywords', 'comments', 'char_count', 'word_count', 'lines', 'paragraphs', 'gpt_token_count', 'grammar_checked', 'is_summary', 'is_spell_checked', 'is_rendered', 'is_image', 'length', 'width', 'doc_prompt', 'doc_gpt_ver', 'doc_maj_version', 'doc_min_version', 'doc_downloadable', 'doc_template', 'doc_render_url', 'file_size_bytes', 'producer_prog', 'is_immutable', 'page_size', 'page_count', 'hashx', 'is_audio', 'is_video', 'duration', 'audio_frame_rate', 'audio_channels', 'uploaded_by', 'accession_on']
+    # show_columns = ['mime_type', 'language', 'doc_url', 'doc_text', 'doc_binary_url', 'doc_title', 'source_url', 'subject', 'author', 'keywords', 'comments', 'char_count', 'word_count', 'lines', 'paragraphs', 'gpt_token_count', 'grammar_checked', 'is_summary', 'is_spell_checked', 'is_rendered', 'is_image', 'length', 'width', 'doc_prompt', 'doc_gpt_ver', 'doc_maj_version', 'doc_min_version', 'doc_downloadable', 'doc_template', 'doc_render_url', 'file_size_bytes', 'producer_prog', 'is_immutable', 'page_size', 'page_count', 'hashx', 'is_audio', 'is_video', 'duration', 'audio_frame_rate', 'audio_channels', 'uploaded_by', 'accession_on']
+    # edit_columns = ['mime_type', 'language', 'doc_url', 'doc_text', 'doc_binary_url', 'doc_title', 'source_url', 'subject', 'author', 'keywords', 'comments', 'char_count', 'word_count', 'lines', 'paragraphs', 'gpt_token_count', 'grammar_checked', 'is_summary', 'is_spell_checked', 'is_rendered', 'is_image', 'length', 'width', 'doc_prompt', 'doc_gpt_ver', 'doc_maj_version', 'doc_min_version', 'doc_downloadable', 'doc_template', 'doc_render_url', 'file_size_bytes', 'producer_prog', 'is_immutable', 'page_size', 'page_count', 'hashx', 'is_audio', 'is_video', 'duration', 'audio_frame_rate', 'audio_channels', 'uploaded_by', 'accession_on']
+    add_columns = ['mime_type', 'language', 'doc_url', 'doc_text', 'doc_binary_url', 'doc_title', 'source_url', 'subject', 'author', 'keywords', 'comments', 'char_count', 'word_count', 'lines', 'paragraphs', 'gpt_token_count', 'grammar_checked', 'is_summary', 'is_spell_checked', 'is_rendered', 'is_image', 'length', 'width', 'doc_prompt', 'doc_gpt_ver', 'doc_maj_version', 'doc_min_version', 'doc_downloadable', 'doc_template', 'doc_render_url', 'file_size_bytes', 'producer_prog', 'is_immutable', 'page_size', 'page_count', 'hashx', 'is_audio', 'is_video', 'duration', 'audio_frame_rate', 'audio_channels', 'uploaded_by', 'accession_on']
+    # search_columns = ['mime_type', 'language', 'doc_url', 'doc_text', 'doc_binary_url', 'doc_title', 'source_url', 'subject', 'author', 'keywords', 'comments', 'char_count', 'word_count', 'lines', 'paragraphs', 'gpt_token_count', 'grammar_checked', 'is_summary', 'is_spell_checked', 'is_rendered', 'is_image', 'length', 'width', 'doc_prompt', 'doc_gpt_ver', 'doc_maj_version', 'doc_min_version', 'doc_downloadable', 'doc_template', 'doc_render_url', 'file_size_bytes', 'producer_prog', 'is_immutable', 'page_size', 'page_count', 'hashx', 'is_audio', 'is_video', 'duration', 'audio_frame_rate', 'audio_channels', 'uploaded_by', 'accession_on']
+    description_columns = {
+        'id' : 'Unique identifier for each source document',
+        'mime_type_id_fk' : 'MIME type ID referencing the type of the document',
+        'language_id_fk' : 'ISO 639-3 code representing the language of the document',
+        'doc_url' : 'Document thumbnail or preview image',
+        'doc_text' : 'Extracted text content from the document',
+        'doc_binary_url' : 'Raw binary content of the document',
+        'doc_title' : 'Title or headline of the document',
+        'source_url' : 'Direct URL to access or download the original document',
+        'subject' : 'The primary topic or focus of the document',
+        'author' : 'Author or creator of the document',
+        'keywords' : 'List of keywords associated with the document',
+        'comments' : 'Additional comments or description about the document',
+        'char_count' : 'Total character count in the document',
+        'word_count' : 'Total word count in the document',
+        'lines' : 'Total line count in the document',
+        'paragraphs' : 'Total paragraph count in the document',
+        'gpt_token_count' : 'Token count as per GPT model parsing',
+        'grammar_checked' : 'Flag indicating if the document has been checked for grammar',
+        'is_summary' : 'Flag indicating if the document is a summary',
+        'is_spell_checked' : 'Flag indicating if the document has been checked for spelling errors',
+        'is_rendered' : 'Flag indicating if the document has been rendered (e.g., for view or print)',
+        'is_image' : 'Flag indicating if the document is primarily an image',
+        'length' : 'Length dimension of the document (for images, videos, or pages)',
+        'width' : 'Width dimension of the document (for images, videos, or pages)',
+        'doc_prompt' : 'A prompt or description that led to the creation of this document',
+        'doc_gpt_ver' : 'Version of the GPT model used, if applicable',
+        'doc_maj_version' : 'Major version number of the document',
+        'doc_min_version' : 'Minor version number of the document',
+        'doc_downloadable' : 'Flag indicating if the document can be downloaded',
+        'doc_template' : 'The template used for the document, if any',
+        'doc_render_url' : 'Rendered or finalized version of the document for display or print',
+        'file_size_bytes' : 'Size of the document file in bytes',
+        'producer_prog' : 'Software or tool used to produce the document',
+        'is_immutable' : 'Flag indicating if the document should not be modified',
+        'page_size' : 'Physical size of the pages (e.g., A4, Letter)',
+        'page_count' : 'Total number of pages in the document',
+        'hashx' : 'A hash value for ensuring the document’s integrity',
+        'is_audio' : 'Flag indicating if the document contains audio content',
+        'is_video' : 'Flag indicating if the document contains video content',
+        'duration' : 'Total playback duration for audio or video content in seconds',
+        'audio_frame_rate' : 'Frame rate for audio content, if applicable',
+        'audio_channels' : 'Number of audio channels (e.g., mono, stereo)',
+        'uploaded_by_id_fk' : 'Identifier for the person who uploaded the document',
+        'accession_on' : 'Timestamp indicating when the document was added to the system',
+    }
+    # list_exclude_columns = ['mime_type', 'language', 'doc_url', 'doc_text', 'doc_binary_url', 'doc_title', 'source_url', 'subject', 'author', 'keywords', 'comments', 'char_count', 'word_count', 'lines', 'paragraphs', 'gpt_token_count', 'grammar_checked', 'is_summary', 'is_spell_checked', 'is_rendered', 'is_image', 'length', 'width', 'doc_prompt', 'doc_gpt_ver', 'doc_maj_version', 'doc_min_version', 'doc_downloadable', 'doc_template', 'doc_render_url', 'file_size_bytes', 'producer_prog', 'is_immutable', 'page_size', 'page_count', 'hashx', 'is_audio', 'is_video', 'duration', 'audio_frame_rate', 'audio_channels', 'uploaded_by', 'accession_on']
+    # show_exclude_columns = ['mime_type', 'language', 'doc_url', 'doc_text', 'doc_binary_url', 'doc_title', 'source_url', 'subject', 'author', 'keywords', 'comments', 'char_count', 'word_count', 'lines', 'paragraphs', 'gpt_token_count', 'grammar_checked', 'is_summary', 'is_spell_checked', 'is_rendered', 'is_image', 'length', 'width', 'doc_prompt', 'doc_gpt_ver', 'doc_maj_version', 'doc_min_version', 'doc_downloadable', 'doc_template', 'doc_render_url', 'file_size_bytes', 'producer_prog', 'is_immutable', 'page_size', 'page_count', 'hashx', 'is_audio', 'is_video', 'duration', 'audio_frame_rate', 'audio_channels', 'uploaded_by', 'accession_on']
+    # edit_exclude_columns = ['mime_type', 'language', 'doc_url', 'doc_text', 'doc_binary_url', 'doc_title', 'source_url', 'subject', 'author', 'keywords', 'comments', 'char_count', 'word_count', 'lines', 'paragraphs', 'gpt_token_count', 'grammar_checked', 'is_summary', 'is_spell_checked', 'is_rendered', 'is_image', 'length', 'width', 'doc_prompt', 'doc_gpt_ver', 'doc_maj_version', 'doc_min_version', 'doc_downloadable', 'doc_template', 'doc_render_url', 'file_size_bytes', 'producer_prog', 'is_immutable', 'page_size', 'page_count', 'hashx', 'is_audio', 'is_video', 'duration', 'audio_frame_rate', 'audio_channels', 'uploaded_by', 'accession_on']
+    # add_exclude_columns = ['mime_type', 'language', 'doc_url', 'doc_text', 'doc_binary_url', 'doc_title', 'source_url', 'subject', 'author', 'keywords', 'comments', 'char_count', 'word_count', 'lines', 'paragraphs', 'gpt_token_count', 'grammar_checked', 'is_summary', 'is_spell_checked', 'is_rendered', 'is_image', 'length', 'width', 'doc_prompt', 'doc_gpt_ver', 'doc_maj_version', 'doc_min_version', 'doc_downloadable', 'doc_template', 'doc_render_url', 'file_size_bytes', 'producer_prog', 'is_immutable', 'page_size', 'page_count', 'hashx', 'is_audio', 'is_video', 'duration', 'audio_frame_rate', 'audio_channels', 'uploaded_by', 'accession_on']
+    # search_exclude_columns = ['mime_type', 'language', 'doc_url', 'doc_text', 'doc_binary_url', 'doc_title', 'source_url', 'subject', 'author', 'keywords', 'comments', 'char_count', 'word_count', 'lines', 'paragraphs', 'gpt_token_count', 'grammar_checked', 'is_summary', 'is_spell_checked', 'is_rendered', 'is_image', 'length', 'width', 'doc_prompt', 'doc_gpt_ver', 'doc_maj_version', 'doc_min_version', 'doc_downloadable', 'doc_template', 'doc_render_url', 'file_size_bytes', 'producer_prog', 'is_immutable', 'page_size', 'page_count', 'hashx', 'is_audio', 'is_video', 'duration', 'audio_frame_rate', 'audio_channels', 'uploaded_by', 'accession_on']
+    # order_columns = ['mime_type', 'language', 'doc_url', 'doc_text', 'doc_binary_url', 'doc_title', 'source_url', 'subject', 'author', 'keywords', 'comments', 'char_count', 'word_count', 'lines', 'paragraphs', 'gpt_token_count', 'grammar_checked', 'is_summary', 'is_spell_checked', 'is_rendered', 'is_image', 'length', 'width', 'doc_prompt', 'doc_gpt_ver', 'doc_maj_version', 'doc_min_version', 'doc_downloadable', 'doc_template', 'doc_render_url', 'file_size_bytes', 'producer_prog', 'is_immutable', 'page_size', 'page_count', 'hashx', 'is_audio', 'is_video', 'duration', 'audio_frame_rate', 'audio_channels', 'uploaded_by', 'accession_on']
+    # add_columns = ['mime_type', 'language', 'doc_url', 'doc_text', 'doc_binary_url', 'doc_title', 'source_url', 'subject', 'author', 'keywords', 'comments', 'char_count', 'word_count', 'lines', 'paragraphs', 'gpt_token_count', 'grammar_checked', 'is_summary', 'is_spell_checked', 'is_rendered', 'is_image', 'length', 'width', 'doc_prompt', 'doc_gpt_ver', 'doc_maj_version', 'doc_min_version', 'doc_downloadable', 'doc_template', 'doc_render_url', 'file_size_bytes', 'producer_prog', 'is_immutable', 'page_size', 'page_count', 'hashx', 'is_audio', 'is_video', 'duration', 'audio_frame_rate', 'audio_channels', 'uploaded_by', 'accession_on']
+    # add_columns = ['mime_type', 'language', 'doc_url', 'doc_text', 'doc_binary_url', 'doc_title', 'source_url', 'subject', 'author', 'keywords', 'comments', 'char_count', 'word_count', 'lines', 'paragraphs', 'gpt_token_count', 'grammar_checked', 'is_summary', 'is_spell_checked', 'is_rendered', 'is_image', 'length', 'width', 'doc_prompt', 'doc_gpt_ver', 'doc_maj_version', 'doc_min_version', 'doc_downloadable', 'doc_template', 'doc_render_url', 'file_size_bytes', 'producer_prog', 'is_immutable', 'page_size', 'page_count', 'hashx', 'is_audio', 'is_video', 'duration', 'audio_frame_rate', 'audio_channels', 'uploaded_by', 'accession_on']
+    # add_columns = ['mime_type', 'language', 'doc_url', 'doc_text', 'doc_binary_url', 'doc_title', 'source_url', 'subject', 'author', 'keywords', 'comments', 'char_count', 'word_count', 'lines', 'paragraphs', 'gpt_token_count', 'grammar_checked', 'is_summary', 'is_spell_checked', 'is_rendered', 'is_image', 'length', 'width', 'doc_prompt', 'doc_gpt_ver', 'doc_maj_version', 'doc_min_version', 'doc_downloadable', 'doc_template', 'doc_render_url', 'file_size_bytes', 'producer_prog', 'is_immutable', 'page_size', 'page_count', 'hashx', 'is_audio', 'is_video', 'duration', 'audio_frame_rate', 'audio_channels', 'uploaded_by', 'accession_on']
+    
+    label_columns = {'mime_type':'Mime Type', 'language':'Language', 'doc_url':'Doc Url', 'doc_text':'Doc Text', 'doc_binary_url':'Doc Binary Url', 'doc_title':'Doc Title', 'source_url':'Source Url', 'subject':'Subject', 'author':'Author', 'keywords':'Keywords', 'comments':'Comments', 'char_count':'Char Count', 'word_count':'Word Count', 'lines':'Lines', 'paragraphs':'Paragraphs', 'gpt_token_count':'Gpt Token Count', 'grammar_checked':'Grammar Checked', 'is_summary':'Is Summary', 'is_spell_checked':'Is Spell Checked', 'is_rendered':'Is Rendered', 'is_image':'Is Image', 'length':'Length', 'width':'Width', 'doc_prompt':'Doc Prompt', 'doc_gpt_ver':'Doc Gpt Ver', 'doc_maj_version':'Doc Maj Version', 'doc_min_version':'Doc Min Version', 'doc_downloadable':'Doc Downloadable', 'doc_template':'Doc Template', 'doc_render_url':'Doc Render Url', 'file_size_bytes':'File Size Bytes', 'producer_prog':'Producer Prog', 'is_immutable':'Is Immutable', 'page_size':'Page Size', 'page_count':'Page Count', 'hashx':'Hashx', 'is_audio':'Is Audio', 'is_video':'Is Video', 'duration':'Duration', 'audio_frame_rate':'Audio Frame Rate', 'audio_channels':'Audio Channels', 'uploaded_by':'Uploaded By', 'accession_on':'Accession On'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['mime_type', 'language', 'doc_url', 'doc_text', 'doc_binary_url', 'doc_title', 'source_url', 'subject', 'author', 'keywords', 'comments', 'char_count', 'word_count', 'lines', 'paragraphs', 'gpt_token_count', 'grammar_checked', 'is_summary', 'is_spell_checked', 'is_rendered', 'is_image', 'length', 'width', 'doc_prompt', 'doc_gpt_ver', 'doc_maj_version', 'doc_min_version', 'doc_downloadable', 'doc_template', 'doc_render_url', 'file_size_bytes', 'producer_prog', 'is_immutable', 'page_size', 'page_count', 'hashx', 'is_audio', 'is_video', 'duration', 'audio_frame_rate', 'audio_channels', 'uploaded_by', 'accession_on']
+class UserPointsModelView(ModelView):
+    datamodel = SQLAInterface(UserPoints)
+    list_title = 'List User Points'
+    show_title = 'Show User Points'
+    edit_title = 'Edit User Points'
+    add_title  = 'Add User Points'
+ 
+    list_columns = ['person', 'points_earned', 'reason', 'date_earned']
+    # show_columns = ['person', 'points_earned', 'reason', 'date_earned']
+    # edit_columns = ['person', 'points_earned', 'reason', 'date_earned']
+    add_columns = ['person', 'points_earned', 'reason', 'date_earned']
+    # search_columns = ['person', 'points_earned', 'reason', 'date_earned']
+    description_columns = {
+        'id' : 'None',
+        'person_id_fk' : 'None',
+        'points_earned' : 'None',
+        'reason' : 'Reason for earning these points, e.g., Completed Lesson 5',
+        'date_earned' : 'None',
+    }
+    # list_exclude_columns = ['person', 'points_earned', 'reason', 'date_earned']
+    # show_exclude_columns = ['person', 'points_earned', 'reason', 'date_earned']
+    # edit_exclude_columns = ['person', 'points_earned', 'reason', 'date_earned']
+    # add_exclude_columns = ['person', 'points_earned', 'reason', 'date_earned']
+    # search_exclude_columns = ['person', 'points_earned', 'reason', 'date_earned']
+    # order_columns = ['person', 'points_earned', 'reason', 'date_earned']
+    # add_columns = ['person', 'points_earned', 'reason', 'date_earned']
+    # add_columns = ['person', 'points_earned', 'reason', 'date_earned']
+    # add_columns = ['person', 'points_earned', 'reason', 'date_earned']
+    
+    label_columns = {'person':'Person', 'points_earned':'Points Earned', 'reason':'Reason', 'date_earned':'Date Earned'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['person', 'points_earned', 'reason', 'date_earned']
+class Admin1codesModelView(ModelView):
+    datamodel = SQLAInterface(Admin1codes)
+    list_title = 'List Admin1codes'
+    show_title = 'Show Admin1codes'
+    edit_title = 'Edit Admin1codes'
+    add_title  = 'Add Admin1codes'
+ 
+    list_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # show_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # edit_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    add_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # search_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    description_columns = {
+        'id' : 'None',
+        'code' : 'Primary identifier, typically a combination of country code and admin1 code e.g., US.AL for Alabama, United States',
+        'countrycode_id_fk' : '3-letter ISO 3166-1 alpha code of the country e.g., USA for the United States',
+        'admin1_code' : 'Unique identifier within a country for this first-level administrative division. E.g., AL for Alabama',
+        'name' : 'Local name of the administrative division in the official language',
+        'alt_name_english' : 'Alternative name or translation of the division in English',
+        'geo_id_fk' : 'Reference to geoname table; linking administrative division data with geographical name data',
+    }
+    # list_exclude_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # show_exclude_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # edit_exclude_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # add_exclude_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # search_exclude_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # order_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # add_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # add_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # add_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    
+    label_columns = {'code':'Code', 'countrycode':'Countrycode', 'admin1_code':'Admin1 Code', 'name':'Name', 'alt_name_english':'Alt Name English', 'geo':'Geo'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+class Admin2codesModelView(ModelView):
+    datamodel = SQLAInterface(Admin2codes)
+    list_title = 'List Admin2codes'
+    show_title = 'Show Admin2codes'
+    edit_title = 'Edit Admin2codes'
+    add_title  = 'Add Admin2codes'
+ 
+    list_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # show_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # edit_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    add_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # search_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    description_columns = {
+        'id' : 'None',
+        'code' : 'Primary identifier, typically a combination of country code, admin1 code, and an additional code representing the second-level administrative division e.g., US.AL.001',
+        'countrycode_id_fk' : '3-letter ISO 3166-1 alpha code of the country this division belongs to e.g., USA for the United States',
+        'admin1_code' : 'ref: > admin1codes.admin1_code,Reference to the first-level administrative division. E.g., US.AL for Alabama in the United States',
+        'name' : 'Local name of the second-level administrative division in the official language',
+        'alt_name_english' : 'Alternative name or translation of the division in English',
+        'geo_id_fk' : 'Reference to geoname table; linking second-level administrative division data with geographical name data',
+    }
+    # list_exclude_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # show_exclude_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # edit_exclude_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # add_exclude_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # search_exclude_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # order_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # add_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # add_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    # add_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+    
+    label_columns = {'code':'Code', 'countrycode':'Countrycode', 'admin1_code':'Admin1 Code', 'name':'Name', 'alt_name_english':'Alt Name English', 'geo':'Geo'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['code', 'countrycode', 'admin1_code', 'name', 'alt_name_english', 'geo']
+class AnimalBreedModelView(ModelView):
+    datamodel = SQLAInterface(AnimalBreed)
+    list_title = 'List Animal Breed'
+    show_title = 'Show Animal Breed'
+    edit_title = 'Edit Animal Breed'
+    add_title  = 'Add Animal Breed'
+ 
+    list_columns = ['name', 'species', 'origin_country', 'average_weight', 'color_pattern', 'temperament', 'lifespan', 'purpose', 'distinctive_features', 'breeding_cycle_days', 'gestation_period_days', 'lactation_period_days', 'average_milk_yield', 'average_offspring_count', 'weaning_age_days', 'resistance_traits', 'climate_adaptability', 'feed_efficiency', 'common_ailments', 'population_status', 'history', 'external_references', 'photo_url']
+    # show_columns = ['name', 'species', 'origin_country', 'average_weight', 'color_pattern', 'temperament', 'lifespan', 'purpose', 'distinctive_features', 'breeding_cycle_days', 'gestation_period_days', 'lactation_period_days', 'average_milk_yield', 'average_offspring_count', 'weaning_age_days', 'resistance_traits', 'climate_adaptability', 'feed_efficiency', 'common_ailments', 'population_status', 'history', 'external_references', 'photo_url']
+    # edit_columns = ['name', 'species', 'origin_country', 'average_weight', 'color_pattern', 'temperament', 'lifespan', 'purpose', 'distinctive_features', 'breeding_cycle_days', 'gestation_period_days', 'lactation_period_days', 'average_milk_yield', 'average_offspring_count', 'weaning_age_days', 'resistance_traits', 'climate_adaptability', 'feed_efficiency', 'common_ailments', 'population_status', 'history', 'external_references', 'photo_url']
+    add_columns = ['name', 'species', 'origin_country', 'average_weight', 'color_pattern', 'temperament', 'lifespan', 'purpose', 'distinctive_features', 'breeding_cycle_days', 'gestation_period_days', 'lactation_period_days', 'average_milk_yield', 'average_offspring_count', 'weaning_age_days', 'resistance_traits', 'climate_adaptability', 'feed_efficiency', 'common_ailments', 'population_status', 'history', 'external_references', 'photo_url']
+    # search_columns = ['name', 'species', 'origin_country', 'average_weight', 'color_pattern', 'temperament', 'lifespan', 'purpose', 'distinctive_features', 'breeding_cycle_days', 'gestation_period_days', 'lactation_period_days', 'average_milk_yield', 'average_offspring_count', 'weaning_age_days', 'resistance_traits', 'climate_adaptability', 'feed_efficiency', 'common_ailments', 'population_status', 'history', 'external_references', 'photo_url']
+    description_columns = {
+        'id' : 'Unique identifier for each animal breed',
+        'name' : 'Name of the animal breed',
+        'species' : 'Species to which the breed belongs, e.g., cattle, sheep, goat, etc.',
+        'origin_country_id_fk' : 'Country or region of origin for the breed',
+        'average_weight' : 'Average mature weight for the breed, usually in kilograms',
+        'color_pattern' : 'Dominant color or pattern of the breed',
+        'temperament' : 'General temperament of the breed, e.g., docile, aggressive, etc.',
+        'lifespan' : 'Average lifespan of the breed in years',
+        'purpose' : 'Primary purpose for which the breed is raised, e.g., meat, milk, wool, work, etc.',
+        'distinctive_features' : 'Any unique or distinctive features of the breed',
+        'breeding_cycle_days' : 'Duration of the breeding cycle in days, if applicable',
+        'gestation_period_days' : 'Duration of the gestation period in days',
+        'lactation_period_days' : 'Average duration of lactation period in days, if applicable',
+        'average_milk_yield' : 'Average daily milk yield in liters, if applicable',
+        'average_offspring_count' : 'Average number of offspring produced per breeding cycle',
+        'weaning_age_days' : 'Age in days at which offspring are typically weaned',
+        'resistance_traits' : 'Any known disease resistance or hardiness traits specific to the breed',
+        'climate_adaptability' : 'Types of climates the breed is best suited for, e.g., tropical, temperate, etc.',
+        'feed_efficiency' : 'Average feed conversion ratio or efficiency',
+        'common_ailments' : 'Common diseases or ailments that affect the breed',
+        'population_status' : 'Status of the breed population, e.g., endangered, stable, etc.',
+        'history' : 'Brief history or background of the breed',
+        'external_references' : 'Links or references to external sources or further readings about the breed',
+        'photo_url' : 'Link to a representative photo or image of the breed',
+    }
+    # list_exclude_columns = ['name', 'species', 'origin_country', 'average_weight', 'color_pattern', 'temperament', 'lifespan', 'purpose', 'distinctive_features', 'breeding_cycle_days', 'gestation_period_days', 'lactation_period_days', 'average_milk_yield', 'average_offspring_count', 'weaning_age_days', 'resistance_traits', 'climate_adaptability', 'feed_efficiency', 'common_ailments', 'population_status', 'history', 'external_references', 'photo_url']
+    # show_exclude_columns = ['name', 'species', 'origin_country', 'average_weight', 'color_pattern', 'temperament', 'lifespan', 'purpose', 'distinctive_features', 'breeding_cycle_days', 'gestation_period_days', 'lactation_period_days', 'average_milk_yield', 'average_offspring_count', 'weaning_age_days', 'resistance_traits', 'climate_adaptability', 'feed_efficiency', 'common_ailments', 'population_status', 'history', 'external_references', 'photo_url']
+    # edit_exclude_columns = ['name', 'species', 'origin_country', 'average_weight', 'color_pattern', 'temperament', 'lifespan', 'purpose', 'distinctive_features', 'breeding_cycle_days', 'gestation_period_days', 'lactation_period_days', 'average_milk_yield', 'average_offspring_count', 'weaning_age_days', 'resistance_traits', 'climate_adaptability', 'feed_efficiency', 'common_ailments', 'population_status', 'history', 'external_references', 'photo_url']
+    # add_exclude_columns = ['name', 'species', 'origin_country', 'average_weight', 'color_pattern', 'temperament', 'lifespan', 'purpose', 'distinctive_features', 'breeding_cycle_days', 'gestation_period_days', 'lactation_period_days', 'average_milk_yield', 'average_offspring_count', 'weaning_age_days', 'resistance_traits', 'climate_adaptability', 'feed_efficiency', 'common_ailments', 'population_status', 'history', 'external_references', 'photo_url']
+    # search_exclude_columns = ['name', 'species', 'origin_country', 'average_weight', 'color_pattern', 'temperament', 'lifespan', 'purpose', 'distinctive_features', 'breeding_cycle_days', 'gestation_period_days', 'lactation_period_days', 'average_milk_yield', 'average_offspring_count', 'weaning_age_days', 'resistance_traits', 'climate_adaptability', 'feed_efficiency', 'common_ailments', 'population_status', 'history', 'external_references', 'photo_url']
+    # order_columns = ['name', 'species', 'origin_country', 'average_weight', 'color_pattern', 'temperament', 'lifespan', 'purpose', 'distinctive_features', 'breeding_cycle_days', 'gestation_period_days', 'lactation_period_days', 'average_milk_yield', 'average_offspring_count', 'weaning_age_days', 'resistance_traits', 'climate_adaptability', 'feed_efficiency', 'common_ailments', 'population_status', 'history', 'external_references', 'photo_url']
+    # add_columns = ['name', 'species', 'origin_country', 'average_weight', 'color_pattern', 'temperament', 'lifespan', 'purpose', 'distinctive_features', 'breeding_cycle_days', 'gestation_period_days', 'lactation_period_days', 'average_milk_yield', 'average_offspring_count', 'weaning_age_days', 'resistance_traits', 'climate_adaptability', 'feed_efficiency', 'common_ailments', 'population_status', 'history', 'external_references', 'photo_url']
+    # add_columns = ['name', 'species', 'origin_country', 'average_weight', 'color_pattern', 'temperament', 'lifespan', 'purpose', 'distinctive_features', 'breeding_cycle_days', 'gestation_period_days', 'lactation_period_days', 'average_milk_yield', 'average_offspring_count', 'weaning_age_days', 'resistance_traits', 'climate_adaptability', 'feed_efficiency', 'common_ailments', 'population_status', 'history', 'external_references', 'photo_url']
+    # add_columns = ['name', 'species', 'origin_country', 'average_weight', 'color_pattern', 'temperament', 'lifespan', 'purpose', 'distinctive_features', 'breeding_cycle_days', 'gestation_period_days', 'lactation_period_days', 'average_milk_yield', 'average_offspring_count', 'weaning_age_days', 'resistance_traits', 'climate_adaptability', 'feed_efficiency', 'common_ailments', 'population_status', 'history', 'external_references', 'photo_url']
+    
+    label_columns = {'name':'Name', 'species':'Species', 'origin_country':'Origin Country', 'average_weight':'Average Weight', 'color_pattern':'Color Pattern', 'temperament':'Temperament', 'lifespan':'Lifespan', 'purpose':'Purpose', 'distinctive_features':'Distinctive Features', 'breeding_cycle_days':'Breeding Cycle Days', 'gestation_period_days':'Gestation Period Days', 'lactation_period_days':'Lactation Period Days', 'average_milk_yield':'Average Milk Yield', 'average_offspring_count':'Average Offspring Count', 'weaning_age_days':'Weaning Age Days', 'resistance_traits':'Resistance Traits', 'climate_adaptability':'Climate Adaptability', 'feed_efficiency':'Feed Efficiency', 'common_ailments':'Common Ailments', 'population_status':'Population Status', 'history':'History', 'external_references':'External References', 'photo_url':'Photo Url'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['name', 'species', 'origin_country', 'average_weight', 'color_pattern', 'temperament', 'lifespan', 'purpose', 'distinctive_features', 'breeding_cycle_days', 'gestation_period_days', 'lactation_period_days', 'average_milk_yield', 'average_offspring_count', 'weaning_age_days', 'resistance_traits', 'climate_adaptability', 'feed_efficiency', 'common_ailments', 'population_status', 'history', 'external_references', 'photo_url']
+class ContentModelView(ModelView):
+    datamodel = SQLAInterface(Content)
+    list_title = 'List Content'
+    show_title = 'Show Content'
+    edit_title = 'Edit Content'
+    add_title  = 'Add Content'
+ 
+    list_columns = ['title', 'mime_type', 'language', 'source_doc', 'doc_text', 'url', 'description', 'difficulty_level', 'pre_requisite_content', 'tags', 'duration', 'length', 'uploaded_by', 'created_at', 'updated_at']
+    # show_columns = ['title', 'mime_type', 'language', 'source_doc', 'doc_text', 'url', 'description', 'difficulty_level', 'pre_requisite_content', 'tags', 'duration', 'length', 'uploaded_by', 'created_at', 'updated_at']
+    # edit_columns = ['title', 'mime_type', 'language', 'source_doc', 'doc_text', 'url', 'description', 'difficulty_level', 'pre_requisite_content', 'tags', 'duration', 'length', 'uploaded_by', 'created_at', 'updated_at']
+    add_columns = ['title', 'mime_type', 'language', 'source_doc', 'doc_text', 'url', 'description', 'difficulty_level', 'pre_requisite_content', 'tags', 'duration', 'length', 'uploaded_by', 'created_at', 'updated_at']
+    # search_columns = ['title', 'mime_type', 'language', 'source_doc', 'doc_text', 'url', 'description', 'difficulty_level', 'pre_requisite_content', 'tags', 'duration', 'length', 'uploaded_by', 'created_at', 'updated_at']
+    description_columns = {
+        'id' : 'None',
+        'title' : 'None',
+        'mime_type_id_fk' : 'None',
+        'language_id_fk' : 'None',
+        'source_doc_id_fk' : 'None',
+        'doc_text' : 'None',
+        'url' : 'Link to the actual content (could be a URL, S3 or file path)',
+        'description' : 'Brief about the content',
+        'difficulty_level' : 'None',
+        'pre_requisite_content_id_fk' : 'None',
+        'tags' : 'None',
+        'duration' : 'Duration in seconds for video/audio content',
+        'length' : 'Byte length of nthe media',
+        'uploaded_by_id_fk' : 'User who uploaded the content',
+        'created_at' : 'None',
+        'updated_at' : 'None',
+    }
+    # list_exclude_columns = ['title', 'mime_type', 'language', 'source_doc', 'doc_text', 'url', 'description', 'difficulty_level', 'pre_requisite_content', 'tags', 'duration', 'length', 'uploaded_by', 'created_at', 'updated_at']
+    # show_exclude_columns = ['title', 'mime_type', 'language', 'source_doc', 'doc_text', 'url', 'description', 'difficulty_level', 'pre_requisite_content', 'tags', 'duration', 'length', 'uploaded_by', 'created_at', 'updated_at']
+    # edit_exclude_columns = ['title', 'mime_type', 'language', 'source_doc', 'doc_text', 'url', 'description', 'difficulty_level', 'pre_requisite_content', 'tags', 'duration', 'length', 'uploaded_by', 'created_at', 'updated_at']
+    # add_exclude_columns = ['title', 'mime_type', 'language', 'source_doc', 'doc_text', 'url', 'description', 'difficulty_level', 'pre_requisite_content', 'tags', 'duration', 'length', 'uploaded_by', 'created_at', 'updated_at']
+    # search_exclude_columns = ['title', 'mime_type', 'language', 'source_doc', 'doc_text', 'url', 'description', 'difficulty_level', 'pre_requisite_content', 'tags', 'duration', 'length', 'uploaded_by', 'created_at', 'updated_at']
+    # order_columns = ['title', 'mime_type', 'language', 'source_doc', 'doc_text', 'url', 'description', 'difficulty_level', 'pre_requisite_content', 'tags', 'duration', 'length', 'uploaded_by', 'created_at', 'updated_at']
+    # add_columns = ['title', 'mime_type', 'language', 'source_doc', 'doc_text', 'url', 'description', 'difficulty_level', 'pre_requisite_content', 'tags', 'duration', 'length', 'uploaded_by', 'created_at', 'updated_at']
+    # add_columns = ['title', 'mime_type', 'language', 'source_doc', 'doc_text', 'url', 'description', 'difficulty_level', 'pre_requisite_content', 'tags', 'duration', 'length', 'uploaded_by', 'created_at', 'updated_at']
+    # add_columns = ['title', 'mime_type', 'language', 'source_doc', 'doc_text', 'url', 'description', 'difficulty_level', 'pre_requisite_content', 'tags', 'duration', 'length', 'uploaded_by', 'created_at', 'updated_at']
+    
+    label_columns = {'title':'Title', 'mime_type':'Mime Type', 'language':'Language', 'source_doc':'Source Doc', 'doc_text':'Doc Text', 'url':'Url', 'description':'Description', 'difficulty_level':'Difficulty Level', 'pre_requisite_content':'Pre Requisite Content', 'tags':'Tags', 'duration':'Duration', 'length':'Length', 'uploaded_by':'Uploaded By', 'created_at':'Created At', 'updated_at':'Updated At'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['title', 'mime_type', 'language', 'source_doc', 'doc_text', 'url', 'description', 'difficulty_level', 'pre_requisite_content', 'tags', 'duration', 'length', 'uploaded_by', 'created_at', 'updated_at']
+class IsicGroupModelView(ModelView):
+    datamodel = SQLAInterface(IsicGroup)
+    list_title = 'List Isic Group'
+    show_title = 'Show Isic Group'
+    edit_title = 'Edit Isic Group'
+    add_title  = 'Add Isic Group'
+ 
+    list_columns = ['group_id', 'division', 'group_name']
+    # show_columns = ['group_id', 'division', 'group_name']
+    # edit_columns = ['group_id', 'division', 'group_name']
+    add_columns = ['group_id', 'division', 'group_name']
+    # search_columns = ['group_id', 'division', 'group_name']
+    description_columns = {
+        'id' : 'None',
+        'group_id' : 'Unique identifier for each ISIC group.',
+        'division_id_fk' : 'Reference to the parent ISIC division.',
+        'group_name' : 'Name or description of the ISIC group.',
+    }
+    # list_exclude_columns = ['group_id', 'division', 'group_name']
+    # show_exclude_columns = ['group_id', 'division', 'group_name']
+    # edit_exclude_columns = ['group_id', 'division', 'group_name']
+    # add_exclude_columns = ['group_id', 'division', 'group_name']
+    # search_exclude_columns = ['group_id', 'division', 'group_name']
+    # order_columns = ['group_id', 'division', 'group_name']
+    # add_columns = ['group_id', 'division', 'group_name']
+    # add_columns = ['group_id', 'division', 'group_name']
+    # add_columns = ['group_id', 'division', 'group_name']
+    
+    label_columns = {'group_id':'Group Id', 'division':'Division', 'group_name':'Group Name'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['group_id', 'division', 'group_name']
+class LearningPathContentModelView(ModelView):
+    datamodel = SQLAInterface(LearningPathContent)
+    list_title = 'List Learning Path Content'
+    show_title = 'Show Learning Path Content'
+    edit_title = 'Edit Learning Path Content'
+    add_title  = 'Add Learning Path Content'
+ 
+    list_columns = ['learning_path', 'module', 'order_in_path', 'recommended_completion_date', 'is_dynamic', 'content_recommendations', 'reason_for_recommendation']
+    # show_columns = ['learning_path', 'module', 'order_in_path', 'recommended_completion_date', 'is_dynamic', 'content_recommendations', 'reason_for_recommendation']
+    # edit_columns = ['learning_path', 'module', 'order_in_path', 'recommended_completion_date', 'is_dynamic', 'content_recommendations', 'reason_for_recommendation']
+    add_columns = ['learning_path', 'module', 'order_in_path', 'recommended_completion_date', 'is_dynamic', 'content_recommendations', 'reason_for_recommendation']
+    # search_columns = ['learning_path', 'module', 'order_in_path', 'recommended_completion_date', 'is_dynamic', 'content_recommendations', 'reason_for_recommendation']
+    description_columns = {
+        'id' : 'None',
+        'learning_path_id_fk' : 'None',
+        'module_id_fk' : 'None',
+        'order_in_path' : 'None',
+        'recommended_completion_date' : 'Date by which the module is recommended to be completed',
+        'is_dynamic' : 'None',
+        'content_recommendations' : 'None',
+        'reason_for_recommendation' : 'None',
+    }
+    # list_exclude_columns = ['learning_path', 'module', 'order_in_path', 'recommended_completion_date', 'is_dynamic', 'content_recommendations', 'reason_for_recommendation']
+    # show_exclude_columns = ['learning_path', 'module', 'order_in_path', 'recommended_completion_date', 'is_dynamic', 'content_recommendations', 'reason_for_recommendation']
+    # edit_exclude_columns = ['learning_path', 'module', 'order_in_path', 'recommended_completion_date', 'is_dynamic', 'content_recommendations', 'reason_for_recommendation']
+    # add_exclude_columns = ['learning_path', 'module', 'order_in_path', 'recommended_completion_date', 'is_dynamic', 'content_recommendations', 'reason_for_recommendation']
+    # search_exclude_columns = ['learning_path', 'module', 'order_in_path', 'recommended_completion_date', 'is_dynamic', 'content_recommendations', 'reason_for_recommendation']
+    # order_columns = ['learning_path', 'module', 'order_in_path', 'recommended_completion_date', 'is_dynamic', 'content_recommendations', 'reason_for_recommendation']
+    # add_columns = ['learning_path', 'module', 'order_in_path', 'recommended_completion_date', 'is_dynamic', 'content_recommendations', 'reason_for_recommendation']
+    # add_columns = ['learning_path', 'module', 'order_in_path', 'recommended_completion_date', 'is_dynamic', 'content_recommendations', 'reason_for_recommendation']
+    # add_columns = ['learning_path', 'module', 'order_in_path', 'recommended_completion_date', 'is_dynamic', 'content_recommendations', 'reason_for_recommendation']
+    
+    label_columns = {'learning_path':'Learning Path', 'module':'Module', 'order_in_path':'Order In Path', 'recommended_completion_date':'Recommended Completion Date', 'is_dynamic':'Is Dynamic', 'content_recommendations':'Content Recommendations', 'reason_for_recommendation':'Reason For Recommendation'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['learning_path', 'module', 'order_in_path', 'recommended_completion_date', 'is_dynamic', 'content_recommendations', 'reason_for_recommendation']
+class LessonEngagementModelView(ModelView):
+    datamodel = SQLAInterface(LessonEngagement)
+    list_title = 'List Lesson Engagement'
+    show_title = 'Show Lesson Engagement'
+    edit_title = 'Edit Lesson Engagement'
+    add_title  = 'Add Lesson Engagement'
+ 
+    list_columns = ['person', 'lesson', 'engagement_type', 'engagement_value', 'engagement_date', 'delivered_at', 'start_at', 'end_at', 'time_on_lesson', 'open_delay', 'completed', 'hints_used', 'comment_text', 'comment_date', 'shared_to_platform', 'difficulty_feedback']
+    # show_columns = ['person', 'lesson', 'engagement_type', 'engagement_value', 'engagement_date', 'delivered_at', 'start_at', 'end_at', 'time_on_lesson', 'open_delay', 'completed', 'hints_used', 'comment_text', 'comment_date', 'shared_to_platform', 'difficulty_feedback']
+    # edit_columns = ['person', 'lesson', 'engagement_type', 'engagement_value', 'engagement_date', 'delivered_at', 'start_at', 'end_at', 'time_on_lesson', 'open_delay', 'completed', 'hints_used', 'comment_text', 'comment_date', 'shared_to_platform', 'difficulty_feedback']
+    add_columns = ['person', 'lesson', 'engagement_type', 'engagement_value', 'engagement_date', 'delivered_at', 'start_at', 'end_at', 'time_on_lesson', 'open_delay', 'completed', 'hints_used', 'comment_text', 'comment_date', 'shared_to_platform', 'difficulty_feedback']
+    # search_columns = ['person', 'lesson', 'engagement_type', 'engagement_value', 'engagement_date', 'delivered_at', 'start_at', 'end_at', 'time_on_lesson', 'open_delay', 'completed', 'hints_used', 'comment_text', 'comment_date', 'shared_to_platform', 'difficulty_feedback']
+    description_columns = {
+        'id' : 'Unique identifier for each comment',
+        'person_id_fk' : 'Identifier of the user making the comment',
+        'lesson_id_fk' : 'Identifier of the content being commented on',
+        'engagement_type' : 'None',
+        'engagement_value' : 'Numerical value representing the engagement level. Useful for scoring mechanisms.',
+        'engagement_date' : 'Timestamp when the engagement occurred',
+        'delivered_at' : 'Timestamp when the user started viewing the content',
+        'start_at' : 'Timestamp when the user started viewing the content',
+        'end_at' : 'Timestamp when the user stopped viewing the content',
+        'time_on_lesson' : 'Duration in seconds calculated as the difference between start_at and end_at',
+        'open_delay' : 'How long between delivering the message and opening the message',
+        'completed' : 'None',
+        'hints_used' : 'None',
+        'comment_text' : 'Text of the comment',
+        'comment_date' : 'Timestamp when the comment was made',
+        'shared_to_platform' : 'Platform where the content was shared: email, social media, etc.',
+        'difficulty_feedback' : 'None',
+    }
+    # list_exclude_columns = ['person', 'lesson', 'engagement_type', 'engagement_value', 'engagement_date', 'delivered_at', 'start_at', 'end_at', 'time_on_lesson', 'open_delay', 'completed', 'hints_used', 'comment_text', 'comment_date', 'shared_to_platform', 'difficulty_feedback']
+    # show_exclude_columns = ['person', 'lesson', 'engagement_type', 'engagement_value', 'engagement_date', 'delivered_at', 'start_at', 'end_at', 'time_on_lesson', 'open_delay', 'completed', 'hints_used', 'comment_text', 'comment_date', 'shared_to_platform', 'difficulty_feedback']
+    # edit_exclude_columns = ['person', 'lesson', 'engagement_type', 'engagement_value', 'engagement_date', 'delivered_at', 'start_at', 'end_at', 'time_on_lesson', 'open_delay', 'completed', 'hints_used', 'comment_text', 'comment_date', 'shared_to_platform', 'difficulty_feedback']
+    # add_exclude_columns = ['person', 'lesson', 'engagement_type', 'engagement_value', 'engagement_date', 'delivered_at', 'start_at', 'end_at', 'time_on_lesson', 'open_delay', 'completed', 'hints_used', 'comment_text', 'comment_date', 'shared_to_platform', 'difficulty_feedback']
+    # search_exclude_columns = ['person', 'lesson', 'engagement_type', 'engagement_value', 'engagement_date', 'delivered_at', 'start_at', 'end_at', 'time_on_lesson', 'open_delay', 'completed', 'hints_used', 'comment_text', 'comment_date', 'shared_to_platform', 'difficulty_feedback']
+    # order_columns = ['person', 'lesson', 'engagement_type', 'engagement_value', 'engagement_date', 'delivered_at', 'start_at', 'end_at', 'time_on_lesson', 'open_delay', 'completed', 'hints_used', 'comment_text', 'comment_date', 'shared_to_platform', 'difficulty_feedback']
+    # add_columns = ['person', 'lesson', 'engagement_type', 'engagement_value', 'engagement_date', 'delivered_at', 'start_at', 'end_at', 'time_on_lesson', 'open_delay', 'completed', 'hints_used', 'comment_text', 'comment_date', 'shared_to_platform', 'difficulty_feedback']
+    # add_columns = ['person', 'lesson', 'engagement_type', 'engagement_value', 'engagement_date', 'delivered_at', 'start_at', 'end_at', 'time_on_lesson', 'open_delay', 'completed', 'hints_used', 'comment_text', 'comment_date', 'shared_to_platform', 'difficulty_feedback']
+    # add_columns = ['person', 'lesson', 'engagement_type', 'engagement_value', 'engagement_date', 'delivered_at', 'start_at', 'end_at', 'time_on_lesson', 'open_delay', 'completed', 'hints_used', 'comment_text', 'comment_date', 'shared_to_platform', 'difficulty_feedback']
+    
+    label_columns = {'person':'Person', 'lesson':'Lesson', 'engagement_type':'Engagement Type', 'engagement_value':'Engagement Value', 'engagement_date':'Engagement Date', 'delivered_at':'Delivered At', 'start_at':'Start At', 'end_at':'End At', 'time_on_lesson':'Time On Lesson', 'open_delay':'Open Delay', 'completed':'Completed', 'hints_used':'Hints Used', 'comment_text':'Comment Text', 'comment_date':'Comment Date', 'shared_to_platform':'Shared To Platform', 'difficulty_feedback':'Difficulty Feedback'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['person', 'lesson', 'engagement_type', 'engagement_value', 'engagement_date', 'delivered_at', 'start_at', 'end_at', 'time_on_lesson', 'open_delay', 'completed', 'hints_used', 'comment_text', 'comment_date', 'shared_to_platform', 'difficulty_feedback']
+class PersonAdditionalDataModelView(ModelView):
+    datamodel = SQLAInterface(PersonAdditionalData)
+    list_title = 'List Person Additional Data'
+    show_title = 'Show Person Additional Data'
+    edit_title = 'Edit Person Additional Data'
+    add_title  = 'Add Person Additional Data'
+ 
+    list_columns = ['person', 'Gender', 'religion', 'ethnicity', 'consumer_credit_score', 'is_home_owner', 'person_height', 'person_weight', 'person_height_unit_of_measure', 'person_weight_unit_of_measure', 'highest_education_level', 'person_life_stage', 'mothers_maiden_name', 'Marital_Status_cd', 'Citizenship', 'Poverty_Status', 'From_whom', 'Amount', 'Interest_rate_pa', 'Number_of_people_depending_on_overal_income', 'YesNo_cd_Bank_account', 'YesNo_cd_Business_plan_provided', 'YesNo_cd_Access_to_internet', 'Introduced_by', 'Known_to_introducer_since', 'Last_visited_by', 'Last_visited_on']
+    # show_columns = ['person', 'Gender', 'religion', 'ethnicity', 'consumer_credit_score', 'is_home_owner', 'person_height', 'person_weight', 'person_height_unit_of_measure', 'person_weight_unit_of_measure', 'highest_education_level', 'person_life_stage', 'mothers_maiden_name', 'Marital_Status_cd', 'Citizenship', 'Poverty_Status', 'From_whom', 'Amount', 'Interest_rate_pa', 'Number_of_people_depending_on_overal_income', 'YesNo_cd_Bank_account', 'YesNo_cd_Business_plan_provided', 'YesNo_cd_Access_to_internet', 'Introduced_by', 'Known_to_introducer_since', 'Last_visited_by', 'Last_visited_on']
+    # edit_columns = ['person', 'Gender', 'religion', 'ethnicity', 'consumer_credit_score', 'is_home_owner', 'person_height', 'person_weight', 'person_height_unit_of_measure', 'person_weight_unit_of_measure', 'highest_education_level', 'person_life_stage', 'mothers_maiden_name', 'Marital_Status_cd', 'Citizenship', 'Poverty_Status', 'From_whom', 'Amount', 'Interest_rate_pa', 'Number_of_people_depending_on_overal_income', 'YesNo_cd_Bank_account', 'YesNo_cd_Business_plan_provided', 'YesNo_cd_Access_to_internet', 'Introduced_by', 'Known_to_introducer_since', 'Last_visited_by', 'Last_visited_on']
+    add_columns = ['person', 'Gender', 'religion', 'ethnicity', 'consumer_credit_score', 'is_home_owner', 'person_height', 'person_weight', 'person_height_unit_of_measure', 'person_weight_unit_of_measure', 'highest_education_level', 'person_life_stage', 'mothers_maiden_name', 'Marital_Status_cd', 'Citizenship', 'Poverty_Status', 'From_whom', 'Amount', 'Interest_rate_pa', 'Number_of_people_depending_on_overal_income', 'YesNo_cd_Bank_account', 'YesNo_cd_Business_plan_provided', 'YesNo_cd_Access_to_internet', 'Introduced_by', 'Known_to_introducer_since', 'Last_visited_by', 'Last_visited_on']
+    # search_columns = ['person', 'Gender', 'religion', 'ethnicity', 'consumer_credit_score', 'is_home_owner', 'person_height', 'person_weight', 'person_height_unit_of_measure', 'person_weight_unit_of_measure', 'highest_education_level', 'person_life_stage', 'mothers_maiden_name', 'Marital_Status_cd', 'Citizenship', 'Poverty_Status', 'From_whom', 'Amount', 'Interest_rate_pa', 'Number_of_people_depending_on_overal_income', 'YesNo_cd_Bank_account', 'YesNo_cd_Business_plan_provided', 'YesNo_cd_Access_to_internet', 'Introduced_by', 'Known_to_introducer_since', 'Last_visited_by', 'Last_visited_on']
+    description_columns = {
+        'person_id_fk' : 'None',
+        'Gender' : 'None',
+        'religion' : 'None',
+        'ethnicity' : 'None',
+        'consumer_credit_score' : 'None',
+        'is_home_owner' : 'None',
+        'person_height' : 'None',
+        'person_weight' : 'None',
+        'person_height_unit_of_measure' : 'None',
+        'person_weight_unit_of_measure' : 'None',
+        'highest_education_level' : 'None',
+        'person_life_stage' : 'None',
+        'mothers_maiden_name' : 'None',
+        'Marital_Status_cd' : 'None',
+        'Citizenship_id_fk' : 'None',
+        'Poverty_Status' : 'None',
+        'From_whom' : 'None',
+        'Amount' : 'None',
+        'Interest_rate_pa' : 'None',
+        'Number_of_people_depending_on_overal_income' : 'None',
+        'YesNo_cd_Bank_account' : 'None',
+        'YesNo_cd_Business_plan_provided' : 'None',
+        'YesNo_cd_Access_to_internet' : 'None',
+        'Introduced_by' : 'None',
+        'Known_to_introducer_since' : 'None',
+        'Last_visited_by' : 'None',
+        'Last_visited_on' : 'None',
+    }
+    # list_exclude_columns = ['person', 'Gender', 'religion', 'ethnicity', 'consumer_credit_score', 'is_home_owner', 'person_height', 'person_weight', 'person_height_unit_of_measure', 'person_weight_unit_of_measure', 'highest_education_level', 'person_life_stage', 'mothers_maiden_name', 'Marital_Status_cd', 'Citizenship', 'Poverty_Status', 'From_whom', 'Amount', 'Interest_rate_pa', 'Number_of_people_depending_on_overal_income', 'YesNo_cd_Bank_account', 'YesNo_cd_Business_plan_provided', 'YesNo_cd_Access_to_internet', 'Introduced_by', 'Known_to_introducer_since', 'Last_visited_by', 'Last_visited_on']
+    # show_exclude_columns = ['person', 'Gender', 'religion', 'ethnicity', 'consumer_credit_score', 'is_home_owner', 'person_height', 'person_weight', 'person_height_unit_of_measure', 'person_weight_unit_of_measure', 'highest_education_level', 'person_life_stage', 'mothers_maiden_name', 'Marital_Status_cd', 'Citizenship', 'Poverty_Status', 'From_whom', 'Amount', 'Interest_rate_pa', 'Number_of_people_depending_on_overal_income', 'YesNo_cd_Bank_account', 'YesNo_cd_Business_plan_provided', 'YesNo_cd_Access_to_internet', 'Introduced_by', 'Known_to_introducer_since', 'Last_visited_by', 'Last_visited_on']
+    # edit_exclude_columns = ['person', 'Gender', 'religion', 'ethnicity', 'consumer_credit_score', 'is_home_owner', 'person_height', 'person_weight', 'person_height_unit_of_measure', 'person_weight_unit_of_measure', 'highest_education_level', 'person_life_stage', 'mothers_maiden_name', 'Marital_Status_cd', 'Citizenship', 'Poverty_Status', 'From_whom', 'Amount', 'Interest_rate_pa', 'Number_of_people_depending_on_overal_income', 'YesNo_cd_Bank_account', 'YesNo_cd_Business_plan_provided', 'YesNo_cd_Access_to_internet', 'Introduced_by', 'Known_to_introducer_since', 'Last_visited_by', 'Last_visited_on']
+    # add_exclude_columns = ['person', 'Gender', 'religion', 'ethnicity', 'consumer_credit_score', 'is_home_owner', 'person_height', 'person_weight', 'person_height_unit_of_measure', 'person_weight_unit_of_measure', 'highest_education_level', 'person_life_stage', 'mothers_maiden_name', 'Marital_Status_cd', 'Citizenship', 'Poverty_Status', 'From_whom', 'Amount', 'Interest_rate_pa', 'Number_of_people_depending_on_overal_income', 'YesNo_cd_Bank_account', 'YesNo_cd_Business_plan_provided', 'YesNo_cd_Access_to_internet', 'Introduced_by', 'Known_to_introducer_since', 'Last_visited_by', 'Last_visited_on']
+    # search_exclude_columns = ['person', 'Gender', 'religion', 'ethnicity', 'consumer_credit_score', 'is_home_owner', 'person_height', 'person_weight', 'person_height_unit_of_measure', 'person_weight_unit_of_measure', 'highest_education_level', 'person_life_stage', 'mothers_maiden_name', 'Marital_Status_cd', 'Citizenship', 'Poverty_Status', 'From_whom', 'Amount', 'Interest_rate_pa', 'Number_of_people_depending_on_overal_income', 'YesNo_cd_Bank_account', 'YesNo_cd_Business_plan_provided', 'YesNo_cd_Access_to_internet', 'Introduced_by', 'Known_to_introducer_since', 'Last_visited_by', 'Last_visited_on']
+    # order_columns = ['person', 'Gender', 'religion', 'ethnicity', 'consumer_credit_score', 'is_home_owner', 'person_height', 'person_weight', 'person_height_unit_of_measure', 'person_weight_unit_of_measure', 'highest_education_level', 'person_life_stage', 'mothers_maiden_name', 'Marital_Status_cd', 'Citizenship', 'Poverty_Status', 'From_whom', 'Amount', 'Interest_rate_pa', 'Number_of_people_depending_on_overal_income', 'YesNo_cd_Bank_account', 'YesNo_cd_Business_plan_provided', 'YesNo_cd_Access_to_internet', 'Introduced_by', 'Known_to_introducer_since', 'Last_visited_by', 'Last_visited_on']
+    # add_columns = ['person', 'Gender', 'religion', 'ethnicity', 'consumer_credit_score', 'is_home_owner', 'person_height', 'person_weight', 'person_height_unit_of_measure', 'person_weight_unit_of_measure', 'highest_education_level', 'person_life_stage', 'mothers_maiden_name', 'Marital_Status_cd', 'Citizenship', 'Poverty_Status', 'From_whom', 'Amount', 'Interest_rate_pa', 'Number_of_people_depending_on_overal_income', 'YesNo_cd_Bank_account', 'YesNo_cd_Business_plan_provided', 'YesNo_cd_Access_to_internet', 'Introduced_by', 'Known_to_introducer_since', 'Last_visited_by', 'Last_visited_on']
+    # add_columns = ['person', 'Gender', 'religion', 'ethnicity', 'consumer_credit_score', 'is_home_owner', 'person_height', 'person_weight', 'person_height_unit_of_measure', 'person_weight_unit_of_measure', 'highest_education_level', 'person_life_stage', 'mothers_maiden_name', 'Marital_Status_cd', 'Citizenship', 'Poverty_Status', 'From_whom', 'Amount', 'Interest_rate_pa', 'Number_of_people_depending_on_overal_income', 'YesNo_cd_Bank_account', 'YesNo_cd_Business_plan_provided', 'YesNo_cd_Access_to_internet', 'Introduced_by', 'Known_to_introducer_since', 'Last_visited_by', 'Last_visited_on']
+    # add_columns = ['person', 'Gender', 'religion', 'ethnicity', 'consumer_credit_score', 'is_home_owner', 'person_height', 'person_weight', 'person_height_unit_of_measure', 'person_weight_unit_of_measure', 'highest_education_level', 'person_life_stage', 'mothers_maiden_name', 'Marital_Status_cd', 'Citizenship', 'Poverty_Status', 'From_whom', 'Amount', 'Interest_rate_pa', 'Number_of_people_depending_on_overal_income', 'YesNo_cd_Bank_account', 'YesNo_cd_Business_plan_provided', 'YesNo_cd_Access_to_internet', 'Introduced_by', 'Known_to_introducer_since', 'Last_visited_by', 'Last_visited_on']
+    
+    label_columns = {'person':'Person', 'Gender':'Gender', 'religion':'Religion', 'ethnicity':'Ethnicity', 'consumer_credit_score':'Consumer Credit Score', 'is_home_owner':'Is Home Owner', 'person_height':'Person Height', 'person_weight':'Person Weight', 'person_height_unit_of_measure':'Person Height Unit Of Measure', 'person_weight_unit_of_measure':'Person Weight Unit Of Measure', 'highest_education_level':'Highest Education Level', 'person_life_stage':'Person Life Stage', 'mothers_maiden_name':'Mothers Maiden Name', 'Marital_Status_cd':'Marital Status Cd', 'Citizenship':'Citizenship', 'Poverty_Status':'Poverty Status', 'From_whom':'From Whom', 'Amount':'Amount', 'Interest_rate_pa':'Interest Rate Pa', 'Number_of_people_depending_on_overal_income':'Number Of People Depending On Overal Income', 'YesNo_cd_Bank_account':'Yesno Cd Bank Account', 'YesNo_cd_Business_plan_provided':'Yesno Cd Business Plan Provided', 'YesNo_cd_Access_to_internet':'Yesno Cd Access To Internet', 'Introduced_by':'Introduced By', 'Known_to_introducer_since':'Known To Introducer Since', 'Last_visited_by':'Last Visited By', 'Last_visited_on':'Last Visited On'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['person', 'Gender', 'religion', 'ethnicity', 'consumer_credit_score', 'is_home_owner', 'person_height', 'person_weight', 'person_height_unit_of_measure', 'person_weight_unit_of_measure', 'highest_education_level', 'person_life_stage', 'mothers_maiden_name', 'Marital_Status_cd', 'Citizenship', 'Poverty_Status', 'From_whom', 'Amount', 'Interest_rate_pa', 'Number_of_people_depending_on_overal_income', 'YesNo_cd_Bank_account', 'YesNo_cd_Business_plan_provided', 'YesNo_cd_Access_to_internet', 'Introduced_by', 'Known_to_introducer_since', 'Last_visited_by', 'Last_visited_on']
+class QuizModelView(ModelView):
+    datamodel = SQLAInterface(Quiz)
+    list_title = 'List Quiz'
+    show_title = 'Show Quiz'
+    edit_title = 'Edit Quiz'
+    add_title  = 'Add Quiz'
+ 
+    list_columns = ['lesson', 'title', 'description', 'created_at', 'updated_at']
+    # show_columns = ['lesson', 'title', 'description', 'created_at', 'updated_at']
+    # edit_columns = ['lesson', 'title', 'description', 'created_at', 'updated_at']
+    add_columns = ['lesson', 'title', 'description', 'created_at', 'updated_at']
+    # search_columns = ['lesson', 'title', 'description', 'created_at', 'updated_at']
+    description_columns = {
+        'id' : 'None',
+        'lesson_id_fk' : 'None',
+        'title' : 'None',
+        'description' : 'None',
+        'created_at' : 'None',
+        'updated_at' : 'None',
+    }
+    # list_exclude_columns = ['lesson', 'title', 'description', 'created_at', 'updated_at']
+    # show_exclude_columns = ['lesson', 'title', 'description', 'created_at', 'updated_at']
+    # edit_exclude_columns = ['lesson', 'title', 'description', 'created_at', 'updated_at']
+    # add_exclude_columns = ['lesson', 'title', 'description', 'created_at', 'updated_at']
+    # search_exclude_columns = ['lesson', 'title', 'description', 'created_at', 'updated_at']
+    # order_columns = ['lesson', 'title', 'description', 'created_at', 'updated_at']
+    # add_columns = ['lesson', 'title', 'description', 'created_at', 'updated_at']
+    # add_columns = ['lesson', 'title', 'description', 'created_at', 'updated_at']
+    # add_columns = ['lesson', 'title', 'description', 'created_at', 'updated_at']
+    
+    label_columns = {'lesson':'Lesson', 'title':'Title', 'description':'Description', 'created_at':'Created At', 'updated_at':'Updated At'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['lesson', 'title', 'description', 'created_at', 'updated_at']
+class TimezoneModelView(ModelView):
+    datamodel = SQLAInterface(Timezone)
+    list_title = 'List Timezone'
+    show_title = 'Show Timezone'
+    edit_title = 'Edit Timezone'
+    add_title  = 'Add Timezone'
+ 
+    list_columns = ['country_code', 'timezonename', 'comments']
+    # show_columns = ['country_code', 'timezonename', 'comments']
+    # edit_columns = ['country_code', 'timezonename', 'comments']
+    add_columns = ['country_code', 'timezonename', 'comments']
+    # search_columns = ['country_code', 'timezonename', 'comments']
+    description_columns = {
+        'id' : 'None',
+        'country_code_id_fk' : 'None',
+        'timezonename' : 'None',
+        'comments' : 'None',
+    }
+    # list_exclude_columns = ['country_code', 'timezonename', 'comments']
+    # show_exclude_columns = ['country_code', 'timezonename', 'comments']
+    # edit_exclude_columns = ['country_code', 'timezonename', 'comments']
+    # add_exclude_columns = ['country_code', 'timezonename', 'comments']
+    # search_exclude_columns = ['country_code', 'timezonename', 'comments']
+    # order_columns = ['country_code', 'timezonename', 'comments']
+    # add_columns = ['country_code', 'timezonename', 'comments']
+    # add_columns = ['country_code', 'timezonename', 'comments']
+    # add_columns = ['country_code', 'timezonename', 'comments']
+    
+    label_columns = {'country_code':'Country Code', 'timezonename':'Timezonename', 'comments':'Comments'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['country_code', 'timezonename', 'comments']
+class AnimalModelView(ModelView):
+    datamodel = SQLAInterface(Animal)
+    list_title = 'List Animal'
+    show_title = 'Show Animal'
+    edit_title = 'Edit Animal'
+    add_title  = 'Add Animal'
+ 
+    list_columns = ['owner', 'name', 'animal_type', 'breed', 'dob', 'approx_age_months', 'sex', 'sire', 'dam', 'location', 'has_horns', 'horn_orientation', 'color', 'distinguishing_marks', 'weight_kg', 'height_cm', 'body_length_cm', 'ear_tag_number', 'rfid_tag', 'health_status', 'horn_pic', 'frontal_pic', 'left_pic', 'right_pic', 'top_pic', 'rear_pic', 'registration_number', 'insurance_details']
+    # show_columns = ['owner', 'name', 'animal_type', 'breed', 'dob', 'approx_age_months', 'sex', 'sire', 'dam', 'location', 'has_horns', 'horn_orientation', 'color', 'distinguishing_marks', 'weight_kg', 'height_cm', 'body_length_cm', 'ear_tag_number', 'rfid_tag', 'health_status', 'horn_pic', 'frontal_pic', 'left_pic', 'right_pic', 'top_pic', 'rear_pic', 'registration_number', 'insurance_details']
+    # edit_columns = ['owner', 'name', 'animal_type', 'breed', 'dob', 'approx_age_months', 'sex', 'sire', 'dam', 'location', 'has_horns', 'horn_orientation', 'color', 'distinguishing_marks', 'weight_kg', 'height_cm', 'body_length_cm', 'ear_tag_number', 'rfid_tag', 'health_status', 'horn_pic', 'frontal_pic', 'left_pic', 'right_pic', 'top_pic', 'rear_pic', 'registration_number', 'insurance_details']
+    add_columns = ['owner', 'name', 'animal_type', 'breed', 'dob', 'approx_age_months', 'sex', 'sire', 'dam', 'location', 'has_horns', 'horn_orientation', 'color', 'distinguishing_marks', 'weight_kg', 'height_cm', 'body_length_cm', 'ear_tag_number', 'rfid_tag', 'health_status', 'horn_pic', 'frontal_pic', 'left_pic', 'right_pic', 'top_pic', 'rear_pic', 'registration_number', 'insurance_details']
+    # search_columns = ['owner', 'name', 'animal_type', 'breed', 'dob', 'approx_age_months', 'sex', 'sire', 'dam', 'location', 'has_horns', 'horn_orientation', 'color', 'distinguishing_marks', 'weight_kg', 'height_cm', 'body_length_cm', 'ear_tag_number', 'rfid_tag', 'health_status', 'horn_pic', 'frontal_pic', 'left_pic', 'right_pic', 'top_pic', 'rear_pic', 'registration_number', 'insurance_details']
+    description_columns = {
+        'id' : 'Unique identifier for each animal',
+        'owner_id_fk' : 'Owner of the animal',
+        'name' : 'Name or nickname of the animal',
+        'animal_type' : 'Type of animal, e.g., cattle, sheep, goat, etc.',
+        'breed_id_fk' : 'Breed of the animal',
+        'dob' : 'Date of birth of the animal',
+        'approx_age_months' : 'Approximate age of the animal in months, especially if exact dob is unknown',
+        'sex' : 'Sex of the animal, typically M or F',
+        'sire_id_fk' : 'Father of the animal, if known',
+        'dam_id_fk' : 'Mother of the animal, if known',
+        'location_id_fk' : 'Current or last known location of the animal',
+        'has_horns' : 'Indicates if the animal has horns',
+        'horn_orientation' : 'Describes the orientation of horns e.g., inward, outward, upward, etc.',
+        'color' : 'Primary color or color pattern of the animal',
+        'distinguishing_marks' : 'Any unique marks or patterns that can help in identification',
+        'weight_kg' : 'Weight of the animal in kilograms, if available',
+        'height_cm' : 'Height of the animal in centimeters, if available',
+        'body_length_cm' : 'Length of the animal from nose to tail, in centimeters, if available',
+        'ear_tag_number' : 'Ear tag number, if available',
+        'rfid_tag' : 'RFID tag number, if available',
+        'health_status' : 'Current or recent health status or remarks',
+        'horn_pic' : 'URL to a picture focused on the horns for identification',
+        'frontal_pic' : 'URL to a frontal picture of the animal',
+        'left_pic' : 'URL to a left-side picture of the animal',
+        'right_pic' : 'URL to a right-side picture of the animal',
+        'top_pic' : 'URL to a top-view picture of the animal',
+        'rear_pic' : 'URL to a rear-view picture of the animal',
+        'registration_number' : 'Official registration number, if available',
+        'insurance_details' : 'Details about animal insurance, if any',
+    }
+    # list_exclude_columns = ['owner', 'name', 'animal_type', 'breed', 'dob', 'approx_age_months', 'sex', 'sire', 'dam', 'location', 'has_horns', 'horn_orientation', 'color', 'distinguishing_marks', 'weight_kg', 'height_cm', 'body_length_cm', 'ear_tag_number', 'rfid_tag', 'health_status', 'horn_pic', 'frontal_pic', 'left_pic', 'right_pic', 'top_pic', 'rear_pic', 'registration_number', 'insurance_details']
+    # show_exclude_columns = ['owner', 'name', 'animal_type', 'breed', 'dob', 'approx_age_months', 'sex', 'sire', 'dam', 'location', 'has_horns', 'horn_orientation', 'color', 'distinguishing_marks', 'weight_kg', 'height_cm', 'body_length_cm', 'ear_tag_number', 'rfid_tag', 'health_status', 'horn_pic', 'frontal_pic', 'left_pic', 'right_pic', 'top_pic', 'rear_pic', 'registration_number', 'insurance_details']
+    # edit_exclude_columns = ['owner', 'name', 'animal_type', 'breed', 'dob', 'approx_age_months', 'sex', 'sire', 'dam', 'location', 'has_horns', 'horn_orientation', 'color', 'distinguishing_marks', 'weight_kg', 'height_cm', 'body_length_cm', 'ear_tag_number', 'rfid_tag', 'health_status', 'horn_pic', 'frontal_pic', 'left_pic', 'right_pic', 'top_pic', 'rear_pic', 'registration_number', 'insurance_details']
+    # add_exclude_columns = ['owner', 'name', 'animal_type', 'breed', 'dob', 'approx_age_months', 'sex', 'sire', 'dam', 'location', 'has_horns', 'horn_orientation', 'color', 'distinguishing_marks', 'weight_kg', 'height_cm', 'body_length_cm', 'ear_tag_number', 'rfid_tag', 'health_status', 'horn_pic', 'frontal_pic', 'left_pic', 'right_pic', 'top_pic', 'rear_pic', 'registration_number', 'insurance_details']
+    # search_exclude_columns = ['owner', 'name', 'animal_type', 'breed', 'dob', 'approx_age_months', 'sex', 'sire', 'dam', 'location', 'has_horns', 'horn_orientation', 'color', 'distinguishing_marks', 'weight_kg', 'height_cm', 'body_length_cm', 'ear_tag_number', 'rfid_tag', 'health_status', 'horn_pic', 'frontal_pic', 'left_pic', 'right_pic', 'top_pic', 'rear_pic', 'registration_number', 'insurance_details']
+    # order_columns = ['owner', 'name', 'animal_type', 'breed', 'dob', 'approx_age_months', 'sex', 'sire', 'dam', 'location', 'has_horns', 'horn_orientation', 'color', 'distinguishing_marks', 'weight_kg', 'height_cm', 'body_length_cm', 'ear_tag_number', 'rfid_tag', 'health_status', 'horn_pic', 'frontal_pic', 'left_pic', 'right_pic', 'top_pic', 'rear_pic', 'registration_number', 'insurance_details']
+    # add_columns = ['owner', 'name', 'animal_type', 'breed', 'dob', 'approx_age_months', 'sex', 'sire', 'dam', 'location', 'has_horns', 'horn_orientation', 'color', 'distinguishing_marks', 'weight_kg', 'height_cm', 'body_length_cm', 'ear_tag_number', 'rfid_tag', 'health_status', 'horn_pic', 'frontal_pic', 'left_pic', 'right_pic', 'top_pic', 'rear_pic', 'registration_number', 'insurance_details']
+    # add_columns = ['owner', 'name', 'animal_type', 'breed', 'dob', 'approx_age_months', 'sex', 'sire', 'dam', 'location', 'has_horns', 'horn_orientation', 'color', 'distinguishing_marks', 'weight_kg', 'height_cm', 'body_length_cm', 'ear_tag_number', 'rfid_tag', 'health_status', 'horn_pic', 'frontal_pic', 'left_pic', 'right_pic', 'top_pic', 'rear_pic', 'registration_number', 'insurance_details']
+    # add_columns = ['owner', 'name', 'animal_type', 'breed', 'dob', 'approx_age_months', 'sex', 'sire', 'dam', 'location', 'has_horns', 'horn_orientation', 'color', 'distinguishing_marks', 'weight_kg', 'height_cm', 'body_length_cm', 'ear_tag_number', 'rfid_tag', 'health_status', 'horn_pic', 'frontal_pic', 'left_pic', 'right_pic', 'top_pic', 'rear_pic', 'registration_number', 'insurance_details']
+    
+    label_columns = {'owner':'Owner', 'name':'Name', 'animal_type':'Animal Type', 'breed':'Breed', 'dob':'Dob', 'approx_age_months':'Approx Age Months', 'sex':'Sex', 'sire':'Sire', 'dam':'Dam', 'location':'Location', 'has_horns':'Has Horns', 'horn_orientation':'Horn Orientation', 'color':'Color', 'distinguishing_marks':'Distinguishing Marks', 'weight_kg':'Weight Kg', 'height_cm':'Height Cm', 'body_length_cm':'Body Length Cm', 'ear_tag_number':'Ear Tag Number', 'rfid_tag':'Rfid Tag', 'health_status':'Health Status', 'horn_pic':'Horn Pic', 'frontal_pic':'Frontal Pic', 'left_pic':'Left Pic', 'right_pic':'Right Pic', 'top_pic':'Top Pic', 'rear_pic':'Rear Pic', 'registration_number':'Registration Number', 'insurance_details':'Insurance Details'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['owner', 'name', 'animal_type', 'breed', 'dob', 'approx_age_months', 'sex', 'sire', 'dam', 'location', 'has_horns', 'horn_orientation', 'color', 'distinguishing_marks', 'weight_kg', 'height_cm', 'body_length_cm', 'ear_tag_number', 'rfid_tag', 'health_status', 'horn_pic', 'frontal_pic', 'left_pic', 'right_pic', 'top_pic', 'rear_pic', 'registration_number', 'insurance_details']
+class ContentRecommendationsModelView(ModelView):
+    datamodel = SQLAInterface(ContentRecommendations)
+    list_title = 'List Content Recommendations'
+    show_title = 'Show Content Recommendations'
+    edit_title = 'Edit Content Recommendations'
+    add_title  = 'Add Content Recommendations'
+ 
+    list_columns = ['person', 'content', 'recommendation_date', 'reason']
+    # show_columns = ['person', 'content', 'recommendation_date', 'reason']
+    # edit_columns = ['person', 'content', 'recommendation_date', 'reason']
+    add_columns = ['person', 'content', 'recommendation_date', 'reason']
+    # search_columns = ['person', 'content', 'recommendation_date', 'reason']
+    description_columns = {
+        'id' : 'None',
+        'person_id_fk' : 'None',
+        'content_id_fk' : 'None',
+        'recommendation_date' : 'None',
+        'reason' : 'None',
+    }
+    # list_exclude_columns = ['person', 'content', 'recommendation_date', 'reason']
+    # show_exclude_columns = ['person', 'content', 'recommendation_date', 'reason']
+    # edit_exclude_columns = ['person', 'content', 'recommendation_date', 'reason']
+    # add_exclude_columns = ['person', 'content', 'recommendation_date', 'reason']
+    # search_exclude_columns = ['person', 'content', 'recommendation_date', 'reason']
+    # order_columns = ['person', 'content', 'recommendation_date', 'reason']
+    # add_columns = ['person', 'content', 'recommendation_date', 'reason']
+    # add_columns = ['person', 'content', 'recommendation_date', 'reason']
+    # add_columns = ['person', 'content', 'recommendation_date', 'reason']
+    
+    label_columns = {'person':'Person', 'content':'Content', 'recommendation_date':'Recommendation Date', 'reason':'Reason'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['person', 'content', 'recommendation_date', 'reason']
+class IsicClassModelView(ModelView):
+    datamodel = SQLAInterface(IsicClass)
+    list_title = 'List Isic Class'
+    show_title = 'Show Isic Class'
+    edit_title = 'Edit Isic Class'
+    add_title  = 'Add Isic Class'
+ 
+    list_columns = ['isic_class', 'group', 'class_name']
+    # show_columns = ['isic_class', 'group', 'class_name']
+    # edit_columns = ['isic_class', 'group', 'class_name']
+    add_columns = ['isic_class', 'group', 'class_name']
+    # search_columns = ['isic_class', 'group', 'class_name']
+    description_columns = {
+        'id' : 'None',
+        'isic_class' : 'Unique identifier for each ISIC class.',
+        'group_id_fk' : 'Reference to the parent ISIC group.',
+        'class_name' : 'Name or description of the ISIC class.',
+    }
+    # list_exclude_columns = ['isic_class', 'group', 'class_name']
+    # show_exclude_columns = ['isic_class', 'group', 'class_name']
+    # edit_exclude_columns = ['isic_class', 'group', 'class_name']
+    # add_exclude_columns = ['isic_class', 'group', 'class_name']
+    # search_exclude_columns = ['isic_class', 'group', 'class_name']
+    # order_columns = ['isic_class', 'group', 'class_name']
+    # add_columns = ['isic_class', 'group', 'class_name']
+    # add_columns = ['isic_class', 'group', 'class_name']
+    # add_columns = ['isic_class', 'group', 'class_name']
+    
+    label_columns = {'isic_class':'Isic Class', 'group':'Group', 'class_name':'Class Name'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['isic_class', 'group', 'class_name']
+class LessonContentLinkModelView(ModelView):
+    datamodel = SQLAInterface(LessonContentLink)
+    list_title = 'List Lesson Content Link'
+    show_title = 'Show Lesson Content Link'
+    edit_title = 'Edit Lesson Content Link'
+    add_title  = 'Add Lesson Content Link'
+ 
+    list_columns = ['lesson', 'content']
+    # show_columns = ['lesson', 'content']
+    # edit_columns = ['lesson', 'content']
+    add_columns = ['lesson', 'content']
+    # search_columns = ['lesson', 'content']
+    description_columns = {
+        'id' : 'None',
+        'lesson_id_fk' : 'None',
+        'content_id_fk' : 'None',
+    }
+    # list_exclude_columns = ['lesson', 'content']
+    # show_exclude_columns = ['lesson', 'content']
+    # edit_exclude_columns = ['lesson', 'content']
+    # add_exclude_columns = ['lesson', 'content']
+    # search_exclude_columns = ['lesson', 'content']
+    # order_columns = ['lesson', 'content']
+    # add_columns = ['lesson', 'content']
+    # add_columns = ['lesson', 'content']
+    # add_columns = ['lesson', 'content']
+    
+    label_columns = {'lesson':'Lesson', 'content':'Content'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['lesson', 'content']
+class OrgModelView(ModelView):
+    datamodel = SQLAInterface(Org)
+    list_title = 'List Org'
+    show_title = 'Show Org'
+    edit_title = 'Edit Org'
+    add_title  = 'Add Org'
+ 
+    list_columns = ['parent', 'org_type', 'principal_name', 'trading_name', 'formal_name', 'org_reg_status', 'op_level', 'description', 'field_of_activity', 'country', 'admin1code', 'admin2code', 'geo', 'address_line1', 'address_line2', 'address_line3', 'address_line4', 'city_name', 'postal_code', 'number_of_employees', 'annual_income', 'monthly_income', 'domain_name', 'linkedin_Url', 'org_notes']
+    # show_columns = ['parent', 'org_type', 'principal_name', 'trading_name', 'formal_name', 'org_reg_status', 'op_level', 'description', 'field_of_activity', 'country', 'admin1code', 'admin2code', 'geo', 'address_line1', 'address_line2', 'address_line3', 'address_line4', 'city_name', 'postal_code', 'number_of_employees', 'annual_income', 'monthly_income', 'domain_name', 'linkedin_Url', 'org_notes']
+    # edit_columns = ['parent', 'org_type', 'principal_name', 'trading_name', 'formal_name', 'org_reg_status', 'op_level', 'description', 'field_of_activity', 'country', 'admin1code', 'admin2code', 'geo', 'address_line1', 'address_line2', 'address_line3', 'address_line4', 'city_name', 'postal_code', 'number_of_employees', 'annual_income', 'monthly_income', 'domain_name', 'linkedin_Url', 'org_notes']
+    add_columns = ['parent', 'org_type', 'principal_name', 'trading_name', 'formal_name', 'org_reg_status', 'op_level', 'description', 'field_of_activity', 'country', 'admin1code', 'admin2code', 'geo', 'address_line1', 'address_line2', 'address_line3', 'address_line4', 'city_name', 'postal_code', 'number_of_employees', 'annual_income', 'monthly_income', 'domain_name', 'linkedin_Url', 'org_notes']
+    # search_columns = ['parent', 'org_type', 'principal_name', 'trading_name', 'formal_name', 'org_reg_status', 'op_level', 'description', 'field_of_activity', 'country', 'admin1code', 'admin2code', 'geo', 'address_line1', 'address_line2', 'address_line3', 'address_line4', 'city_name', 'postal_code', 'number_of_employees', 'annual_income', 'monthly_income', 'domain_name', 'linkedin_Url', 'org_notes']
+    description_columns = {
+        'id' : 'None',
+        'parent_id_fk' : 'None',
+        'org_type' : 'None',
+        'principal_name' : 'None',
+        'trading_name' : 'None',
+        'formal_name' : 'None',
+        'org_reg_status' : 'None',
+        'op_level' : 'None',
+        'description' : 'None',
+        'field_of_activity' : 'None',
+        'country' : 'None',
+        'admin1code_id_fk' : 'Equivalent of State/County/Province, Largest National subunit',
+        'admin2code_id_fk' : 'Equivalent of LGA/District/Subcounty, 2nd Largest National subunit',
+        'geo_id_fk' : 'None',
+        'address_line1' : 'Employer address details',
+        'address_line2' : 'None',
+        'address_line3' : 'None',
+        'address_line4' : 'None',
+        'city_name' : 'None',
+        'postal_code' : 'None',
+        'number_of_employees' : 'Number of employees if self-employed',
+        'annual_income' : 'Yearly income of the org',
+        'monthly_income' : 'Monthly income of the org',
+        'domain_name' : 'None',
+        'linkedin_Url' : 'None',
+        'org_notes' : 'None',
+    }
+    # list_exclude_columns = ['parent', 'org_type', 'principal_name', 'trading_name', 'formal_name', 'org_reg_status', 'op_level', 'description', 'field_of_activity', 'country', 'admin1code', 'admin2code', 'geo', 'address_line1', 'address_line2', 'address_line3', 'address_line4', 'city_name', 'postal_code', 'number_of_employees', 'annual_income', 'monthly_income', 'domain_name', 'linkedin_Url', 'org_notes']
+    # show_exclude_columns = ['parent', 'org_type', 'principal_name', 'trading_name', 'formal_name', 'org_reg_status', 'op_level', 'description', 'field_of_activity', 'country', 'admin1code', 'admin2code', 'geo', 'address_line1', 'address_line2', 'address_line3', 'address_line4', 'city_name', 'postal_code', 'number_of_employees', 'annual_income', 'monthly_income', 'domain_name', 'linkedin_Url', 'org_notes']
+    # edit_exclude_columns = ['parent', 'org_type', 'principal_name', 'trading_name', 'formal_name', 'org_reg_status', 'op_level', 'description', 'field_of_activity', 'country', 'admin1code', 'admin2code', 'geo', 'address_line1', 'address_line2', 'address_line3', 'address_line4', 'city_name', 'postal_code', 'number_of_employees', 'annual_income', 'monthly_income', 'domain_name', 'linkedin_Url', 'org_notes']
+    # add_exclude_columns = ['parent', 'org_type', 'principal_name', 'trading_name', 'formal_name', 'org_reg_status', 'op_level', 'description', 'field_of_activity', 'country', 'admin1code', 'admin2code', 'geo', 'address_line1', 'address_line2', 'address_line3', 'address_line4', 'city_name', 'postal_code', 'number_of_employees', 'annual_income', 'monthly_income', 'domain_name', 'linkedin_Url', 'org_notes']
+    # search_exclude_columns = ['parent', 'org_type', 'principal_name', 'trading_name', 'formal_name', 'org_reg_status', 'op_level', 'description', 'field_of_activity', 'country', 'admin1code', 'admin2code', 'geo', 'address_line1', 'address_line2', 'address_line3', 'address_line4', 'city_name', 'postal_code', 'number_of_employees', 'annual_income', 'monthly_income', 'domain_name', 'linkedin_Url', 'org_notes']
+    # order_columns = ['parent', 'org_type', 'principal_name', 'trading_name', 'formal_name', 'org_reg_status', 'op_level', 'description', 'field_of_activity', 'country', 'admin1code', 'admin2code', 'geo', 'address_line1', 'address_line2', 'address_line3', 'address_line4', 'city_name', 'postal_code', 'number_of_employees', 'annual_income', 'monthly_income', 'domain_name', 'linkedin_Url', 'org_notes']
+    # add_columns = ['parent', 'org_type', 'principal_name', 'trading_name', 'formal_name', 'org_reg_status', 'op_level', 'description', 'field_of_activity', 'country', 'admin1code', 'admin2code', 'geo', 'address_line1', 'address_line2', 'address_line3', 'address_line4', 'city_name', 'postal_code', 'number_of_employees', 'annual_income', 'monthly_income', 'domain_name', 'linkedin_Url', 'org_notes']
+    # add_columns = ['parent', 'org_type', 'principal_name', 'trading_name', 'formal_name', 'org_reg_status', 'op_level', 'description', 'field_of_activity', 'country', 'admin1code', 'admin2code', 'geo', 'address_line1', 'address_line2', 'address_line3', 'address_line4', 'city_name', 'postal_code', 'number_of_employees', 'annual_income', 'monthly_income', 'domain_name', 'linkedin_Url', 'org_notes']
+    # add_columns = ['parent', 'org_type', 'principal_name', 'trading_name', 'formal_name', 'org_reg_status', 'op_level', 'description', 'field_of_activity', 'country', 'admin1code', 'admin2code', 'geo', 'address_line1', 'address_line2', 'address_line3', 'address_line4', 'city_name', 'postal_code', 'number_of_employees', 'annual_income', 'monthly_income', 'domain_name', 'linkedin_Url', 'org_notes']
+    
+    label_columns = {'parent':'Parent', 'org_type':'Org Type', 'principal_name':'Principal Name', 'trading_name':'Trading Name', 'formal_name':'Formal Name', 'org_reg_status':'Org Reg Status', 'op_level':'Op Level', 'description':'Description', 'field_of_activity':'Field Of Activity', 'country':'Country', 'admin1code':'Admin1code', 'admin2code':'Admin2code', 'geo':'Geo', 'address_line1':'Address Line1', 'address_line2':'Address Line2', 'address_line3':'Address Line3', 'address_line4':'Address Line4', 'city_name':'City Name', 'postal_code':'Postal Code', 'number_of_employees':'Number Of Employees', 'annual_income':'Annual Income', 'monthly_income':'Monthly Income', 'domain_name':'Domain Name', 'linkedin_Url':'Linkedin Url', 'org_notes':'Org Notes'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['parent', 'org_type', 'principal_name', 'trading_name', 'formal_name', 'org_reg_status', 'op_level', 'description', 'field_of_activity', 'country', 'admin1code', 'admin2code', 'geo', 'address_line1', 'address_line2', 'address_line3', 'address_line4', 'city_name', 'postal_code', 'number_of_employees', 'annual_income', 'monthly_income', 'domain_name', 'linkedin_Url', 'org_notes']
+class QuizQuestionModelView(ModelView):
+    datamodel = SQLAInterface(QuizQuestion)
+    list_title = 'List Quiz Question'
+    show_title = 'Show Quiz Question'
+    edit_title = 'Edit Quiz Question'
+    add_title  = 'Add Quiz Question'
+ 
+    list_columns = ['quiz', 'question_text', 'has_options', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_option', 'correct_text']
+    # show_columns = ['quiz', 'question_text', 'has_options', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_option', 'correct_text']
+    # edit_columns = ['quiz', 'question_text', 'has_options', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_option', 'correct_text']
+    add_columns = ['quiz', 'question_text', 'has_options', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_option', 'correct_text']
+    # search_columns = ['quiz', 'question_text', 'has_options', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_option', 'correct_text']
+    description_columns = {
+        'id' : 'None',
+        'quiz_id_fk' : 'None',
+        'question_text' : 'None',
+        'has_options' : 'None',
+        'option_a' : 'None',
+        'option_b' : 'None',
+        'option_c' : 'None',
+        'option_d' : 'None',
+        'correct_option' : 'None',
+        'correct_text' : 'If the answer is narrative',
+    }
+    # list_exclude_columns = ['quiz', 'question_text', 'has_options', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_option', 'correct_text']
+    # show_exclude_columns = ['quiz', 'question_text', 'has_options', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_option', 'correct_text']
+    # edit_exclude_columns = ['quiz', 'question_text', 'has_options', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_option', 'correct_text']
+    # add_exclude_columns = ['quiz', 'question_text', 'has_options', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_option', 'correct_text']
+    # search_exclude_columns = ['quiz', 'question_text', 'has_options', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_option', 'correct_text']
+    # order_columns = ['quiz', 'question_text', 'has_options', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_option', 'correct_text']
+    # add_columns = ['quiz', 'question_text', 'has_options', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_option', 'correct_text']
+    # add_columns = ['quiz', 'question_text', 'has_options', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_option', 'correct_text']
+    # add_columns = ['quiz', 'question_text', 'has_options', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_option', 'correct_text']
+    
+    label_columns = {'quiz':'Quiz', 'question_text':'Question Text', 'has_options':'Has Options', 'option_a':'Option A', 'option_b':'Option B', 'option_c':'Option C', 'option_d':'Option D', 'correct_option':'Correct Option', 'correct_text':'Correct Text'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['quiz', 'question_text', 'has_options', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_option', 'correct_text']
+class PurchaseOrderModelView(ModelView):
+    datamodel = SQLAInterface(PurchaseOrder)
+    list_title = 'List Purchase Order'
+    show_title = 'Show Purchase Order'
+    edit_title = 'Edit Purchase Order'
+    add_title  = 'Add Purchase Order'
+ 
+    list_columns = ['org', 'supplier', 'order_date', 'expected_delivery_date', 'status', 'created_at', 'updated_at', 'notes']
+    # show_columns = ['org', 'supplier', 'order_date', 'expected_delivery_date', 'status', 'created_at', 'updated_at', 'notes']
+    # edit_columns = ['org', 'supplier', 'order_date', 'expected_delivery_date', 'status', 'created_at', 'updated_at', 'notes']
+    add_columns = ['org', 'supplier', 'order_date', 'expected_delivery_date', 'status', 'created_at', 'updated_at', 'notes']
+    # search_columns = ['org', 'supplier', 'order_date', 'expected_delivery_date', 'status', 'created_at', 'updated_at', 'notes']
+    description_columns = {
+        'id' : 'None',
+        'org_id_fk' : 'None',
+        'supplier_id_fk' : 'None',
+        'order_date' : 'None',
+        'expected_delivery_date' : 'None',
+        'status' : 'None',
+        'created_at' : 'None',
+        'updated_at' : 'None',
+        'notes' : 'None',
+    }
+    # list_exclude_columns = ['org', 'supplier', 'order_date', 'expected_delivery_date', 'status', 'created_at', 'updated_at', 'notes']
+    # show_exclude_columns = ['org', 'supplier', 'order_date', 'expected_delivery_date', 'status', 'created_at', 'updated_at', 'notes']
+    # edit_exclude_columns = ['org', 'supplier', 'order_date', 'expected_delivery_date', 'status', 'created_at', 'updated_at', 'notes']
+    # add_exclude_columns = ['org', 'supplier', 'order_date', 'expected_delivery_date', 'status', 'created_at', 'updated_at', 'notes']
+    # search_exclude_columns = ['org', 'supplier', 'order_date', 'expected_delivery_date', 'status', 'created_at', 'updated_at', 'notes']
+    # order_columns = ['org', 'supplier', 'order_date', 'expected_delivery_date', 'status', 'created_at', 'updated_at', 'notes']
+    # add_columns = ['org', 'supplier', 'order_date', 'expected_delivery_date', 'status', 'created_at', 'updated_at', 'notes']
+    # add_columns = ['org', 'supplier', 'order_date', 'expected_delivery_date', 'status', 'created_at', 'updated_at', 'notes']
+    # add_columns = ['org', 'supplier', 'order_date', 'expected_delivery_date', 'status', 'created_at', 'updated_at', 'notes']
+    
+    label_columns = {'org':'Org', 'supplier':'Supplier', 'order_date':'Order Date', 'expected_delivery_date':'Expected Delivery Date', 'status':'Status', 'created_at':'Created At', 'updated_at':'Updated At', 'notes':'Notes'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['org', 'supplier', 'order_date', 'expected_delivery_date', 'status', 'created_at', 'updated_at', 'notes']
+class SalesOrderModelView(ModelView):
+    datamodel = SQLAInterface(SalesOrder)
+    list_title = 'List Sales Order'
+    show_title = 'Show Sales Order'
+    edit_title = 'Edit Sales Order'
+    add_title  = 'Add Sales Order'
+ 
+    list_columns = ['org', 'customer', 'order_date', 'expected_ship_date', 'status', 'created_at', 'updated_at', 'notes']
+    # show_columns = ['org', 'customer', 'order_date', 'expected_ship_date', 'status', 'created_at', 'updated_at', 'notes']
+    # edit_columns = ['org', 'customer', 'order_date', 'expected_ship_date', 'status', 'created_at', 'updated_at', 'notes']
+    add_columns = ['org', 'customer', 'order_date', 'expected_ship_date', 'status', 'created_at', 'updated_at', 'notes']
+    # search_columns = ['org', 'customer', 'order_date', 'expected_ship_date', 'status', 'created_at', 'updated_at', 'notes']
+    description_columns = {
+        'id' : 'None',
+        'org_id_fk' : 'None',
+        'customer_id_fk' : 'None',
+        'order_date' : 'None',
+        'expected_ship_date' : 'None',
+        'status' : 'None',
+        'created_at' : 'None',
+        'updated_at' : 'None',
+        'notes' : 'None',
+    }
+    # list_exclude_columns = ['org', 'customer', 'order_date', 'expected_ship_date', 'status', 'created_at', 'updated_at', 'notes']
+    # show_exclude_columns = ['org', 'customer', 'order_date', 'expected_ship_date', 'status', 'created_at', 'updated_at', 'notes']
+    # edit_exclude_columns = ['org', 'customer', 'order_date', 'expected_ship_date', 'status', 'created_at', 'updated_at', 'notes']
+    # add_exclude_columns = ['org', 'customer', 'order_date', 'expected_ship_date', 'status', 'created_at', 'updated_at', 'notes']
+    # search_exclude_columns = ['org', 'customer', 'order_date', 'expected_ship_date', 'status', 'created_at', 'updated_at', 'notes']
+    # order_columns = ['org', 'customer', 'order_date', 'expected_ship_date', 'status', 'created_at', 'updated_at', 'notes']
+    # add_columns = ['org', 'customer', 'order_date', 'expected_ship_date', 'status', 'created_at', 'updated_at', 'notes']
+    # add_columns = ['org', 'customer', 'order_date', 'expected_ship_date', 'status', 'created_at', 'updated_at', 'notes']
+    # add_columns = ['org', 'customer', 'order_date', 'expected_ship_date', 'status', 'created_at', 'updated_at', 'notes']
+    
+    label_columns = {'org':'Org', 'customer':'Customer', 'order_date':'Order Date', 'expected_ship_date':'Expected Ship Date', 'status':'Status', 'created_at':'Created At', 'updated_at':'Updated At', 'notes':'Notes'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['org', 'customer', 'order_date', 'expected_ship_date', 'status', 'created_at', 'updated_at', 'notes']
+class AccGlAccountModelView(ModelView):
+    datamodel = SQLAInterface(AccGlAccount)
+    list_title = 'List Acc Gl Account'
+    show_title = 'Show Acc Gl Account'
+    edit_title = 'Edit Acc Gl Account'
+    add_title  = 'Add Acc Gl Account'
+ 
+    list_columns = ['name', 'description', 'parent', 'gl_code', 'disabled', 'manual_journal_entries_allowed', 'currency', 'classification', 'normal_side', 'account_usage', 'account_type', 'account_category', 'acc_path', 'company', 'division', 'is_bank_account', 'is_default_account', 'allow_reconciliation', 'default_tax_code', 'default_tax_rate', 'custom_fields', 'account_restrictions', 'integration_id', 'is_deleted', 'is_favourite', 'deleted_by', 'deleted_on', 'deleted_reason', 'is_external', 'comments', 'balance', 'created_by', 'updated_by', 'created_at', 'updated_at']
+    # show_columns = ['name', 'description', 'parent', 'gl_code', 'disabled', 'manual_journal_entries_allowed', 'currency', 'classification', 'normal_side', 'account_usage', 'account_type', 'account_category', 'acc_path', 'company', 'division', 'is_bank_account', 'is_default_account', 'allow_reconciliation', 'default_tax_code', 'default_tax_rate', 'custom_fields', 'account_restrictions', 'integration_id', 'is_deleted', 'is_favourite', 'deleted_by', 'deleted_on', 'deleted_reason', 'is_external', 'comments', 'balance', 'created_by', 'updated_by', 'created_at', 'updated_at']
+    # edit_columns = ['name', 'description', 'parent', 'gl_code', 'disabled', 'manual_journal_entries_allowed', 'currency', 'classification', 'normal_side', 'account_usage', 'account_type', 'account_category', 'acc_path', 'company', 'division', 'is_bank_account', 'is_default_account', 'allow_reconciliation', 'default_tax_code', 'default_tax_rate', 'custom_fields', 'account_restrictions', 'integration_id', 'is_deleted', 'is_favourite', 'deleted_by', 'deleted_on', 'deleted_reason', 'is_external', 'comments', 'balance', 'created_by', 'updated_by', 'created_at', 'updated_at']
+    add_columns = ['name', 'description', 'parent', 'gl_code', 'disabled', 'manual_journal_entries_allowed', 'currency', 'classification', 'normal_side', 'account_usage', 'account_type', 'account_category', 'acc_path', 'company', 'division', 'is_bank_account', 'is_default_account', 'allow_reconciliation', 'default_tax_code', 'default_tax_rate', 'custom_fields', 'account_restrictions', 'integration_id', 'is_deleted', 'is_favourite', 'deleted_by', 'deleted_on', 'deleted_reason', 'is_external', 'comments', 'balance', 'created_by', 'updated_by', 'created_at', 'updated_at']
+    # search_columns = ['name', 'description', 'parent', 'gl_code', 'disabled', 'manual_journal_entries_allowed', 'currency', 'classification', 'normal_side', 'account_usage', 'account_type', 'account_category', 'acc_path', 'company', 'division', 'is_bank_account', 'is_default_account', 'allow_reconciliation', 'default_tax_code', 'default_tax_rate', 'custom_fields', 'account_restrictions', 'integration_id', 'is_deleted', 'is_favourite', 'deleted_by', 'deleted_on', 'deleted_reason', 'is_external', 'comments', 'balance', 'created_by', 'updated_by', 'created_at', 'updated_at']
+    description_columns = {
+        'id' : 'Unique identifier for the GL account',
+        'name' : 'Name or title of the GL account',
+        'description' : 'Describes how this acount should be used and for what',
+        'parent_id_fk' : 'Links to parent GL account for hierarchical structures',
+        'gl_code' : 'Unique code representing the GL account',
+        'disabled' : 'Flag to indicate if the account is disabled or not',
+        'manual_journal_entries_allowed' : 'Flag to indicate if manual journal entries can be made to this account',
+        'currency_id_fk' : 'Currency associated with the account',
+        'classification' : 'Classification of the account: Current or Non-Current',
+        'normal_side' : 'Indicates whether the account normally carries a debit or credit balance',
+        'account_usage' : 'How the account is used: for transactions, reporting, or both',
+        'account_type' : 'The type or category of the GL account (e.g., Asset, Liability)',
+        'account_category' : 'None',
+        'acc_path' : 'None',
+        'company_id_fk' : 'None',
+        'division_id_fk' : 'None',
+        'is_bank_account' : 'None',
+        'is_default_account' : 'None',
+        'allow_reconciliation' : 'None',
+        'default_tax_code' : 'None',
+        'default_tax_rate' : 'None',
+        'custom_fields' : 'None',
+        'account_restrictions' : 'None',
+        'integration_id' : 'None',
+        'is_deleted' : 'Flag to mark the account as deleted',
+        'is_favourite' : 'None',
+        'deleted_by_id_fk' : 'None',
+        'deleted_on' : 'None',
+        'deleted_reason' : 'None',
+        'is_external' : 'None',
+        'comments' : 'Any additional notes or comments about the account',
+        'balance' : 'Current balance of the account. Can be computed or periodically updated',
+        'created_by_id_fk' : 'User who created this account',
+        'updated_by_id_fk' : 'User who last updated this account',
+        'created_at' : 'Timestamp when the account was created',
+        'updated_at' : 'Timestamp when the account was last updated',
+    }
+    # list_exclude_columns = ['name', 'description', 'parent', 'gl_code', 'disabled', 'manual_journal_entries_allowed', 'currency', 'classification', 'normal_side', 'account_usage', 'account_type', 'account_category', 'acc_path', 'company', 'division', 'is_bank_account', 'is_default_account', 'allow_reconciliation', 'default_tax_code', 'default_tax_rate', 'custom_fields', 'account_restrictions', 'integration_id', 'is_deleted', 'is_favourite', 'deleted_by', 'deleted_on', 'deleted_reason', 'is_external', 'comments', 'balance', 'created_by', 'updated_by', 'created_at', 'updated_at']
+    # show_exclude_columns = ['name', 'description', 'parent', 'gl_code', 'disabled', 'manual_journal_entries_allowed', 'currency', 'classification', 'normal_side', 'account_usage', 'account_type', 'account_category', 'acc_path', 'company', 'division', 'is_bank_account', 'is_default_account', 'allow_reconciliation', 'default_tax_code', 'default_tax_rate', 'custom_fields', 'account_restrictions', 'integration_id', 'is_deleted', 'is_favourite', 'deleted_by', 'deleted_on', 'deleted_reason', 'is_external', 'comments', 'balance', 'created_by', 'updated_by', 'created_at', 'updated_at']
+    # edit_exclude_columns = ['name', 'description', 'parent', 'gl_code', 'disabled', 'manual_journal_entries_allowed', 'currency', 'classification', 'normal_side', 'account_usage', 'account_type', 'account_category', 'acc_path', 'company', 'division', 'is_bank_account', 'is_default_account', 'allow_reconciliation', 'default_tax_code', 'default_tax_rate', 'custom_fields', 'account_restrictions', 'integration_id', 'is_deleted', 'is_favourite', 'deleted_by', 'deleted_on', 'deleted_reason', 'is_external', 'comments', 'balance', 'created_by', 'updated_by', 'created_at', 'updated_at']
+    # add_exclude_columns = ['name', 'description', 'parent', 'gl_code', 'disabled', 'manual_journal_entries_allowed', 'currency', 'classification', 'normal_side', 'account_usage', 'account_type', 'account_category', 'acc_path', 'company', 'division', 'is_bank_account', 'is_default_account', 'allow_reconciliation', 'default_tax_code', 'default_tax_rate', 'custom_fields', 'account_restrictions', 'integration_id', 'is_deleted', 'is_favourite', 'deleted_by', 'deleted_on', 'deleted_reason', 'is_external', 'comments', 'balance', 'created_by', 'updated_by', 'created_at', 'updated_at']
+    # search_exclude_columns = ['name', 'description', 'parent', 'gl_code', 'disabled', 'manual_journal_entries_allowed', 'currency', 'classification', 'normal_side', 'account_usage', 'account_type', 'account_category', 'acc_path', 'company', 'division', 'is_bank_account', 'is_default_account', 'allow_reconciliation', 'default_tax_code', 'default_tax_rate', 'custom_fields', 'account_restrictions', 'integration_id', 'is_deleted', 'is_favourite', 'deleted_by', 'deleted_on', 'deleted_reason', 'is_external', 'comments', 'balance', 'created_by', 'updated_by', 'created_at', 'updated_at']
+    # order_columns = ['name', 'description', 'parent', 'gl_code', 'disabled', 'manual_journal_entries_allowed', 'currency', 'classification', 'normal_side', 'account_usage', 'account_type', 'account_category', 'acc_path', 'company', 'division', 'is_bank_account', 'is_default_account', 'allow_reconciliation', 'default_tax_code', 'default_tax_rate', 'custom_fields', 'account_restrictions', 'integration_id', 'is_deleted', 'is_favourite', 'deleted_by', 'deleted_on', 'deleted_reason', 'is_external', 'comments', 'balance', 'created_by', 'updated_by', 'created_at', 'updated_at']
+    # add_columns = ['name', 'description', 'parent', 'gl_code', 'disabled', 'manual_journal_entries_allowed', 'currency', 'classification', 'normal_side', 'account_usage', 'account_type', 'account_category', 'acc_path', 'company', 'division', 'is_bank_account', 'is_default_account', 'allow_reconciliation', 'default_tax_code', 'default_tax_rate', 'custom_fields', 'account_restrictions', 'integration_id', 'is_deleted', 'is_favourite', 'deleted_by', 'deleted_on', 'deleted_reason', 'is_external', 'comments', 'balance', 'created_by', 'updated_by', 'created_at', 'updated_at']
+    # add_columns = ['name', 'description', 'parent', 'gl_code', 'disabled', 'manual_journal_entries_allowed', 'currency', 'classification', 'normal_side', 'account_usage', 'account_type', 'account_category', 'acc_path', 'company', 'division', 'is_bank_account', 'is_default_account', 'allow_reconciliation', 'default_tax_code', 'default_tax_rate', 'custom_fields', 'account_restrictions', 'integration_id', 'is_deleted', 'is_favourite', 'deleted_by', 'deleted_on', 'deleted_reason', 'is_external', 'comments', 'balance', 'created_by', 'updated_by', 'created_at', 'updated_at']
+    # add_columns = ['name', 'description', 'parent', 'gl_code', 'disabled', 'manual_journal_entries_allowed', 'currency', 'classification', 'normal_side', 'account_usage', 'account_type', 'account_category', 'acc_path', 'company', 'division', 'is_bank_account', 'is_default_account', 'allow_reconciliation', 'default_tax_code', 'default_tax_rate', 'custom_fields', 'account_restrictions', 'integration_id', 'is_deleted', 'is_favourite', 'deleted_by', 'deleted_on', 'deleted_reason', 'is_external', 'comments', 'balance', 'created_by', 'updated_by', 'created_at', 'updated_at']
+    
+    label_columns = {'name':'Name', 'description':'Description', 'parent':'Parent', 'gl_code':'Gl Code', 'disabled':'Disabled', 'manual_journal_entries_allowed':'Manual Journal Entries Allowed', 'currency':'Currency', 'classification':'Classification', 'normal_side':'Normal Side', 'account_usage':'Account Usage', 'account_type':'Account Type', 'account_category':'Account Category', 'acc_path':'Acc Path', 'company':'Company', 'division':'Division', 'is_bank_account':'Is Bank Account', 'is_default_account':'Is Default Account', 'allow_reconciliation':'Allow Reconciliation', 'default_tax_code':'Default Tax Code', 'default_tax_rate':'Default Tax Rate', 'custom_fields':'Custom Fields', 'account_restrictions':'Account Restrictions', 'integration_id':'Integration Id', 'is_deleted':'Is Deleted', 'is_favourite':'Is Favourite', 'deleted_by':'Deleted By', 'deleted_on':'Deleted On', 'deleted_reason':'Deleted Reason', 'is_external':'Is External', 'comments':'Comments', 'balance':'Balance', 'created_by':'Created By', 'updated_by':'Updated By', 'created_at':'Created At', 'updated_at':'Updated At'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['name', 'description', 'parent', 'gl_code', 'disabled', 'manual_journal_entries_allowed', 'currency', 'classification', 'normal_side', 'account_usage', 'account_type', 'account_category', 'acc_path', 'company', 'division', 'is_bank_account', 'is_default_account', 'allow_reconciliation', 'default_tax_code', 'default_tax_rate', 'custom_fields', 'account_restrictions', 'integration_id', 'is_deleted', 'is_favourite', 'deleted_by', 'deleted_on', 'deleted_reason', 'is_external', 'comments', 'balance', 'created_by', 'updated_by', 'created_at', 'updated_at']
+class AccGlClosureModelView(ModelView):
+    datamodel = SQLAInterface(AccGlClosure)
+    list_title = 'List Acc Gl Closure'
+    show_title = 'Show Acc Gl Closure'
+    edit_title = 'Edit Acc Gl Closure'
+    add_title  = 'Add Acc Gl Closure'
+ 
+    list_columns = ['org', 'closure_type', 'closing_date', 'opened_by', 'closed_by', 'is_deleted', 'comments', 'opening_balance', 'closing_balance', 'total_debits', 'total_credits', 'created_at', 'updated_at']
+    # show_columns = ['org', 'closure_type', 'closing_date', 'opened_by', 'closed_by', 'is_deleted', 'comments', 'opening_balance', 'closing_balance', 'total_debits', 'total_credits', 'created_at', 'updated_at']
+    # edit_columns = ['org', 'closure_type', 'closing_date', 'opened_by', 'closed_by', 'is_deleted', 'comments', 'opening_balance', 'closing_balance', 'total_debits', 'total_credits', 'created_at', 'updated_at']
+    add_columns = ['org', 'closure_type', 'closing_date', 'opened_by', 'closed_by', 'is_deleted', 'comments', 'opening_balance', 'closing_balance', 'total_debits', 'total_credits', 'created_at', 'updated_at']
+    # search_columns = ['org', 'closure_type', 'closing_date', 'opened_by', 'closed_by', 'is_deleted', 'comments', 'opening_balance', 'closing_balance', 'total_debits', 'total_credits', 'created_at', 'updated_at']
+    description_columns = {
+        'id' : 'Unique identifier for the GL closure',
+        'org_id_fk' : 'Foreign key reference to the organization for which books are closed',
+        'closure_type' : 'Type of closure - Monthly, Quarterly, or Yearly',
+        'closing_date' : 'Date when the books are officially closed',
+        'opened_by_id_fk' : 'User who opened this closure (typically an accountant or financial manager)',
+        'closed_by_id_fk' : 'User who closed the books',
+        'is_deleted' : 'Flag to mark the closure as deleted or inactive',
+        'comments' : 'Any additional notes or comments about the closure',
+        'opening_balance' : 'Balance at the beginning of the period being closed',
+        'closing_balance' : 'Balance at the end of the period',
+        'total_debits' : 'Total debits during the closure period',
+        'total_credits' : 'Total credits during the closure period',
+        'created_at' : 'Timestamp of when the closure was created',
+        'updated_at' : 'Timestamp of the last update made to the closure',
+    }
+    # list_exclude_columns = ['org', 'closure_type', 'closing_date', 'opened_by', 'closed_by', 'is_deleted', 'comments', 'opening_balance', 'closing_balance', 'total_debits', 'total_credits', 'created_at', 'updated_at']
+    # show_exclude_columns = ['org', 'closure_type', 'closing_date', 'opened_by', 'closed_by', 'is_deleted', 'comments', 'opening_balance', 'closing_balance', 'total_debits', 'total_credits', 'created_at', 'updated_at']
+    # edit_exclude_columns = ['org', 'closure_type', 'closing_date', 'opened_by', 'closed_by', 'is_deleted', 'comments', 'opening_balance', 'closing_balance', 'total_debits', 'total_credits', 'created_at', 'updated_at']
+    # add_exclude_columns = ['org', 'closure_type', 'closing_date', 'opened_by', 'closed_by', 'is_deleted', 'comments', 'opening_balance', 'closing_balance', 'total_debits', 'total_credits', 'created_at', 'updated_at']
+    # search_exclude_columns = ['org', 'closure_type', 'closing_date', 'opened_by', 'closed_by', 'is_deleted', 'comments', 'opening_balance', 'closing_balance', 'total_debits', 'total_credits', 'created_at', 'updated_at']
+    # order_columns = ['org', 'closure_type', 'closing_date', 'opened_by', 'closed_by', 'is_deleted', 'comments', 'opening_balance', 'closing_balance', 'total_debits', 'total_credits', 'created_at', 'updated_at']
+    # add_columns = ['org', 'closure_type', 'closing_date', 'opened_by', 'closed_by', 'is_deleted', 'comments', 'opening_balance', 'closing_balance', 'total_debits', 'total_credits', 'created_at', 'updated_at']
+    # add_columns = ['org', 'closure_type', 'closing_date', 'opened_by', 'closed_by', 'is_deleted', 'comments', 'opening_balance', 'closing_balance', 'total_debits', 'total_credits', 'created_at', 'updated_at']
+    # add_columns = ['org', 'closure_type', 'closing_date', 'opened_by', 'closed_by', 'is_deleted', 'comments', 'opening_balance', 'closing_balance', 'total_debits', 'total_credits', 'created_at', 'updated_at']
+    
+    label_columns = {'org':'Org', 'closure_type':'Closure Type', 'closing_date':'Closing Date', 'opened_by':'Opened By', 'closed_by':'Closed By', 'is_deleted':'Is Deleted', 'comments':'Comments', 'opening_balance':'Opening Balance', 'closing_balance':'Closing Balance', 'total_debits':'Total Debits', 'total_credits':'Total Credits', 'created_at':'Created At', 'updated_at':'Updated At'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['org', 'closure_type', 'closing_date', 'opened_by', 'closed_by', 'is_deleted', 'comments', 'opening_balance', 'closing_balance', 'total_debits', 'total_credits', 'created_at', 'updated_at']
+class AnimalHealthModelView(ModelView):
+    datamodel = SQLAInterface(AnimalHealth)
+    list_title = 'List Animal Health'
+    show_title = 'Show Animal Health'
+    edit_title = 'Edit Animal Health'
+    add_title  = 'Add Animal Health'
+ 
+    list_columns = ['animal', 'weight_kgs', 'weigh_date', 'weighed_by', 'health_status', 'health_checked_by', 'health_check_on', 'behavioral_observations', 'nutrition_evaluation', 'body_condition_score', 'temperature', 'pulse_rate', 'respiration_rate', 'skin_coat_condition', 'eye_ear_condition', 'oral_health_status', 'hoof_claw_condition', 'mammary_gland_condition', 'reproductive_system_condition', 'locomotion_status', 'tail_anus_condition', 'blood_test_results', 'fecal_test_results', 'urine_test_results', 'milk_quality_test_results', 'biopsy_tissue_sampling_results', 'vaccination_status', 'deworming_status', 'tuberculosis_test', 'brucellosis_test', 'bvd_test', 'ultrasound_results', 'x_ray_results', 'rfid_scan_id', 'medications_given', 'symptoms_present', 'health_comments', 'created_at', 'updated_at', 'is_active', 'feather_condition', 'eye_and_comb_condition', 'leg_and_claw_condition']
+    # show_columns = ['animal', 'weight_kgs', 'weigh_date', 'weighed_by', 'health_status', 'health_checked_by', 'health_check_on', 'behavioral_observations', 'nutrition_evaluation', 'body_condition_score', 'temperature', 'pulse_rate', 'respiration_rate', 'skin_coat_condition', 'eye_ear_condition', 'oral_health_status', 'hoof_claw_condition', 'mammary_gland_condition', 'reproductive_system_condition', 'locomotion_status', 'tail_anus_condition', 'blood_test_results', 'fecal_test_results', 'urine_test_results', 'milk_quality_test_results', 'biopsy_tissue_sampling_results', 'vaccination_status', 'deworming_status', 'tuberculosis_test', 'brucellosis_test', 'bvd_test', 'ultrasound_results', 'x_ray_results', 'rfid_scan_id', 'medications_given', 'symptoms_present', 'health_comments', 'created_at', 'updated_at', 'is_active', 'feather_condition', 'eye_and_comb_condition', 'leg_and_claw_condition']
+    # edit_columns = ['animal', 'weight_kgs', 'weigh_date', 'weighed_by', 'health_status', 'health_checked_by', 'health_check_on', 'behavioral_observations', 'nutrition_evaluation', 'body_condition_score', 'temperature', 'pulse_rate', 'respiration_rate', 'skin_coat_condition', 'eye_ear_condition', 'oral_health_status', 'hoof_claw_condition', 'mammary_gland_condition', 'reproductive_system_condition', 'locomotion_status', 'tail_anus_condition', 'blood_test_results', 'fecal_test_results', 'urine_test_results', 'milk_quality_test_results', 'biopsy_tissue_sampling_results', 'vaccination_status', 'deworming_status', 'tuberculosis_test', 'brucellosis_test', 'bvd_test', 'ultrasound_results', 'x_ray_results', 'rfid_scan_id', 'medications_given', 'symptoms_present', 'health_comments', 'created_at', 'updated_at', 'is_active', 'feather_condition', 'eye_and_comb_condition', 'leg_and_claw_condition']
+    add_columns = ['animal', 'weight_kgs', 'weigh_date', 'weighed_by', 'health_status', 'health_checked_by', 'health_check_on', 'behavioral_observations', 'nutrition_evaluation', 'body_condition_score', 'temperature', 'pulse_rate', 'respiration_rate', 'skin_coat_condition', 'eye_ear_condition', 'oral_health_status', 'hoof_claw_condition', 'mammary_gland_condition', 'reproductive_system_condition', 'locomotion_status', 'tail_anus_condition', 'blood_test_results', 'fecal_test_results', 'urine_test_results', 'milk_quality_test_results', 'biopsy_tissue_sampling_results', 'vaccination_status', 'deworming_status', 'tuberculosis_test', 'brucellosis_test', 'bvd_test', 'ultrasound_results', 'x_ray_results', 'rfid_scan_id', 'medications_given', 'symptoms_present', 'health_comments', 'created_at', 'updated_at', 'is_active', 'feather_condition', 'eye_and_comb_condition', 'leg_and_claw_condition']
+    # search_columns = ['animal', 'weight_kgs', 'weigh_date', 'weighed_by', 'health_status', 'health_checked_by', 'health_check_on', 'behavioral_observations', 'nutrition_evaluation', 'body_condition_score', 'temperature', 'pulse_rate', 'respiration_rate', 'skin_coat_condition', 'eye_ear_condition', 'oral_health_status', 'hoof_claw_condition', 'mammary_gland_condition', 'reproductive_system_condition', 'locomotion_status', 'tail_anus_condition', 'blood_test_results', 'fecal_test_results', 'urine_test_results', 'milk_quality_test_results', 'biopsy_tissue_sampling_results', 'vaccination_status', 'deworming_status', 'tuberculosis_test', 'brucellosis_test', 'bvd_test', 'ultrasound_results', 'x_ray_results', 'rfid_scan_id', 'medications_given', 'symptoms_present', 'health_comments', 'created_at', 'updated_at', 'is_active', 'feather_condition', 'eye_and_comb_condition', 'leg_and_claw_condition']
+    description_columns = {
+        'id' : 'Primary Key',
+        'animal_id_fk' : 'Foreign Key referencing animal',
+        'weight_kgs' : 'Weight of the animal in kilograms',
+        'weigh_date' : 'Date and time when the weight was measured',
+        'weighed_by_id_fk' : 'ID of the person who weighed the animal',
+        'health_status' : 'Current health status',
+        'health_checked_by_id_fk' : 'ID of the person who checked the health',
+        'health_check_on' : 'Timestamp when the health check was performed',
+        'behavioral_observations' : 'Notes on the behavior of the animal',
+        'nutrition_evaluation' : 'Assessment of the nutrition level',
+        'body_condition_score' : 'Score indicating body condition',
+        'temperature' : 'Body temperature',
+        'pulse_rate' : 'Heart pulse rate',
+        'respiration_rate' : 'Rate of respiration',
+        'skin_coat_condition' : 'Status of skin and coat',
+        'eye_ear_condition' : 'Condition of eyes and ears',
+        'oral_health_status' : 'Condition of mouth and teeth',
+        'hoof_claw_condition' : 'Status of hoofs or claws',
+        'mammary_gland_condition' : 'Condition of mammary glands, if applicable',
+        'reproductive_system_condition' : 'Condition of reproductive system',
+        'locomotion_status' : 'Observation on mobility',
+        'tail_anus_condition' : 'Condition of tail and anus',
+        'blood_test_results' : 'Results of blood tests',
+        'fecal_test_results' : 'Results of fecal tests',
+        'urine_test_results' : 'Results of urine tests',
+        'milk_quality_test_results' : 'Quality of milk test results',
+        'biopsy_tissue_sampling_results' : 'Biopsy or tissue sample results',
+        'vaccination_status' : 'Status of vaccinations',
+        'deworming_status' : 'Status of deworming',
+        'tuberculosis_test' : 'Results of tuberculosis tests',
+        'brucellosis_test' : 'Results of brucellosis tests',
+        'bvd_test' : 'Results of Bovine Viral Diarrhea (BVD) tests',
+        'ultrasound_results' : 'Results of ultrasound scans',
+        'x_ray_results' : 'Results of X-ray scans',
+        'rfid_scan_id' : 'ID from RFID scan',
+        'medications_given' : 'Medications administered',
+        'symptoms_present' : 'Symptoms observed',
+        'health_comments' : 'Additional comments on health',
+        'created_at' : 'Creation timestamp',
+        'updated_at' : 'Last update timestamp',
+        'is_active' : 'Flag indicating if this record is still valid',
+        'feather_condition' : 'Condition of feathers, if applicable',
+        'eye_and_comb_condition' : 'Condition of eyes and comb, if applicable',
+        'leg_and_claw_condition' : 'Condition of legs and claws, if applicable',
+    }
+    # list_exclude_columns = ['animal', 'weight_kgs', 'weigh_date', 'weighed_by', 'health_status', 'health_checked_by', 'health_check_on', 'behavioral_observations', 'nutrition_evaluation', 'body_condition_score', 'temperature', 'pulse_rate', 'respiration_rate', 'skin_coat_condition', 'eye_ear_condition', 'oral_health_status', 'hoof_claw_condition', 'mammary_gland_condition', 'reproductive_system_condition', 'locomotion_status', 'tail_anus_condition', 'blood_test_results', 'fecal_test_results', 'urine_test_results', 'milk_quality_test_results', 'biopsy_tissue_sampling_results', 'vaccination_status', 'deworming_status', 'tuberculosis_test', 'brucellosis_test', 'bvd_test', 'ultrasound_results', 'x_ray_results', 'rfid_scan_id', 'medications_given', 'symptoms_present', 'health_comments', 'created_at', 'updated_at', 'is_active', 'feather_condition', 'eye_and_comb_condition', 'leg_and_claw_condition']
+    # show_exclude_columns = ['animal', 'weight_kgs', 'weigh_date', 'weighed_by', 'health_status', 'health_checked_by', 'health_check_on', 'behavioral_observations', 'nutrition_evaluation', 'body_condition_score', 'temperature', 'pulse_rate', 'respiration_rate', 'skin_coat_condition', 'eye_ear_condition', 'oral_health_status', 'hoof_claw_condition', 'mammary_gland_condition', 'reproductive_system_condition', 'locomotion_status', 'tail_anus_condition', 'blood_test_results', 'fecal_test_results', 'urine_test_results', 'milk_quality_test_results', 'biopsy_tissue_sampling_results', 'vaccination_status', 'deworming_status', 'tuberculosis_test', 'brucellosis_test', 'bvd_test', 'ultrasound_results', 'x_ray_results', 'rfid_scan_id', 'medications_given', 'symptoms_present', 'health_comments', 'created_at', 'updated_at', 'is_active', 'feather_condition', 'eye_and_comb_condition', 'leg_and_claw_condition']
+    # edit_exclude_columns = ['animal', 'weight_kgs', 'weigh_date', 'weighed_by', 'health_status', 'health_checked_by', 'health_check_on', 'behavioral_observations', 'nutrition_evaluation', 'body_condition_score', 'temperature', 'pulse_rate', 'respiration_rate', 'skin_coat_condition', 'eye_ear_condition', 'oral_health_status', 'hoof_claw_condition', 'mammary_gland_condition', 'reproductive_system_condition', 'locomotion_status', 'tail_anus_condition', 'blood_test_results', 'fecal_test_results', 'urine_test_results', 'milk_quality_test_results', 'biopsy_tissue_sampling_results', 'vaccination_status', 'deworming_status', 'tuberculosis_test', 'brucellosis_test', 'bvd_test', 'ultrasound_results', 'x_ray_results', 'rfid_scan_id', 'medications_given', 'symptoms_present', 'health_comments', 'created_at', 'updated_at', 'is_active', 'feather_condition', 'eye_and_comb_condition', 'leg_and_claw_condition']
+    # add_exclude_columns = ['animal', 'weight_kgs', 'weigh_date', 'weighed_by', 'health_status', 'health_checked_by', 'health_check_on', 'behavioral_observations', 'nutrition_evaluation', 'body_condition_score', 'temperature', 'pulse_rate', 'respiration_rate', 'skin_coat_condition', 'eye_ear_condition', 'oral_health_status', 'hoof_claw_condition', 'mammary_gland_condition', 'reproductive_system_condition', 'locomotion_status', 'tail_anus_condition', 'blood_test_results', 'fecal_test_results', 'urine_test_results', 'milk_quality_test_results', 'biopsy_tissue_sampling_results', 'vaccination_status', 'deworming_status', 'tuberculosis_test', 'brucellosis_test', 'bvd_test', 'ultrasound_results', 'x_ray_results', 'rfid_scan_id', 'medications_given', 'symptoms_present', 'health_comments', 'created_at', 'updated_at', 'is_active', 'feather_condition', 'eye_and_comb_condition', 'leg_and_claw_condition']
+    # search_exclude_columns = ['animal', 'weight_kgs', 'weigh_date', 'weighed_by', 'health_status', 'health_checked_by', 'health_check_on', 'behavioral_observations', 'nutrition_evaluation', 'body_condition_score', 'temperature', 'pulse_rate', 'respiration_rate', 'skin_coat_condition', 'eye_ear_condition', 'oral_health_status', 'hoof_claw_condition', 'mammary_gland_condition', 'reproductive_system_condition', 'locomotion_status', 'tail_anus_condition', 'blood_test_results', 'fecal_test_results', 'urine_test_results', 'milk_quality_test_results', 'biopsy_tissue_sampling_results', 'vaccination_status', 'deworming_status', 'tuberculosis_test', 'brucellosis_test', 'bvd_test', 'ultrasound_results', 'x_ray_results', 'rfid_scan_id', 'medications_given', 'symptoms_present', 'health_comments', 'created_at', 'updated_at', 'is_active', 'feather_condition', 'eye_and_comb_condition', 'leg_and_claw_condition']
+    # order_columns = ['animal', 'weight_kgs', 'weigh_date', 'weighed_by', 'health_status', 'health_checked_by', 'health_check_on', 'behavioral_observations', 'nutrition_evaluation', 'body_condition_score', 'temperature', 'pulse_rate', 'respiration_rate', 'skin_coat_condition', 'eye_ear_condition', 'oral_health_status', 'hoof_claw_condition', 'mammary_gland_condition', 'reproductive_system_condition', 'locomotion_status', 'tail_anus_condition', 'blood_test_results', 'fecal_test_results', 'urine_test_results', 'milk_quality_test_results', 'biopsy_tissue_sampling_results', 'vaccination_status', 'deworming_status', 'tuberculosis_test', 'brucellosis_test', 'bvd_test', 'ultrasound_results', 'x_ray_results', 'rfid_scan_id', 'medications_given', 'symptoms_present', 'health_comments', 'created_at', 'updated_at', 'is_active', 'feather_condition', 'eye_and_comb_condition', 'leg_and_claw_condition']
+    # add_columns = ['animal', 'weight_kgs', 'weigh_date', 'weighed_by', 'health_status', 'health_checked_by', 'health_check_on', 'behavioral_observations', 'nutrition_evaluation', 'body_condition_score', 'temperature', 'pulse_rate', 'respiration_rate', 'skin_coat_condition', 'eye_ear_condition', 'oral_health_status', 'hoof_claw_condition', 'mammary_gland_condition', 'reproductive_system_condition', 'locomotion_status', 'tail_anus_condition', 'blood_test_results', 'fecal_test_results', 'urine_test_results', 'milk_quality_test_results', 'biopsy_tissue_sampling_results', 'vaccination_status', 'deworming_status', 'tuberculosis_test', 'brucellosis_test', 'bvd_test', 'ultrasound_results', 'x_ray_results', 'rfid_scan_id', 'medications_given', 'symptoms_present', 'health_comments', 'created_at', 'updated_at', 'is_active', 'feather_condition', 'eye_and_comb_condition', 'leg_and_claw_condition']
+    # add_columns = ['animal', 'weight_kgs', 'weigh_date', 'weighed_by', 'health_status', 'health_checked_by', 'health_check_on', 'behavioral_observations', 'nutrition_evaluation', 'body_condition_score', 'temperature', 'pulse_rate', 'respiration_rate', 'skin_coat_condition', 'eye_ear_condition', 'oral_health_status', 'hoof_claw_condition', 'mammary_gland_condition', 'reproductive_system_condition', 'locomotion_status', 'tail_anus_condition', 'blood_test_results', 'fecal_test_results', 'urine_test_results', 'milk_quality_test_results', 'biopsy_tissue_sampling_results', 'vaccination_status', 'deworming_status', 'tuberculosis_test', 'brucellosis_test', 'bvd_test', 'ultrasound_results', 'x_ray_results', 'rfid_scan_id', 'medications_given', 'symptoms_present', 'health_comments', 'created_at', 'updated_at', 'is_active', 'feather_condition', 'eye_and_comb_condition', 'leg_and_claw_condition']
+    # add_columns = ['animal', 'weight_kgs', 'weigh_date', 'weighed_by', 'health_status', 'health_checked_by', 'health_check_on', 'behavioral_observations', 'nutrition_evaluation', 'body_condition_score', 'temperature', 'pulse_rate', 'respiration_rate', 'skin_coat_condition', 'eye_ear_condition', 'oral_health_status', 'hoof_claw_condition', 'mammary_gland_condition', 'reproductive_system_condition', 'locomotion_status', 'tail_anus_condition', 'blood_test_results', 'fecal_test_results', 'urine_test_results', 'milk_quality_test_results', 'biopsy_tissue_sampling_results', 'vaccination_status', 'deworming_status', 'tuberculosis_test', 'brucellosis_test', 'bvd_test', 'ultrasound_results', 'x_ray_results', 'rfid_scan_id', 'medications_given', 'symptoms_present', 'health_comments', 'created_at', 'updated_at', 'is_active', 'feather_condition', 'eye_and_comb_condition', 'leg_and_claw_condition']
+    
+    label_columns = {'animal':'Animal', 'weight_kgs':'Weight Kgs', 'weigh_date':'Weigh Date', 'weighed_by':'Weighed By', 'health_status':'Health Status', 'health_checked_by':'Health Checked By', 'health_check_on':'Health Check On', 'behavioral_observations':'Behavioral Observations', 'nutrition_evaluation':'Nutrition Evaluation', 'body_condition_score':'Body Condition Score', 'temperature':'Temperature', 'pulse_rate':'Pulse Rate', 'respiration_rate':'Respiration Rate', 'skin_coat_condition':'Skin Coat Condition', 'eye_ear_condition':'Eye Ear Condition', 'oral_health_status':'Oral Health Status', 'hoof_claw_condition':'Hoof Claw Condition', 'mammary_gland_condition':'Mammary Gland Condition', 'reproductive_system_condition':'Reproductive System Condition', 'locomotion_status':'Locomotion Status', 'tail_anus_condition':'Tail Anus Condition', 'blood_test_results':'Blood Test Results', 'fecal_test_results':'Fecal Test Results', 'urine_test_results':'Urine Test Results', 'milk_quality_test_results':'Milk Quality Test Results', 'biopsy_tissue_sampling_results':'Biopsy Tissue Sampling Results', 'vaccination_status':'Vaccination Status', 'deworming_status':'Deworming Status', 'tuberculosis_test':'Tuberculosis Test', 'brucellosis_test':'Brucellosis Test', 'bvd_test':'Bvd Test', 'ultrasound_results':'Ultrasound Results', 'x_ray_results':'X Ray Results', 'rfid_scan_id':'Rfid Scan Id', 'medications_given':'Medications Given', 'symptoms_present':'Symptoms Present', 'health_comments':'Health Comments', 'created_at':'Created At', 'updated_at':'Updated At', 'is_active':'Is Active', 'feather_condition':'Feather Condition', 'eye_and_comb_condition':'Eye And Comb Condition', 'leg_and_claw_condition':'Leg And Claw Condition'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['animal', 'weight_kgs', 'weigh_date', 'weighed_by', 'health_status', 'health_checked_by', 'health_check_on', 'behavioral_observations', 'nutrition_evaluation', 'body_condition_score', 'temperature', 'pulse_rate', 'respiration_rate', 'skin_coat_condition', 'eye_ear_condition', 'oral_health_status', 'hoof_claw_condition', 'mammary_gland_condition', 'reproductive_system_condition', 'locomotion_status', 'tail_anus_condition', 'blood_test_results', 'fecal_test_results', 'urine_test_results', 'milk_quality_test_results', 'biopsy_tissue_sampling_results', 'vaccination_status', 'deworming_status', 'tuberculosis_test', 'brucellosis_test', 'bvd_test', 'ultrasound_results', 'x_ray_results', 'rfid_scan_id', 'medications_given', 'symptoms_present', 'health_comments', 'created_at', 'updated_at', 'is_active', 'feather_condition', 'eye_and_comb_condition', 'leg_and_claw_condition']
+class CalendarModelView(ModelView):
+    datamodel = SQLAInterface(Calendar)
+    list_title = 'List Calendar'
+    show_title = 'Show Calendar'
+    edit_title = 'Edit Calendar'
+    add_title  = 'Add Calendar'
+ 
+    list_columns = ['org', 'person', 'title', 'description', 'location', 'timezone', 'start_date', 'end_date', 'duration_unit', 'comments', 'is_deleted']
+    # show_columns = ['org', 'person', 'title', 'description', 'location', 'timezone', 'start_date', 'end_date', 'duration_unit', 'comments', 'is_deleted']
+    # edit_columns = ['org', 'person', 'title', 'description', 'location', 'timezone', 'start_date', 'end_date', 'duration_unit', 'comments', 'is_deleted']
+    add_columns = ['org', 'person', 'title', 'description', 'location', 'timezone', 'start_date', 'end_date', 'duration_unit', 'comments', 'is_deleted']
+    # search_columns = ['org', 'person', 'title', 'description', 'location', 'timezone', 'start_date', 'end_date', 'duration_unit', 'comments', 'is_deleted']
+    description_columns = {
+        'id' : 'None',
+        'org_id_fk' : 'None',
+        'person_id_fk' : 'None',
+        'title' : 'None',
+        'description' : 'None',
+        'location' : 'None',
+        'timezone_id_fk' : 'None',
+        'start_date' : 'None',
+        'end_date' : 'None',
+        'duration_unit' : 'None',
+        'comments' : 'None',
+        'is_deleted' : 'Logical deletion flag',
+    }
+    # list_exclude_columns = ['org', 'person', 'title', 'description', 'location', 'timezone', 'start_date', 'end_date', 'duration_unit', 'comments', 'is_deleted']
+    # show_exclude_columns = ['org', 'person', 'title', 'description', 'location', 'timezone', 'start_date', 'end_date', 'duration_unit', 'comments', 'is_deleted']
+    # edit_exclude_columns = ['org', 'person', 'title', 'description', 'location', 'timezone', 'start_date', 'end_date', 'duration_unit', 'comments', 'is_deleted']
+    # add_exclude_columns = ['org', 'person', 'title', 'description', 'location', 'timezone', 'start_date', 'end_date', 'duration_unit', 'comments', 'is_deleted']
+    # search_exclude_columns = ['org', 'person', 'title', 'description', 'location', 'timezone', 'start_date', 'end_date', 'duration_unit', 'comments', 'is_deleted']
+    # order_columns = ['org', 'person', 'title', 'description', 'location', 'timezone', 'start_date', 'end_date', 'duration_unit', 'comments', 'is_deleted']
+    # add_columns = ['org', 'person', 'title', 'description', 'location', 'timezone', 'start_date', 'end_date', 'duration_unit', 'comments', 'is_deleted']
+    # add_columns = ['org', 'person', 'title', 'description', 'location', 'timezone', 'start_date', 'end_date', 'duration_unit', 'comments', 'is_deleted']
+    # add_columns = ['org', 'person', 'title', 'description', 'location', 'timezone', 'start_date', 'end_date', 'duration_unit', 'comments', 'is_deleted']
+    
+    label_columns = {'org':'Org', 'person':'Person', 'title':'Title', 'description':'Description', 'location':'Location', 'timezone':'Timezone', 'start_date':'Start Date', 'end_date':'End Date', 'duration_unit':'Duration Unit', 'comments':'Comments', 'is_deleted':'Is Deleted'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['org', 'person', 'title', 'description', 'location', 'timezone', 'start_date', 'end_date', 'duration_unit', 'comments', 'is_deleted']
+class ContactModelView(ModelView):
+    datamodel = SQLAInterface(Contact)
+    list_title = 'List Contact'
+    show_title = 'Show Contact'
+    edit_title = 'Edit Contact'
+    add_title  = 'Add Contact'
+ 
+    list_columns = ['person', 'org', 'address_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
+    # show_columns = ['person', 'org', 'address_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
+    # edit_columns = ['person', 'org', 'address_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
+    add_columns = ['person', 'org', 'address_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
+    # search_columns = ['person', 'org', 'address_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
+    description_columns = {
+        'id' : 'Unique identifier for the contact.',
+        'person_id_fk' : 'Reference to the individual associated with this contact.',
+        'org_id_fk' : 'Reference to the organization associated with this contact.',
+        'address_type_id_fk' : 'Reference to the type of contact.',
+        'contact' : 'Actual contact value, e.g., phone number or email address.',
+        'priority' : 'Ordering priority for displaying or using the contact. Lower value indicates higher priority.',
+        'best_time_to_contact_start' : 'Preferred start time when the individual/organization is available for contact.',
+        'best_time_to_contact_end' : 'Preferred end time for availability.',
+        'active_from_date' : 'Date when this contact became active or relevant.',
+        'active_to_date' : 'Date when this contact ceases to be active or relevant.',
+        'for_business_use' : 'Indicates if the contact is primarily for business purposes.',
+        'for_personal_use' : 'Indicates if the contact is primarily for personal use.',
+        'do_not_use' : 'Indicates if there are any restrictions or requests not to use this contact.',
+        'is_active' : 'Indicates if this contact is currently active and usable.',
+        'is_blocked' : 'Indicates if this contact is blocked, maybe due to spam or other reasons.',
+        'is_verified' : 'Indicates if this contact has been verified, e.g., via OTP or email confirmation.',
+        'notes' : 'Additional notes or context about the contact.',
+    }
+    # list_exclude_columns = ['person', 'org', 'address_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
+    # show_exclude_columns = ['person', 'org', 'address_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
+    # edit_exclude_columns = ['person', 'org', 'address_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
+    # add_exclude_columns = ['person', 'org', 'address_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
+    # search_exclude_columns = ['person', 'org', 'address_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
+    # order_columns = ['person', 'org', 'address_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
+    # add_columns = ['person', 'org', 'address_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
+    # add_columns = ['person', 'org', 'address_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
+    # add_columns = ['person', 'org', 'address_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
+    
+    label_columns = {'person':'Person', 'org':'Org', 'address_type':'Address Type', 'contact':'Contact', 'priority':'Priority', 'best_time_to_contact_start':'Best Time To Contact Start', 'best_time_to_contact_end':'Best Time To Contact End', 'active_from_date':'Active From Date', 'active_to_date':'Active To Date', 'for_business_use':'For Business Use', 'for_personal_use':'For Personal Use', 'do_not_use':'Do Not Use', 'is_active':'Is Active', 'is_blocked':'Is Blocked', 'is_verified':'Is Verified', 'notes':'Notes'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['person', 'org', 'address_type', 'contact', 'priority', 'best_time_to_contact_start', 'best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use', 'do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes']
+class DocModelView(ModelView):
+    datamodel = SQLAInterface(Doc)
+    list_title = 'List Doc'
+    show_title = 'Show Doc'
+    edit_title = 'Edit Doc'
+    add_title  = 'Add Doc'
+ 
+    list_columns = ['doc_type', 'person', 'org', 'doc_name', 'doc_content_type', 'expired', 'verified_date', 'expires_on', 'issued_on', 'issued_by_authority', 'issued_at', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'doc_url', 'doc_length', 'doc_text', 'mime_type', 'language', 'uploaded_at', 'updated_at', 'uploaded_by']
+    # show_columns = ['doc_type', 'person', 'org', 'doc_name', 'doc_content_type', 'expired', 'verified_date', 'expires_on', 'issued_on', 'issued_by_authority', 'issued_at', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'doc_url', 'doc_length', 'doc_text', 'mime_type', 'language', 'uploaded_at', 'updated_at', 'uploaded_by']
+    # edit_columns = ['doc_type', 'person', 'org', 'doc_name', 'doc_content_type', 'expired', 'verified_date', 'expires_on', 'issued_on', 'issued_by_authority', 'issued_at', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'doc_url', 'doc_length', 'doc_text', 'mime_type', 'language', 'uploaded_at', 'updated_at', 'uploaded_by']
+    add_columns = ['doc_type', 'person', 'org', 'doc_name', 'doc_content_type', 'expired', 'verified_date', 'expires_on', 'issued_on', 'issued_by_authority', 'issued_at', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'doc_url', 'doc_length', 'doc_text', 'mime_type', 'language', 'uploaded_at', 'updated_at', 'uploaded_by']
+    # search_columns = ['doc_type', 'person', 'org', 'doc_name', 'doc_content_type', 'expired', 'verified_date', 'expires_on', 'issued_on', 'issued_by_authority', 'issued_at', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'doc_url', 'doc_length', 'doc_text', 'mime_type', 'language', 'uploaded_at', 'updated_at', 'uploaded_by']
+    description_columns = {
+        'id' : 'Unique identifier for the document.',
+        'doc_type_id_fk' : 'References the type of document e.g. passport, license.',
+        'person_id_fk' : 'The person to whom the document belongs.',
+        'org_id_fk' : 'The organization associated with the document.',
+        'doc_name' : 'Name or title of the document.',
+        'doc_content_type' : 'MIME type of the document content e.g. application/pdf, image/jpeg.',
+        'expired' : 'Flag to indicate if the document has expired.',
+        'verified_date' : 'The date when the document was verified.',
+        'expires_on' : 'Expiration date of the document.',
+        'issued_on' : 'The date when the document was issued.',
+        'issued_by_authority' : 'Authority or organization that issued the document.',
+        'issued_at' : 'Place or location where the document was issued.',
+        'identification_number' : 'Unique identification number, e.g., passport number.',
+        'serial_number' : 'Serial number of the document if applicable.',
+        'description' : 'Detailed description or remarks about the document.',
+        'file_name' : 'Name of the file if stored digitally.',
+        'page_count' : 'Number of pages in the document, if applicable.',
+        'doc_url' : 'Actual doc in pdf or other format',
+        'doc_length' : 'Size of the document in bytes or another measure.',
+        'doc_text' : 'Text content extracted from the document. Useful for search and analytics. May be stored in another database for scalability.',
+        'mime_type_id_fk' : 'None',
+        'language_id_fk' : 'None',
+        'uploaded_at' : 'Timestamp when the document was uploaded into the system.',
+        'updated_at' : 'Timestamp when the document record was last updated.',
+        'uploaded_by_id_fk' : 'User who uploaded the document.',
+    }
+    # list_exclude_columns = ['doc_type', 'person', 'org', 'doc_name', 'doc_content_type', 'expired', 'verified_date', 'expires_on', 'issued_on', 'issued_by_authority', 'issued_at', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'doc_url', 'doc_length', 'doc_text', 'mime_type', 'language', 'uploaded_at', 'updated_at', 'uploaded_by']
+    # show_exclude_columns = ['doc_type', 'person', 'org', 'doc_name', 'doc_content_type', 'expired', 'verified_date', 'expires_on', 'issued_on', 'issued_by_authority', 'issued_at', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'doc_url', 'doc_length', 'doc_text', 'mime_type', 'language', 'uploaded_at', 'updated_at', 'uploaded_by']
+    # edit_exclude_columns = ['doc_type', 'person', 'org', 'doc_name', 'doc_content_type', 'expired', 'verified_date', 'expires_on', 'issued_on', 'issued_by_authority', 'issued_at', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'doc_url', 'doc_length', 'doc_text', 'mime_type', 'language', 'uploaded_at', 'updated_at', 'uploaded_by']
+    # add_exclude_columns = ['doc_type', 'person', 'org', 'doc_name', 'doc_content_type', 'expired', 'verified_date', 'expires_on', 'issued_on', 'issued_by_authority', 'issued_at', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'doc_url', 'doc_length', 'doc_text', 'mime_type', 'language', 'uploaded_at', 'updated_at', 'uploaded_by']
+    # search_exclude_columns = ['doc_type', 'person', 'org', 'doc_name', 'doc_content_type', 'expired', 'verified_date', 'expires_on', 'issued_on', 'issued_by_authority', 'issued_at', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'doc_url', 'doc_length', 'doc_text', 'mime_type', 'language', 'uploaded_at', 'updated_at', 'uploaded_by']
+    # order_columns = ['doc_type', 'person', 'org', 'doc_name', 'doc_content_type', 'expired', 'verified_date', 'expires_on', 'issued_on', 'issued_by_authority', 'issued_at', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'doc_url', 'doc_length', 'doc_text', 'mime_type', 'language', 'uploaded_at', 'updated_at', 'uploaded_by']
+    # add_columns = ['doc_type', 'person', 'org', 'doc_name', 'doc_content_type', 'expired', 'verified_date', 'expires_on', 'issued_on', 'issued_by_authority', 'issued_at', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'doc_url', 'doc_length', 'doc_text', 'mime_type', 'language', 'uploaded_at', 'updated_at', 'uploaded_by']
+    # add_columns = ['doc_type', 'person', 'org', 'doc_name', 'doc_content_type', 'expired', 'verified_date', 'expires_on', 'issued_on', 'issued_by_authority', 'issued_at', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'doc_url', 'doc_length', 'doc_text', 'mime_type', 'language', 'uploaded_at', 'updated_at', 'uploaded_by']
+    # add_columns = ['doc_type', 'person', 'org', 'doc_name', 'doc_content_type', 'expired', 'verified_date', 'expires_on', 'issued_on', 'issued_by_authority', 'issued_at', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'doc_url', 'doc_length', 'doc_text', 'mime_type', 'language', 'uploaded_at', 'updated_at', 'uploaded_by']
+    
+    label_columns = {'doc_type':'Doc Type', 'person':'Person', 'org':'Org', 'doc_name':'Doc Name', 'doc_content_type':'Doc Content Type', 'expired':'Expired', 'verified_date':'Verified Date', 'expires_on':'Expires On', 'issued_on':'Issued On', 'issued_by_authority':'Issued By Authority', 'issued_at':'Issued At', 'identification_number':'Identification Number', 'serial_number':'Serial Number', 'description':'Description', 'file_name':'File Name', 'page_count':'Page Count', 'doc_url':'Doc Url', 'doc_length':'Doc Length', 'doc_text':'Doc Text', 'mime_type':'Mime Type', 'language':'Language', 'uploaded_at':'Uploaded At', 'updated_at':'Updated At', 'uploaded_by':'Uploaded By'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['doc_type', 'person', 'org', 'doc_name', 'doc_content_type', 'expired', 'verified_date', 'expires_on', 'issued_on', 'issued_by_authority', 'issued_at', 'identification_number', 'serial_number', 'description', 'file_name', 'page_count', 'doc_url', 'doc_length', 'doc_text', 'mime_type', 'language', 'uploaded_at', 'updated_at', 'uploaded_by']
+class FundModelView(ModelView):
+    datamodel = SQLAInterface(Fund)
+    list_title = 'List Fund'
+    show_title = 'Show Fund'
+    edit_title = 'Edit Fund'
+    add_title  = 'Add Fund'
+ 
+    list_columns = ['fund_name', 'provider']
+    # show_columns = ['fund_name', 'provider']
+    # edit_columns = ['fund_name', 'provider']
+    add_columns = ['fund_name', 'provider']
+    # search_columns = ['fund_name', 'provider']
+    description_columns = {
+        'id' : 'None',
+        'fund_name' : 'None',
+        'provider_id_fk' : 'None',
+    }
+    # list_exclude_columns = ['fund_name', 'provider']
+    # show_exclude_columns = ['fund_name', 'provider']
+    # edit_exclude_columns = ['fund_name', 'provider']
+    # add_exclude_columns = ['fund_name', 'provider']
+    # search_exclude_columns = ['fund_name', 'provider']
+    # order_columns = ['fund_name', 'provider']
+    # add_columns = ['fund_name', 'provider']
+    # add_columns = ['fund_name', 'provider']
+    # add_columns = ['fund_name', 'provider']
+    
+    label_columns = {'fund_name':'Fund Name', 'provider':'Provider'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['fund_name', 'provider']
+class HerdAnimalLinkModelView(ModelView):
+    datamodel = SQLAInterface(HerdAnimalLink)
+    list_title = 'List Herd Animal Link'
+    show_title = 'Show Herd Animal Link'
+    edit_title = 'Edit Herd Animal Link'
+    add_title  = 'Add Herd Animal Link'
+ 
+    list_columns = ['herd', 'animal', 'date_added', 'date_removed', 'reason_for_addition', 'reason_for_removal', 'added_by', 'removed_by', 'notes']
+    # show_columns = ['herd', 'animal', 'date_added', 'date_removed', 'reason_for_addition', 'reason_for_removal', 'added_by', 'removed_by', 'notes']
+    # edit_columns = ['herd', 'animal', 'date_added', 'date_removed', 'reason_for_addition', 'reason_for_removal', 'added_by', 'removed_by', 'notes']
+    add_columns = ['herd', 'animal', 'date_added', 'date_removed', 'reason_for_addition', 'reason_for_removal', 'added_by', 'removed_by', 'notes']
+    # search_columns = ['herd', 'animal', 'date_added', 'date_removed', 'reason_for_addition', 'reason_for_removal', 'added_by', 'removed_by', 'notes']
+    description_columns = {
+        'herd_id_fk' : 'Reference to the herd.',
+        'animal_id_fk' : 'Reference to the individual livestock animal.',
+        'date_added' : 'Date and time when the animal was added to the herd.',
+        'date_removed' : 'Date and time when the animal was removed from the herd. Null if the animal is currently part of the herd.',
+        'reason_for_addition' : 'Reason why the animal was added to the herd, e.g., purchase, birth, transfer.',
+        'reason_for_removal' : 'Reason why the animal was removed from the herd, e.g., sold, died, transfer.',
+        'added_by_id_fk' : 'Person who added the animal to the herd.',
+        'removed_by_id_fk' : 'Person who removed the animal from the herd.',
+        'notes' : 'Any additional notes or details about the animal’s membership in the herd.',
+    }
+    # list_exclude_columns = ['herd', 'animal', 'date_added', 'date_removed', 'reason_for_addition', 'reason_for_removal', 'added_by', 'removed_by', 'notes']
+    # show_exclude_columns = ['herd', 'animal', 'date_added', 'date_removed', 'reason_for_addition', 'reason_for_removal', 'added_by', 'removed_by', 'notes']
+    # edit_exclude_columns = ['herd', 'animal', 'date_added', 'date_removed', 'reason_for_addition', 'reason_for_removal', 'added_by', 'removed_by', 'notes']
+    # add_exclude_columns = ['herd', 'animal', 'date_added', 'date_removed', 'reason_for_addition', 'reason_for_removal', 'added_by', 'removed_by', 'notes']
+    # search_exclude_columns = ['herd', 'animal', 'date_added', 'date_removed', 'reason_for_addition', 'reason_for_removal', 'added_by', 'removed_by', 'notes']
+    # order_columns = ['herd', 'animal', 'date_added', 'date_removed', 'reason_for_addition', 'reason_for_removal', 'added_by', 'removed_by', 'notes']
+    # add_columns = ['herd', 'animal', 'date_added', 'date_removed', 'reason_for_addition', 'reason_for_removal', 'added_by', 'removed_by', 'notes']
+    # add_columns = ['herd', 'animal', 'date_added', 'date_removed', 'reason_for_addition', 'reason_for_removal', 'added_by', 'removed_by', 'notes']
+    # add_columns = ['herd', 'animal', 'date_added', 'date_removed', 'reason_for_addition', 'reason_for_removal', 'added_by', 'removed_by', 'notes']
+    
+    label_columns = {'herd':'Herd', 'animal':'Animal', 'date_added':'Date Added', 'date_removed':'Date Removed', 'reason_for_addition':'Reason For Addition', 'reason_for_removal':'Reason For Removal', 'added_by':'Added By', 'removed_by':'Removed By', 'notes':'Notes'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['herd', 'animal', 'date_added', 'date_removed', 'reason_for_addition', 'reason_for_removal', 'added_by', 'removed_by', 'notes']
+class LoanRiskAnalysisModelView(ModelView):
+    datamodel = SQLAInterface(LoanRiskAnalysis)
+    list_title = 'List Loan Risk Analysis'
+    show_title = 'Show Loan Risk Analysis'
+    edit_title = 'Edit Loan Risk Analysis'
+    add_title  = 'Add Loan Risk Analysis'
+ 
+    list_columns = ['client', 'proposed_loan_amount', 'assets_cash', 'assets_bank_accounts', 'assets_accounts_receivable', 'assets_inventory', 'assets_total_fixed_business', 'assets_total_business', 'assets_total_household', 'liabilities_accounts_payable', 'liabilities_business_debts', 'liabilities_total_business', 'liabilities_equity_working_capital', 'liabilities_total_household', 'liabilities_household_equity', 'cashflow_cash_sales', 'cashflow_cash_sales2', 'cashflow_cost_goods_sold', 'cashflow_cost_goods_sold2', 'cashflow_gross_profit', 'cashflow_other_income1', 'cashflow_total_income2', 'cashflow_household_expense', 'cashflow_payments_to_savings', 'cashflow_operational_expenses', 'cashflow_disposable_income', 'cashflow_amount_loan_installment', 'cashflow_available_surplus', 'fi_inventory_turnover', 'fi_gross_margin', 'fi_indebtedness', 'fi_loan_recommendation', 'fi_roe', 'fi_repayment_capacity']
+    # show_columns = ['client', 'proposed_loan_amount', 'assets_cash', 'assets_bank_accounts', 'assets_accounts_receivable', 'assets_inventory', 'assets_total_fixed_business', 'assets_total_business', 'assets_total_household', 'liabilities_accounts_payable', 'liabilities_business_debts', 'liabilities_total_business', 'liabilities_equity_working_capital', 'liabilities_total_household', 'liabilities_household_equity', 'cashflow_cash_sales', 'cashflow_cash_sales2', 'cashflow_cost_goods_sold', 'cashflow_cost_goods_sold2', 'cashflow_gross_profit', 'cashflow_other_income1', 'cashflow_total_income2', 'cashflow_household_expense', 'cashflow_payments_to_savings', 'cashflow_operational_expenses', 'cashflow_disposable_income', 'cashflow_amount_loan_installment', 'cashflow_available_surplus', 'fi_inventory_turnover', 'fi_gross_margin', 'fi_indebtedness', 'fi_loan_recommendation', 'fi_roe', 'fi_repayment_capacity']
+    # edit_columns = ['client', 'proposed_loan_amount', 'assets_cash', 'assets_bank_accounts', 'assets_accounts_receivable', 'assets_inventory', 'assets_total_fixed_business', 'assets_total_business', 'assets_total_household', 'liabilities_accounts_payable', 'liabilities_business_debts', 'liabilities_total_business', 'liabilities_equity_working_capital', 'liabilities_total_household', 'liabilities_household_equity', 'cashflow_cash_sales', 'cashflow_cash_sales2', 'cashflow_cost_goods_sold', 'cashflow_cost_goods_sold2', 'cashflow_gross_profit', 'cashflow_other_income1', 'cashflow_total_income2', 'cashflow_household_expense', 'cashflow_payments_to_savings', 'cashflow_operational_expenses', 'cashflow_disposable_income', 'cashflow_amount_loan_installment', 'cashflow_available_surplus', 'fi_inventory_turnover', 'fi_gross_margin', 'fi_indebtedness', 'fi_loan_recommendation', 'fi_roe', 'fi_repayment_capacity']
+    add_columns = ['client', 'proposed_loan_amount', 'assets_cash', 'assets_bank_accounts', 'assets_accounts_receivable', 'assets_inventory', 'assets_total_fixed_business', 'assets_total_business', 'assets_total_household', 'liabilities_accounts_payable', 'liabilities_business_debts', 'liabilities_total_business', 'liabilities_equity_working_capital', 'liabilities_total_household', 'liabilities_household_equity', 'cashflow_cash_sales', 'cashflow_cash_sales2', 'cashflow_cost_goods_sold', 'cashflow_cost_goods_sold2', 'cashflow_gross_profit', 'cashflow_other_income1', 'cashflow_total_income2', 'cashflow_household_expense', 'cashflow_payments_to_savings', 'cashflow_operational_expenses', 'cashflow_disposable_income', 'cashflow_amount_loan_installment', 'cashflow_available_surplus', 'fi_inventory_turnover', 'fi_gross_margin', 'fi_indebtedness', 'fi_loan_recommendation', 'fi_roe', 'fi_repayment_capacity']
+    # search_columns = ['client', 'proposed_loan_amount', 'assets_cash', 'assets_bank_accounts', 'assets_accounts_receivable', 'assets_inventory', 'assets_total_fixed_business', 'assets_total_business', 'assets_total_household', 'liabilities_accounts_payable', 'liabilities_business_debts', 'liabilities_total_business', 'liabilities_equity_working_capital', 'liabilities_total_household', 'liabilities_household_equity', 'cashflow_cash_sales', 'cashflow_cash_sales2', 'cashflow_cost_goods_sold', 'cashflow_cost_goods_sold2', 'cashflow_gross_profit', 'cashflow_other_income1', 'cashflow_total_income2', 'cashflow_household_expense', 'cashflow_payments_to_savings', 'cashflow_operational_expenses', 'cashflow_disposable_income', 'cashflow_amount_loan_installment', 'cashflow_available_surplus', 'fi_inventory_turnover', 'fi_gross_margin', 'fi_indebtedness', 'fi_loan_recommendation', 'fi_roe', 'fi_repayment_capacity']
+    description_columns = {
+        'id' : 'None',
+        'client_id_fk' : 'Reference to client',
+        'proposed_loan_amount' : 'Proposed loan amount for the client',
+        'assets_cash' : 'Cash assets of the client',
+        'assets_bank_accounts' : 'Assets in bank accounts',
+        'assets_accounts_receivable' : 'Amounts owed by customers (receivables)',
+        'assets_inventory' : 'Value of inventory',
+        'assets_total_fixed_business' : 'Total fixed business assets',
+        'assets_total_business' : 'Total business assets',
+        'assets_total_household' : 'Total household assets',
+        'liabilities_accounts_payable' : 'Amounts owed to suppliers',
+        'liabilities_business_debts' : 'Total business debts',
+        'liabilities_total_business' : 'Total business liabilities',
+        'liabilities_equity_working_capital' : 'Working capital in equity',
+        'liabilities_total_household' : 'Total household liabilities',
+        'liabilities_household_equity' : 'Equity in the household',
+        'cashflow_cash_sales' : 'Cash sales for cashflow analysis',
+        'cashflow_cash_sales2' : 'Alternative cash sales metric',
+        'cashflow_cost_goods_sold' : 'Cost of goods sold',
+        'cashflow_cost_goods_sold2' : 'Alternative metric for cost of goods sold',
+        'cashflow_gross_profit' : 'Gross profit from cashflow',
+        'cashflow_other_income1' : 'Other income streams',
+        'cashflow_total_income2' : 'Total income for cashflow analysis',
+        'cashflow_household_expense' : 'Household expenses',
+        'cashflow_payments_to_savings' : 'Payments moved to savings',
+        'cashflow_operational_expenses' : 'Operational expenses',
+        'cashflow_disposable_income' : 'Income available after expenses',
+        'cashflow_amount_loan_installment' : 'Installment amount for loan',
+        'cashflow_available_surplus' : 'Available surplus after accounting for expenses and income',
+        'fi_inventory_turnover' : 'Inventory turnover ratio',
+        'fi_gross_margin' : 'Gross margin ratio',
+        'fi_indebtedness' : 'Ratio of indebtedness',
+        'fi_loan_recommendation' : 'Recommended loan amount based on financial indicators',
+        'fi_roe' : 'Return on equity',
+        'fi_repayment_capacity' : 'Capacity for loan repayment',
+    }
+    # list_exclude_columns = ['client', 'proposed_loan_amount', 'assets_cash', 'assets_bank_accounts', 'assets_accounts_receivable', 'assets_inventory', 'assets_total_fixed_business', 'assets_total_business', 'assets_total_household', 'liabilities_accounts_payable', 'liabilities_business_debts', 'liabilities_total_business', 'liabilities_equity_working_capital', 'liabilities_total_household', 'liabilities_household_equity', 'cashflow_cash_sales', 'cashflow_cash_sales2', 'cashflow_cost_goods_sold', 'cashflow_cost_goods_sold2', 'cashflow_gross_profit', 'cashflow_other_income1', 'cashflow_total_income2', 'cashflow_household_expense', 'cashflow_payments_to_savings', 'cashflow_operational_expenses', 'cashflow_disposable_income', 'cashflow_amount_loan_installment', 'cashflow_available_surplus', 'fi_inventory_turnover', 'fi_gross_margin', 'fi_indebtedness', 'fi_loan_recommendation', 'fi_roe', 'fi_repayment_capacity']
+    # show_exclude_columns = ['client', 'proposed_loan_amount', 'assets_cash', 'assets_bank_accounts', 'assets_accounts_receivable', 'assets_inventory', 'assets_total_fixed_business', 'assets_total_business', 'assets_total_household', 'liabilities_accounts_payable', 'liabilities_business_debts', 'liabilities_total_business', 'liabilities_equity_working_capital', 'liabilities_total_household', 'liabilities_household_equity', 'cashflow_cash_sales', 'cashflow_cash_sales2', 'cashflow_cost_goods_sold', 'cashflow_cost_goods_sold2', 'cashflow_gross_profit', 'cashflow_other_income1', 'cashflow_total_income2', 'cashflow_household_expense', 'cashflow_payments_to_savings', 'cashflow_operational_expenses', 'cashflow_disposable_income', 'cashflow_amount_loan_installment', 'cashflow_available_surplus', 'fi_inventory_turnover', 'fi_gross_margin', 'fi_indebtedness', 'fi_loan_recommendation', 'fi_roe', 'fi_repayment_capacity']
+    # edit_exclude_columns = ['client', 'proposed_loan_amount', 'assets_cash', 'assets_bank_accounts', 'assets_accounts_receivable', 'assets_inventory', 'assets_total_fixed_business', 'assets_total_business', 'assets_total_household', 'liabilities_accounts_payable', 'liabilities_business_debts', 'liabilities_total_business', 'liabilities_equity_working_capital', 'liabilities_total_household', 'liabilities_household_equity', 'cashflow_cash_sales', 'cashflow_cash_sales2', 'cashflow_cost_goods_sold', 'cashflow_cost_goods_sold2', 'cashflow_gross_profit', 'cashflow_other_income1', 'cashflow_total_income2', 'cashflow_household_expense', 'cashflow_payments_to_savings', 'cashflow_operational_expenses', 'cashflow_disposable_income', 'cashflow_amount_loan_installment', 'cashflow_available_surplus', 'fi_inventory_turnover', 'fi_gross_margin', 'fi_indebtedness', 'fi_loan_recommendation', 'fi_roe', 'fi_repayment_capacity']
+    # add_exclude_columns = ['client', 'proposed_loan_amount', 'assets_cash', 'assets_bank_accounts', 'assets_accounts_receivable', 'assets_inventory', 'assets_total_fixed_business', 'assets_total_business', 'assets_total_household', 'liabilities_accounts_payable', 'liabilities_business_debts', 'liabilities_total_business', 'liabilities_equity_working_capital', 'liabilities_total_household', 'liabilities_household_equity', 'cashflow_cash_sales', 'cashflow_cash_sales2', 'cashflow_cost_goods_sold', 'cashflow_cost_goods_sold2', 'cashflow_gross_profit', 'cashflow_other_income1', 'cashflow_total_income2', 'cashflow_household_expense', 'cashflow_payments_to_savings', 'cashflow_operational_expenses', 'cashflow_disposable_income', 'cashflow_amount_loan_installment', 'cashflow_available_surplus', 'fi_inventory_turnover', 'fi_gross_margin', 'fi_indebtedness', 'fi_loan_recommendation', 'fi_roe', 'fi_repayment_capacity']
+    # search_exclude_columns = ['client', 'proposed_loan_amount', 'assets_cash', 'assets_bank_accounts', 'assets_accounts_receivable', 'assets_inventory', 'assets_total_fixed_business', 'assets_total_business', 'assets_total_household', 'liabilities_accounts_payable', 'liabilities_business_debts', 'liabilities_total_business', 'liabilities_equity_working_capital', 'liabilities_total_household', 'liabilities_household_equity', 'cashflow_cash_sales', 'cashflow_cash_sales2', 'cashflow_cost_goods_sold', 'cashflow_cost_goods_sold2', 'cashflow_gross_profit', 'cashflow_other_income1', 'cashflow_total_income2', 'cashflow_household_expense', 'cashflow_payments_to_savings', 'cashflow_operational_expenses', 'cashflow_disposable_income', 'cashflow_amount_loan_installment', 'cashflow_available_surplus', 'fi_inventory_turnover', 'fi_gross_margin', 'fi_indebtedness', 'fi_loan_recommendation', 'fi_roe', 'fi_repayment_capacity']
+    # order_columns = ['client', 'proposed_loan_amount', 'assets_cash', 'assets_bank_accounts', 'assets_accounts_receivable', 'assets_inventory', 'assets_total_fixed_business', 'assets_total_business', 'assets_total_household', 'liabilities_accounts_payable', 'liabilities_business_debts', 'liabilities_total_business', 'liabilities_equity_working_capital', 'liabilities_total_household', 'liabilities_household_equity', 'cashflow_cash_sales', 'cashflow_cash_sales2', 'cashflow_cost_goods_sold', 'cashflow_cost_goods_sold2', 'cashflow_gross_profit', 'cashflow_other_income1', 'cashflow_total_income2', 'cashflow_household_expense', 'cashflow_payments_to_savings', 'cashflow_operational_expenses', 'cashflow_disposable_income', 'cashflow_amount_loan_installment', 'cashflow_available_surplus', 'fi_inventory_turnover', 'fi_gross_margin', 'fi_indebtedness', 'fi_loan_recommendation', 'fi_roe', 'fi_repayment_capacity']
+    # add_columns = ['client', 'proposed_loan_amount', 'assets_cash', 'assets_bank_accounts', 'assets_accounts_receivable', 'assets_inventory', 'assets_total_fixed_business', 'assets_total_business', 'assets_total_household', 'liabilities_accounts_payable', 'liabilities_business_debts', 'liabilities_total_business', 'liabilities_equity_working_capital', 'liabilities_total_household', 'liabilities_household_equity', 'cashflow_cash_sales', 'cashflow_cash_sales2', 'cashflow_cost_goods_sold', 'cashflow_cost_goods_sold2', 'cashflow_gross_profit', 'cashflow_other_income1', 'cashflow_total_income2', 'cashflow_household_expense', 'cashflow_payments_to_savings', 'cashflow_operational_expenses', 'cashflow_disposable_income', 'cashflow_amount_loan_installment', 'cashflow_available_surplus', 'fi_inventory_turnover', 'fi_gross_margin', 'fi_indebtedness', 'fi_loan_recommendation', 'fi_roe', 'fi_repayment_capacity']
+    # add_columns = ['client', 'proposed_loan_amount', 'assets_cash', 'assets_bank_accounts', 'assets_accounts_receivable', 'assets_inventory', 'assets_total_fixed_business', 'assets_total_business', 'assets_total_household', 'liabilities_accounts_payable', 'liabilities_business_debts', 'liabilities_total_business', 'liabilities_equity_working_capital', 'liabilities_total_household', 'liabilities_household_equity', 'cashflow_cash_sales', 'cashflow_cash_sales2', 'cashflow_cost_goods_sold', 'cashflow_cost_goods_sold2', 'cashflow_gross_profit', 'cashflow_other_income1', 'cashflow_total_income2', 'cashflow_household_expense', 'cashflow_payments_to_savings', 'cashflow_operational_expenses', 'cashflow_disposable_income', 'cashflow_amount_loan_installment', 'cashflow_available_surplus', 'fi_inventory_turnover', 'fi_gross_margin', 'fi_indebtedness', 'fi_loan_recommendation', 'fi_roe', 'fi_repayment_capacity']
+    # add_columns = ['client', 'proposed_loan_amount', 'assets_cash', 'assets_bank_accounts', 'assets_accounts_receivable', 'assets_inventory', 'assets_total_fixed_business', 'assets_total_business', 'assets_total_household', 'liabilities_accounts_payable', 'liabilities_business_debts', 'liabilities_total_business', 'liabilities_equity_working_capital', 'liabilities_total_household', 'liabilities_household_equity', 'cashflow_cash_sales', 'cashflow_cash_sales2', 'cashflow_cost_goods_sold', 'cashflow_cost_goods_sold2', 'cashflow_gross_profit', 'cashflow_other_income1', 'cashflow_total_income2', 'cashflow_household_expense', 'cashflow_payments_to_savings', 'cashflow_operational_expenses', 'cashflow_disposable_income', 'cashflow_amount_loan_installment', 'cashflow_available_surplus', 'fi_inventory_turnover', 'fi_gross_margin', 'fi_indebtedness', 'fi_loan_recommendation', 'fi_roe', 'fi_repayment_capacity']
+    
+    label_columns = {'client':'Client', 'proposed_loan_amount':'Proposed Loan Amount', 'assets_cash':'Assets Cash', 'assets_bank_accounts':'Assets Bank Accounts', 'assets_accounts_receivable':'Assets Accounts Receivable', 'assets_inventory':'Assets Inventory', 'assets_total_fixed_business':'Assets Total Fixed Business', 'assets_total_business':'Assets Total Business', 'assets_total_household':'Assets Total Household', 'liabilities_accounts_payable':'Liabilities Accounts Payable', 'liabilities_business_debts':'Liabilities Business Debts', 'liabilities_total_business':'Liabilities Total Business', 'liabilities_equity_working_capital':'Liabilities Equity Working Capital', 'liabilities_total_household':'Liabilities Total Household', 'liabilities_household_equity':'Liabilities Household Equity', 'cashflow_cash_sales':'Cashflow Cash Sales', 'cashflow_cash_sales2':'Cashflow Cash Sales2', 'cashflow_cost_goods_sold':'Cashflow Cost Goods Sold', 'cashflow_cost_goods_sold2':'Cashflow Cost Goods Sold2', 'cashflow_gross_profit':'Cashflow Gross Profit', 'cashflow_other_income1':'Cashflow Other Income1', 'cashflow_total_income2':'Cashflow Total Income2', 'cashflow_household_expense':'Cashflow Household Expense', 'cashflow_payments_to_savings':'Cashflow Payments To Savings', 'cashflow_operational_expenses':'Cashflow Operational Expenses', 'cashflow_disposable_income':'Cashflow Disposable Income', 'cashflow_amount_loan_installment':'Cashflow Amount Loan Installment', 'cashflow_available_surplus':'Cashflow Available Surplus', 'fi_inventory_turnover':'Fi Inventory Turnover', 'fi_gross_margin':'Fi Gross Margin', 'fi_indebtedness':'Fi Indebtedness', 'fi_loan_recommendation':'Fi Loan Recommendation', 'fi_roe':'Fi Roe', 'fi_repayment_capacity':'Fi Repayment Capacity'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['client', 'proposed_loan_amount', 'assets_cash', 'assets_bank_accounts', 'assets_accounts_receivable', 'assets_inventory', 'assets_total_fixed_business', 'assets_total_business', 'assets_total_household', 'liabilities_accounts_payable', 'liabilities_business_debts', 'liabilities_total_business', 'liabilities_equity_working_capital', 'liabilities_total_household', 'liabilities_household_equity', 'cashflow_cash_sales', 'cashflow_cash_sales2', 'cashflow_cost_goods_sold', 'cashflow_cost_goods_sold2', 'cashflow_gross_profit', 'cashflow_other_income1', 'cashflow_total_income2', 'cashflow_household_expense', 'cashflow_payments_to_savings', 'cashflow_operational_expenses', 'cashflow_disposable_income', 'cashflow_amount_loan_installment', 'cashflow_available_surplus', 'fi_inventory_turnover', 'fi_gross_margin', 'fi_indebtedness', 'fi_loan_recommendation', 'fi_roe', 'fi_repayment_capacity']
+class LtagBatchModelView(ModelView):
+    datamodel = SQLAInterface(LtagBatch)
+    list_title = 'List Ltag Batch'
+    show_title = 'Show Ltag Batch'
+    edit_title = 'Edit Ltag Batch'
+    add_title  = 'Add Ltag Batch'
+ 
+    list_columns = ['supplier', 'make', 'model', 'quantity', 'received_on', 'tag_type', 'material', 'purpose', 'packaging_notes', 'color', 'tag_size', 'unique_identifiers', 'batch_code', 'expiry_date', 'storage_condition', 'batch_status', 'cost_per_tag', 'total_cost', 'notes']
+    # show_columns = ['supplier', 'make', 'model', 'quantity', 'received_on', 'tag_type', 'material', 'purpose', 'packaging_notes', 'color', 'tag_size', 'unique_identifiers', 'batch_code', 'expiry_date', 'storage_condition', 'batch_status', 'cost_per_tag', 'total_cost', 'notes']
+    # edit_columns = ['supplier', 'make', 'model', 'quantity', 'received_on', 'tag_type', 'material', 'purpose', 'packaging_notes', 'color', 'tag_size', 'unique_identifiers', 'batch_code', 'expiry_date', 'storage_condition', 'batch_status', 'cost_per_tag', 'total_cost', 'notes']
+    add_columns = ['supplier', 'make', 'model', 'quantity', 'received_on', 'tag_type', 'material', 'purpose', 'packaging_notes', 'color', 'tag_size', 'unique_identifiers', 'batch_code', 'expiry_date', 'storage_condition', 'batch_status', 'cost_per_tag', 'total_cost', 'notes']
+    # search_columns = ['supplier', 'make', 'model', 'quantity', 'received_on', 'tag_type', 'material', 'purpose', 'packaging_notes', 'color', 'tag_size', 'unique_identifiers', 'batch_code', 'expiry_date', 'storage_condition', 'batch_status', 'cost_per_tag', 'total_cost', 'notes']
+    description_columns = {
+        'id' : 'Unique identifier for each tag batch',
+        'supplier_id_fk' : 'Supplier or manufacturer of the animal tags',
+        'make' : 'Brand or make of the animal tags',
+        'model' : 'Specific model or variant of the tags, if applicable',
+        'quantity' : 'Total number of tags in the batch',
+        'received_on' : 'Date when the tag batch was received',
+        'tag_type' : 'Type of the tag e.g., ear tag, RFID, neck collar, etc.',
+        'material' : 'Material of the tag e.g., plastic, metal, etc.',
+        'purpose' : 'Purpose or use case for the tags e.g., identification, tracking, health monitoring, etc.',
+        'packaging_notes' : 'None',
+        'color' : 'Primary color of the tags',
+        'tag_size' : 'Size or dimensions of the tag, e.g., small, medium, large or specific dimensions',
+        'unique_identifiers' : 'Indicates if each tag in the batch has a unique identifier',
+        'batch_code' : 'A unique code or number associated with the batch for easy reference',
+        'expiry_date' : 'Expiry date for the tags if they have a limited usable lifespan',
+        'storage_condition' : 'Recommended or actual storage conditions for the tags, e.g., cool dry place, away from sunlight, etc.',
+        'batch_status' : 'Status of the tag batch, e.g., in stock, partially used, fully used, expired, etc.',
+        'cost_per_tag' : 'Cost of each individual tag in the batch',
+        'total_cost' : 'Total cost for the batch',
+        'notes' : 'Any additional notes or remarks about the batch',
+    }
+    # list_exclude_columns = ['supplier', 'make', 'model', 'quantity', 'received_on', 'tag_type', 'material', 'purpose', 'packaging_notes', 'color', 'tag_size', 'unique_identifiers', 'batch_code', 'expiry_date', 'storage_condition', 'batch_status', 'cost_per_tag', 'total_cost', 'notes']
+    # show_exclude_columns = ['supplier', 'make', 'model', 'quantity', 'received_on', 'tag_type', 'material', 'purpose', 'packaging_notes', 'color', 'tag_size', 'unique_identifiers', 'batch_code', 'expiry_date', 'storage_condition', 'batch_status', 'cost_per_tag', 'total_cost', 'notes']
+    # edit_exclude_columns = ['supplier', 'make', 'model', 'quantity', 'received_on', 'tag_type', 'material', 'purpose', 'packaging_notes', 'color', 'tag_size', 'unique_identifiers', 'batch_code', 'expiry_date', 'storage_condition', 'batch_status', 'cost_per_tag', 'total_cost', 'notes']
+    # add_exclude_columns = ['supplier', 'make', 'model', 'quantity', 'received_on', 'tag_type', 'material', 'purpose', 'packaging_notes', 'color', 'tag_size', 'unique_identifiers', 'batch_code', 'expiry_date', 'storage_condition', 'batch_status', 'cost_per_tag', 'total_cost', 'notes']
+    # search_exclude_columns = ['supplier', 'make', 'model', 'quantity', 'received_on', 'tag_type', 'material', 'purpose', 'packaging_notes', 'color', 'tag_size', 'unique_identifiers', 'batch_code', 'expiry_date', 'storage_condition', 'batch_status', 'cost_per_tag', 'total_cost', 'notes']
+    # order_columns = ['supplier', 'make', 'model', 'quantity', 'received_on', 'tag_type', 'material', 'purpose', 'packaging_notes', 'color', 'tag_size', 'unique_identifiers', 'batch_code', 'expiry_date', 'storage_condition', 'batch_status', 'cost_per_tag', 'total_cost', 'notes']
+    # add_columns = ['supplier', 'make', 'model', 'quantity', 'received_on', 'tag_type', 'material', 'purpose', 'packaging_notes', 'color', 'tag_size', 'unique_identifiers', 'batch_code', 'expiry_date', 'storage_condition', 'batch_status', 'cost_per_tag', 'total_cost', 'notes']
+    # add_columns = ['supplier', 'make', 'model', 'quantity', 'received_on', 'tag_type', 'material', 'purpose', 'packaging_notes', 'color', 'tag_size', 'unique_identifiers', 'batch_code', 'expiry_date', 'storage_condition', 'batch_status', 'cost_per_tag', 'total_cost', 'notes']
+    # add_columns = ['supplier', 'make', 'model', 'quantity', 'received_on', 'tag_type', 'material', 'purpose', 'packaging_notes', 'color', 'tag_size', 'unique_identifiers', 'batch_code', 'expiry_date', 'storage_condition', 'batch_status', 'cost_per_tag', 'total_cost', 'notes']
+    
+    label_columns = {'supplier':'Supplier', 'make':'Make', 'model':'Model', 'quantity':'Quantity', 'received_on':'Received On', 'tag_type':'Tag Type', 'material':'Material', 'purpose':'Purpose', 'packaging_notes':'Packaging Notes', 'color':'Color', 'tag_size':'Tag Size', 'unique_identifiers':'Unique Identifiers', 'batch_code':'Batch Code', 'expiry_date':'Expiry Date', 'storage_condition':'Storage Condition', 'batch_status':'Batch Status', 'cost_per_tag':'Cost Per Tag', 'total_cost':'Total Cost', 'notes':'Notes'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['supplier', 'make', 'model', 'quantity', 'received_on', 'tag_type', 'material', 'purpose', 'packaging_notes', 'color', 'tag_size', 'unique_identifiers', 'batch_code', 'expiry_date', 'storage_condition', 'batch_status', 'cost_per_tag', 'total_cost', 'notes']
+class OpportunityModelView(ModelView):
+    datamodel = SQLAInterface(Opportunity)
+    list_title = 'List Opportunity'
+    show_title = 'Show Opportunity'
+    edit_title = 'Edit Opportunity'
+    add_title  = 'Add Opportunity'
+ 
+    list_columns = ['owner', 'title', 'product_class', 'description', 'source_url', 'estimated_value', 'currency', 'country', 'region', 'department', 'contact_info', 'lead_referred_by', 'lead_narrative', 'lead_type', 'lead_quality', 'lead_conversion_probability', 'lead_contact_info', 'estimated_close_date', 'tender_open_date', 'tender_close_date', 'bid_bond_value', 'bid_bond_currency', 'performance_bond_value', 'performance_bond_currency', 'other_bonds_values', 'eligibility_criteria', 'document_requirements', 'technical_specifications', 'payment_terms', 'status', 'created_date', 'last_updated', 'document_links']
+    # show_columns = ['owner', 'title', 'product_class', 'description', 'source_url', 'estimated_value', 'currency', 'country', 'region', 'department', 'contact_info', 'lead_referred_by', 'lead_narrative', 'lead_type', 'lead_quality', 'lead_conversion_probability', 'lead_contact_info', 'estimated_close_date', 'tender_open_date', 'tender_close_date', 'bid_bond_value', 'bid_bond_currency', 'performance_bond_value', 'performance_bond_currency', 'other_bonds_values', 'eligibility_criteria', 'document_requirements', 'technical_specifications', 'payment_terms', 'status', 'created_date', 'last_updated', 'document_links']
+    # edit_columns = ['owner', 'title', 'product_class', 'description', 'source_url', 'estimated_value', 'currency', 'country', 'region', 'department', 'contact_info', 'lead_referred_by', 'lead_narrative', 'lead_type', 'lead_quality', 'lead_conversion_probability', 'lead_contact_info', 'estimated_close_date', 'tender_open_date', 'tender_close_date', 'bid_bond_value', 'bid_bond_currency', 'performance_bond_value', 'performance_bond_currency', 'other_bonds_values', 'eligibility_criteria', 'document_requirements', 'technical_specifications', 'payment_terms', 'status', 'created_date', 'last_updated', 'document_links']
+    add_columns = ['owner', 'title', 'product_class', 'description', 'source_url', 'estimated_value', 'currency', 'country', 'region', 'department', 'contact_info', 'lead_referred_by', 'lead_narrative', 'lead_type', 'lead_quality', 'lead_conversion_probability', 'lead_contact_info', 'estimated_close_date', 'tender_open_date', 'tender_close_date', 'bid_bond_value', 'bid_bond_currency', 'performance_bond_value', 'performance_bond_currency', 'other_bonds_values', 'eligibility_criteria', 'document_requirements', 'technical_specifications', 'payment_terms', 'status', 'created_date', 'last_updated', 'document_links']
+    # search_columns = ['owner', 'title', 'product_class', 'description', 'source_url', 'estimated_value', 'currency', 'country', 'region', 'department', 'contact_info', 'lead_referred_by', 'lead_narrative', 'lead_type', 'lead_quality', 'lead_conversion_probability', 'lead_contact_info', 'estimated_close_date', 'tender_open_date', 'tender_close_date', 'bid_bond_value', 'bid_bond_currency', 'performance_bond_value', 'performance_bond_currency', 'other_bonds_values', 'eligibility_criteria', 'document_requirements', 'technical_specifications', 'payment_terms', 'status', 'created_date', 'last_updated', 'document_links']
+    description_columns = {
+        'id' : 'Unique identifier for each opportunity entry.',
+        'owner_id_fk' : 'Link to the organization tracking the opportunity.',
+        'title' : 'Name or title of the opportunity.',
+        'product_class_id_fk' : 'None',
+        'description' : 'Detailed description of the opportunity.',
+        'source_url' : 'The URL from where the tender information was scraped.',
+        'estimated_value' : 'Projected or advertised value of the tender.',
+        'currency' : 'The currency in which the estimated value is specified.',
+        'country_id_fk' : 'Country in Africa where the tender has been issued.',
+        'region' : 'Specific region or state within the country for the tender.',
+        'department' : 'Government department or agency issuing the tender.',
+        'contact_info' : 'Contact information for queries related to the tender.',
+        'lead_referred_by_id_fk' : 'None',
+        'lead_narrative' : 'How did this lead come about',
+        'lead_type' : 'Type or origin of the lead e.g., Meeting, Newspaper Ad, Personal Contact, Rumour, etc.',
+        'lead_quality' : 'Qualitative assessment of the lead e.g., Hot, Warm, Cold.',
+        'lead_conversion_probability' : 'Probability of the lead converting into a sale. Usually between 0 (0%) and 1 (100%).',
+        'lead_contact_info' : 'Contact information of the lead.',
+        'estimated_close_date' : 'Projected date when the tender decision will be made.',
+        'tender_open_date' : 'The date when the tender was officially opened for proposals.',
+        'tender_close_date' : 'The last date to submit proposals for the tender.',
+        'bid_bond_value' : 'Amount for the bid bond or earnest money deposit.',
+        'bid_bond_currency' : 'Currency for the bid bond amount.',
+        'performance_bond_value' : 'Value of the performance bond or guarantee required.',
+        'performance_bond_currency' : 'Currency for the performance bond amount.',
+        'other_bonds_values' : 'JSON object capturing other types of bonds/values, e.g., advance payment bond.',
+        'eligibility_criteria' : 'Criteria that a bidder must meet to be eligible for the tender.',
+        'document_requirements' : 'List of documents required to be submitted for the tender.',
+        'technical_specifications' : 'Technical details or requirements of the tender.',
+        'payment_terms' : 'Terms of payment post awarding of the tender.',
+        'status' : 'Current status of the tender e.g., Open, Closed, Awarded, Cancelled.',
+        'created_date' : 'Timestamp when the opportunity was first added to the system.',
+        'last_updated' : 'Timestamp when the opportunity was last updated in the system.',
+        'document_links' : 'JSON array containing URLs of associated documents like RFP, technical specifications, etc.',
+    }
+    # list_exclude_columns = ['owner', 'title', 'product_class', 'description', 'source_url', 'estimated_value', 'currency', 'country', 'region', 'department', 'contact_info', 'lead_referred_by', 'lead_narrative', 'lead_type', 'lead_quality', 'lead_conversion_probability', 'lead_contact_info', 'estimated_close_date', 'tender_open_date', 'tender_close_date', 'bid_bond_value', 'bid_bond_currency', 'performance_bond_value', 'performance_bond_currency', 'other_bonds_values', 'eligibility_criteria', 'document_requirements', 'technical_specifications', 'payment_terms', 'status', 'created_date', 'last_updated', 'document_links']
+    # show_exclude_columns = ['owner', 'title', 'product_class', 'description', 'source_url', 'estimated_value', 'currency', 'country', 'region', 'department', 'contact_info', 'lead_referred_by', 'lead_narrative', 'lead_type', 'lead_quality', 'lead_conversion_probability', 'lead_contact_info', 'estimated_close_date', 'tender_open_date', 'tender_close_date', 'bid_bond_value', 'bid_bond_currency', 'performance_bond_value', 'performance_bond_currency', 'other_bonds_values', 'eligibility_criteria', 'document_requirements', 'technical_specifications', 'payment_terms', 'status', 'created_date', 'last_updated', 'document_links']
+    # edit_exclude_columns = ['owner', 'title', 'product_class', 'description', 'source_url', 'estimated_value', 'currency', 'country', 'region', 'department', 'contact_info', 'lead_referred_by', 'lead_narrative', 'lead_type', 'lead_quality', 'lead_conversion_probability', 'lead_contact_info', 'estimated_close_date', 'tender_open_date', 'tender_close_date', 'bid_bond_value', 'bid_bond_currency', 'performance_bond_value', 'performance_bond_currency', 'other_bonds_values', 'eligibility_criteria', 'document_requirements', 'technical_specifications', 'payment_terms', 'status', 'created_date', 'last_updated', 'document_links']
+    # add_exclude_columns = ['owner', 'title', 'product_class', 'description', 'source_url', 'estimated_value', 'currency', 'country', 'region', 'department', 'contact_info', 'lead_referred_by', 'lead_narrative', 'lead_type', 'lead_quality', 'lead_conversion_probability', 'lead_contact_info', 'estimated_close_date', 'tender_open_date', 'tender_close_date', 'bid_bond_value', 'bid_bond_currency', 'performance_bond_value', 'performance_bond_currency', 'other_bonds_values', 'eligibility_criteria', 'document_requirements', 'technical_specifications', 'payment_terms', 'status', 'created_date', 'last_updated', 'document_links']
+    # search_exclude_columns = ['owner', 'title', 'product_class', 'description', 'source_url', 'estimated_value', 'currency', 'country', 'region', 'department', 'contact_info', 'lead_referred_by', 'lead_narrative', 'lead_type', 'lead_quality', 'lead_conversion_probability', 'lead_contact_info', 'estimated_close_date', 'tender_open_date', 'tender_close_date', 'bid_bond_value', 'bid_bond_currency', 'performance_bond_value', 'performance_bond_currency', 'other_bonds_values', 'eligibility_criteria', 'document_requirements', 'technical_specifications', 'payment_terms', 'status', 'created_date', 'last_updated', 'document_links']
+    # order_columns = ['owner', 'title', 'product_class', 'description', 'source_url', 'estimated_value', 'currency', 'country', 'region', 'department', 'contact_info', 'lead_referred_by', 'lead_narrative', 'lead_type', 'lead_quality', 'lead_conversion_probability', 'lead_contact_info', 'estimated_close_date', 'tender_open_date', 'tender_close_date', 'bid_bond_value', 'bid_bond_currency', 'performance_bond_value', 'performance_bond_currency', 'other_bonds_values', 'eligibility_criteria', 'document_requirements', 'technical_specifications', 'payment_terms', 'status', 'created_date', 'last_updated', 'document_links']
+    # add_columns = ['owner', 'title', 'product_class', 'description', 'source_url', 'estimated_value', 'currency', 'country', 'region', 'department', 'contact_info', 'lead_referred_by', 'lead_narrative', 'lead_type', 'lead_quality', 'lead_conversion_probability', 'lead_contact_info', 'estimated_close_date', 'tender_open_date', 'tender_close_date', 'bid_bond_value', 'bid_bond_currency', 'performance_bond_value', 'performance_bond_currency', 'other_bonds_values', 'eligibility_criteria', 'document_requirements', 'technical_specifications', 'payment_terms', 'status', 'created_date', 'last_updated', 'document_links']
+    # add_columns = ['owner', 'title', 'product_class', 'description', 'source_url', 'estimated_value', 'currency', 'country', 'region', 'department', 'contact_info', 'lead_referred_by', 'lead_narrative', 'lead_type', 'lead_quality', 'lead_conversion_probability', 'lead_contact_info', 'estimated_close_date', 'tender_open_date', 'tender_close_date', 'bid_bond_value', 'bid_bond_currency', 'performance_bond_value', 'performance_bond_currency', 'other_bonds_values', 'eligibility_criteria', 'document_requirements', 'technical_specifications', 'payment_terms', 'status', 'created_date', 'last_updated', 'document_links']
+    # add_columns = ['owner', 'title', 'product_class', 'description', 'source_url', 'estimated_value', 'currency', 'country', 'region', 'department', 'contact_info', 'lead_referred_by', 'lead_narrative', 'lead_type', 'lead_quality', 'lead_conversion_probability', 'lead_contact_info', 'estimated_close_date', 'tender_open_date', 'tender_close_date', 'bid_bond_value', 'bid_bond_currency', 'performance_bond_value', 'performance_bond_currency', 'other_bonds_values', 'eligibility_criteria', 'document_requirements', 'technical_specifications', 'payment_terms', 'status', 'created_date', 'last_updated', 'document_links']
+    
+    label_columns = {'owner':'Owner', 'title':'Title', 'product_class':'Product Class', 'description':'Description', 'source_url':'Source Url', 'estimated_value':'Estimated Value', 'currency':'Currency', 'country':'Country', 'region':'Region', 'department':'Department', 'contact_info':'Contact Info', 'lead_referred_by':'Lead Referred By', 'lead_narrative':'Lead Narrative', 'lead_type':'Lead Type', 'lead_quality':'Lead Quality', 'lead_conversion_probability':'Lead Conversion Probability', 'lead_contact_info':'Lead Contact Info', 'estimated_close_date':'Estimated Close Date', 'tender_open_date':'Tender Open Date', 'tender_close_date':'Tender Close Date', 'bid_bond_value':'Bid Bond Value', 'bid_bond_currency':'Bid Bond Currency', 'performance_bond_value':'Performance Bond Value', 'performance_bond_currency':'Performance Bond Currency', 'other_bonds_values':'Other Bonds Values', 'eligibility_criteria':'Eligibility Criteria', 'document_requirements':'Document Requirements', 'technical_specifications':'Technical Specifications', 'payment_terms':'Payment Terms', 'status':'Status', 'created_date':'Created Date', 'last_updated':'Last Updated', 'document_links':'Document Links'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['owner', 'title', 'product_class', 'description', 'source_url', 'estimated_value', 'currency', 'country', 'region', 'department', 'contact_info', 'lead_referred_by', 'lead_narrative', 'lead_type', 'lead_quality', 'lead_conversion_probability', 'lead_contact_info', 'estimated_close_date', 'tender_open_date', 'tender_close_date', 'bid_bond_value', 'bid_bond_currency', 'performance_bond_value', 'performance_bond_currency', 'other_bonds_values', 'eligibility_criteria', 'document_requirements', 'technical_specifications', 'payment_terms', 'status', 'created_date', 'last_updated', 'document_links']
+class OrgPeopleLinkModelView(ModelView):
+    datamodel = SQLAInterface(OrgPeopleLink)
+    list_title = 'List Org People Link'
+    show_title = 'Show Org People Link'
+    edit_title = 'Edit Org People Link'
+    add_title  = 'Add Org People Link'
+ 
+    list_columns = ['org', 'person', 'person_org_role', 'join_date', 'notes']
+    # show_columns = ['org', 'person', 'person_org_role', 'join_date', 'notes']
+    # edit_columns = ['org', 'person', 'person_org_role', 'join_date', 'notes']
+    add_columns = ['org', 'person', 'person_org_role', 'join_date', 'notes']
+    # search_columns = ['org', 'person', 'person_org_role', 'join_date', 'notes']
+    description_columns = {
+        'org_id_fk' : 'None',
+        'person_id_fk' : 'None',
+        'person_org_role' : 'None',
+        'join_date' : 'None',
+        'notes' : 'None',
+    }
+    # list_exclude_columns = ['org', 'person', 'person_org_role', 'join_date', 'notes']
+    # show_exclude_columns = ['org', 'person', 'person_org_role', 'join_date', 'notes']
+    # edit_exclude_columns = ['org', 'person', 'person_org_role', 'join_date', 'notes']
+    # add_exclude_columns = ['org', 'person', 'person_org_role', 'join_date', 'notes']
+    # search_exclude_columns = ['org', 'person', 'person_org_role', 'join_date', 'notes']
+    # order_columns = ['org', 'person', 'person_org_role', 'join_date', 'notes']
+    # add_columns = ['org', 'person', 'person_org_role', 'join_date', 'notes']
+    # add_columns = ['org', 'person', 'person_org_role', 'join_date', 'notes']
+    # add_columns = ['org', 'person', 'person_org_role', 'join_date', 'notes']
+    
+    label_columns = {'org':'Org', 'person':'Person', 'person_org_role':'Person Org Role', 'join_date':'Join Date', 'notes':'Notes'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['org', 'person', 'person_org_role', 'join_date', 'notes']
+class OrgSuppliesLinkModelView(ModelView):
+    datamodel = SQLAInterface(OrgSuppliesLink)
+    list_title = 'List Org Supplies Link'
+    show_title = 'Show Org Supplies Link'
+    edit_title = 'Edit Org Supplies Link'
+    add_title  = 'Add Org Supplies Link'
+ 
+    list_columns = ['org', 'isic_class', 'notes']
+    # show_columns = ['org', 'isic_class', 'notes']
+    # edit_columns = ['org', 'isic_class', 'notes']
+    add_columns = ['org', 'isic_class', 'notes']
+    # search_columns = ['org', 'isic_class', 'notes']
+    description_columns = {
+        'org_id_fk' : 'None',
+        'isic_class_id_fk' : 'None',
+        'notes' : 'None',
+    }
+    # list_exclude_columns = ['org', 'isic_class', 'notes']
+    # show_exclude_columns = ['org', 'isic_class', 'notes']
+    # edit_exclude_columns = ['org', 'isic_class', 'notes']
+    # add_exclude_columns = ['org', 'isic_class', 'notes']
+    # search_exclude_columns = ['org', 'isic_class', 'notes']
+    # order_columns = ['org', 'isic_class', 'notes']
+    # add_columns = ['org', 'isic_class', 'notes']
+    # add_columns = ['org', 'isic_class', 'notes']
+    # add_columns = ['org', 'isic_class', 'notes']
+    
+    label_columns = {'org':'Org', 'isic_class':'Isic Class', 'notes':'Notes'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['org', 'isic_class', 'notes']
+class PersonEmploymentModelView(ModelView):
+    datamodel = SQLAInterface(PersonEmployment)
+    list_title = 'List Person Employment'
+    show_title = 'Show Person Employment'
+    edit_title = 'Edit Person Employment'
+    add_title  = 'Add Person Employment'
+ 
+    list_columns = ['person', 'employment_status', 'field_of_employment', 'employer_name', 'position_text', 'number_of_years_employed', 'monthly_salary', 'self_employed', 'field_of_self_employment', 'business_address', 'number_of_employees', 'monthly_salaries_paid', 'monthly_net_income_of_business_activity', 'monthly_rent', 'other_income_generating_activities', 'bookkeeping', 'loans_with_other_institutions', 'employer', 'employer_address_line1', 'employer_address_line2', 'employer_address_line3', 'employer_address_line4', 'employer_city_name', 'employer_postal_code_text', 'employer_phone_number', 'annual_income', 'monthly_income', 'tax_bracket_range', 'yearly_income_range']
+    # show_columns = ['person', 'employment_status', 'field_of_employment', 'employer_name', 'position_text', 'number_of_years_employed', 'monthly_salary', 'self_employed', 'field_of_self_employment', 'business_address', 'number_of_employees', 'monthly_salaries_paid', 'monthly_net_income_of_business_activity', 'monthly_rent', 'other_income_generating_activities', 'bookkeeping', 'loans_with_other_institutions', 'employer', 'employer_address_line1', 'employer_address_line2', 'employer_address_line3', 'employer_address_line4', 'employer_city_name', 'employer_postal_code_text', 'employer_phone_number', 'annual_income', 'monthly_income', 'tax_bracket_range', 'yearly_income_range']
+    # edit_columns = ['person', 'employment_status', 'field_of_employment', 'employer_name', 'position_text', 'number_of_years_employed', 'monthly_salary', 'self_employed', 'field_of_self_employment', 'business_address', 'number_of_employees', 'monthly_salaries_paid', 'monthly_net_income_of_business_activity', 'monthly_rent', 'other_income_generating_activities', 'bookkeeping', 'loans_with_other_institutions', 'employer', 'employer_address_line1', 'employer_address_line2', 'employer_address_line3', 'employer_address_line4', 'employer_city_name', 'employer_postal_code_text', 'employer_phone_number', 'annual_income', 'monthly_income', 'tax_bracket_range', 'yearly_income_range']
+    add_columns = ['person', 'employment_status', 'field_of_employment', 'employer_name', 'position_text', 'number_of_years_employed', 'monthly_salary', 'self_employed', 'field_of_self_employment', 'business_address', 'number_of_employees', 'monthly_salaries_paid', 'monthly_net_income_of_business_activity', 'monthly_rent', 'other_income_generating_activities', 'bookkeeping', 'loans_with_other_institutions', 'employer', 'employer_address_line1', 'employer_address_line2', 'employer_address_line3', 'employer_address_line4', 'employer_city_name', 'employer_postal_code_text', 'employer_phone_number', 'annual_income', 'monthly_income', 'tax_bracket_range', 'yearly_income_range']
+    # search_columns = ['person', 'employment_status', 'field_of_employment', 'employer_name', 'position_text', 'number_of_years_employed', 'monthly_salary', 'self_employed', 'field_of_self_employment', 'business_address', 'number_of_employees', 'monthly_salaries_paid', 'monthly_net_income_of_business_activity', 'monthly_rent', 'other_income_generating_activities', 'bookkeeping', 'loans_with_other_institutions', 'employer', 'employer_address_line1', 'employer_address_line2', 'employer_address_line3', 'employer_address_line4', 'employer_city_name', 'employer_postal_code_text', 'employer_phone_number', 'annual_income', 'monthly_income', 'tax_bracket_range', 'yearly_income_range']
+    description_columns = {
+        'id' : 'Primary Key',
+        'person_id_fk' : 'Reference to the person associated with this employment record',
+        'employment_status' : 'Status of employment e.g., Employed, Self-Employed, Unemployed',
+        'field_of_employment' : 'Field or industry in which the person is employed',
+        'employer_name' : 'Name of the employer',
+        'position_text' : 'Position or role of the person within the organization',
+        'number_of_years_employed' : 'Total number of years person has been employed',
+        'monthly_salary' : 'Monthly salary received by the person',
+        'self_employed' : 'Indicates if the person is self-employed',
+        'field_of_self_employment' : 'Field or industry of self-employment',
+        'business_address' : 'Business address if self-employed',
+        'number_of_employees' : 'Number of employees if self-employed',
+        'monthly_salaries_paid' : 'Monthly salaries paid if the person is an employer',
+        'monthly_net_income_of_business_activity' : 'Net monthly income from business activities',
+        'monthly_rent' : 'Monthly rent, if applicable',
+        'other_income_generating_activities' : 'Any other activities that generate income',
+        'bookkeeping' : 'Indicates if the person/business maintains bookkeeping',
+        'loans_with_other_institutions' : 'Indicates if the person/business has loans with other institutions',
+        'employer_id_fk' : 'Reference to the employer organization',
+        'employer_address_line1' : 'Employer address details',
+        'employer_address_line2' : 'None',
+        'employer_address_line3' : 'None',
+        'employer_address_line4' : 'None',
+        'employer_city_name' : 'City of the employer',
+        'employer_postal_code_text' : 'Postal code of the employer',
+        'employer_phone_number' : 'Phone number of the employer',
+        'annual_income' : 'Yearly income of the person',
+        'monthly_income' : 'Monthly income of the person',
+        'tax_bracket_range' : 'Tax bracket range of the person',
+        'yearly_income_range' : 'Income range if exact yearly income is not available',
+    }
+    # list_exclude_columns = ['person', 'employment_status', 'field_of_employment', 'employer_name', 'position_text', 'number_of_years_employed', 'monthly_salary', 'self_employed', 'field_of_self_employment', 'business_address', 'number_of_employees', 'monthly_salaries_paid', 'monthly_net_income_of_business_activity', 'monthly_rent', 'other_income_generating_activities', 'bookkeeping', 'loans_with_other_institutions', 'employer', 'employer_address_line1', 'employer_address_line2', 'employer_address_line3', 'employer_address_line4', 'employer_city_name', 'employer_postal_code_text', 'employer_phone_number', 'annual_income', 'monthly_income', 'tax_bracket_range', 'yearly_income_range']
+    # show_exclude_columns = ['person', 'employment_status', 'field_of_employment', 'employer_name', 'position_text', 'number_of_years_employed', 'monthly_salary', 'self_employed', 'field_of_self_employment', 'business_address', 'number_of_employees', 'monthly_salaries_paid', 'monthly_net_income_of_business_activity', 'monthly_rent', 'other_income_generating_activities', 'bookkeeping', 'loans_with_other_institutions', 'employer', 'employer_address_line1', 'employer_address_line2', 'employer_address_line3', 'employer_address_line4', 'employer_city_name', 'employer_postal_code_text', 'employer_phone_number', 'annual_income', 'monthly_income', 'tax_bracket_range', 'yearly_income_range']
+    # edit_exclude_columns = ['person', 'employment_status', 'field_of_employment', 'employer_name', 'position_text', 'number_of_years_employed', 'monthly_salary', 'self_employed', 'field_of_self_employment', 'business_address', 'number_of_employees', 'monthly_salaries_paid', 'monthly_net_income_of_business_activity', 'monthly_rent', 'other_income_generating_activities', 'bookkeeping', 'loans_with_other_institutions', 'employer', 'employer_address_line1', 'employer_address_line2', 'employer_address_line3', 'employer_address_line4', 'employer_city_name', 'employer_postal_code_text', 'employer_phone_number', 'annual_income', 'monthly_income', 'tax_bracket_range', 'yearly_income_range']
+    # add_exclude_columns = ['person', 'employment_status', 'field_of_employment', 'employer_name', 'position_text', 'number_of_years_employed', 'monthly_salary', 'self_employed', 'field_of_self_employment', 'business_address', 'number_of_employees', 'monthly_salaries_paid', 'monthly_net_income_of_business_activity', 'monthly_rent', 'other_income_generating_activities', 'bookkeeping', 'loans_with_other_institutions', 'employer', 'employer_address_line1', 'employer_address_line2', 'employer_address_line3', 'employer_address_line4', 'employer_city_name', 'employer_postal_code_text', 'employer_phone_number', 'annual_income', 'monthly_income', 'tax_bracket_range', 'yearly_income_range']
+    # search_exclude_columns = ['person', 'employment_status', 'field_of_employment', 'employer_name', 'position_text', 'number_of_years_employed', 'monthly_salary', 'self_employed', 'field_of_self_employment', 'business_address', 'number_of_employees', 'monthly_salaries_paid', 'monthly_net_income_of_business_activity', 'monthly_rent', 'other_income_generating_activities', 'bookkeeping', 'loans_with_other_institutions', 'employer', 'employer_address_line1', 'employer_address_line2', 'employer_address_line3', 'employer_address_line4', 'employer_city_name', 'employer_postal_code_text', 'employer_phone_number', 'annual_income', 'monthly_income', 'tax_bracket_range', 'yearly_income_range']
+    # order_columns = ['person', 'employment_status', 'field_of_employment', 'employer_name', 'position_text', 'number_of_years_employed', 'monthly_salary', 'self_employed', 'field_of_self_employment', 'business_address', 'number_of_employees', 'monthly_salaries_paid', 'monthly_net_income_of_business_activity', 'monthly_rent', 'other_income_generating_activities', 'bookkeeping', 'loans_with_other_institutions', 'employer', 'employer_address_line1', 'employer_address_line2', 'employer_address_line3', 'employer_address_line4', 'employer_city_name', 'employer_postal_code_text', 'employer_phone_number', 'annual_income', 'monthly_income', 'tax_bracket_range', 'yearly_income_range']
+    # add_columns = ['person', 'employment_status', 'field_of_employment', 'employer_name', 'position_text', 'number_of_years_employed', 'monthly_salary', 'self_employed', 'field_of_self_employment', 'business_address', 'number_of_employees', 'monthly_salaries_paid', 'monthly_net_income_of_business_activity', 'monthly_rent', 'other_income_generating_activities', 'bookkeeping', 'loans_with_other_institutions', 'employer', 'employer_address_line1', 'employer_address_line2', 'employer_address_line3', 'employer_address_line4', 'employer_city_name', 'employer_postal_code_text', 'employer_phone_number', 'annual_income', 'monthly_income', 'tax_bracket_range', 'yearly_income_range']
+    # add_columns = ['person', 'employment_status', 'field_of_employment', 'employer_name', 'position_text', 'number_of_years_employed', 'monthly_salary', 'self_employed', 'field_of_self_employment', 'business_address', 'number_of_employees', 'monthly_salaries_paid', 'monthly_net_income_of_business_activity', 'monthly_rent', 'other_income_generating_activities', 'bookkeeping', 'loans_with_other_institutions', 'employer', 'employer_address_line1', 'employer_address_line2', 'employer_address_line3', 'employer_address_line4', 'employer_city_name', 'employer_postal_code_text', 'employer_phone_number', 'annual_income', 'monthly_income', 'tax_bracket_range', 'yearly_income_range']
+    # add_columns = ['person', 'employment_status', 'field_of_employment', 'employer_name', 'position_text', 'number_of_years_employed', 'monthly_salary', 'self_employed', 'field_of_self_employment', 'business_address', 'number_of_employees', 'monthly_salaries_paid', 'monthly_net_income_of_business_activity', 'monthly_rent', 'other_income_generating_activities', 'bookkeeping', 'loans_with_other_institutions', 'employer', 'employer_address_line1', 'employer_address_line2', 'employer_address_line3', 'employer_address_line4', 'employer_city_name', 'employer_postal_code_text', 'employer_phone_number', 'annual_income', 'monthly_income', 'tax_bracket_range', 'yearly_income_range']
+    
+    label_columns = {'person':'Person', 'employment_status':'Employment Status', 'field_of_employment':'Field Of Employment', 'employer_name':'Employer Name', 'position_text':'Position Text', 'number_of_years_employed':'Number Of Years Employed', 'monthly_salary':'Monthly Salary', 'self_employed':'Self Employed', 'field_of_self_employment':'Field Of Self Employment', 'business_address':'Business Address', 'number_of_employees':'Number Of Employees', 'monthly_salaries_paid':'Monthly Salaries Paid', 'monthly_net_income_of_business_activity':'Monthly Net Income Of Business Activity', 'monthly_rent':'Monthly Rent', 'other_income_generating_activities':'Other Income Generating Activities', 'bookkeeping':'Bookkeeping', 'loans_with_other_institutions':'Loans With Other Institutions', 'employer':'Employer', 'employer_address_line1':'Employer Address Line1', 'employer_address_line2':'Employer Address Line2', 'employer_address_line3':'Employer Address Line3', 'employer_address_line4':'Employer Address Line4', 'employer_city_name':'Employer City Name', 'employer_postal_code_text':'Employer Postal Code Text', 'employer_phone_number':'Employer Phone Number', 'annual_income':'Annual Income', 'monthly_income':'Monthly Income', 'tax_bracket_range':'Tax Bracket Range', 'yearly_income_range':'Yearly Income Range'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['person', 'employment_status', 'field_of_employment', 'employer_name', 'position_text', 'number_of_years_employed', 'monthly_salary', 'self_employed', 'field_of_self_employment', 'business_address', 'number_of_employees', 'monthly_salaries_paid', 'monthly_net_income_of_business_activity', 'monthly_rent', 'other_income_generating_activities', 'bookkeeping', 'loans_with_other_institutions', 'employer', 'employer_address_line1', 'employer_address_line2', 'employer_address_line3', 'employer_address_line4', 'employer_city_name', 'employer_postal_code_text', 'employer_phone_number', 'annual_income', 'monthly_income', 'tax_bracket_range', 'yearly_income_range']
+class PipelineModelView(ModelView):
+    datamodel = SQLAInterface(Pipeline)
+    list_title = 'List Pipeline'
+    show_title = 'Show Pipeline'
+    edit_title = 'Edit Pipeline'
+    add_title  = 'Add Pipeline'
+ 
+    list_columns = ['owner', 'name', 'description', 'created_date', 'last_updated', 'is_active', 'order']
+    # show_columns = ['owner', 'name', 'description', 'created_date', 'last_updated', 'is_active', 'order']
+    # edit_columns = ['owner', 'name', 'description', 'created_date', 'last_updated', 'is_active', 'order']
+    add_columns = ['owner', 'name', 'description', 'created_date', 'last_updated', 'is_active', 'order']
+    # search_columns = ['owner', 'name', 'description', 'created_date', 'last_updated', 'is_active', 'order']
+    description_columns = {
+        'id' : 'Unique identifier for each pipeline entry.',
+        'owner_id_fk' : 'Link to the organization that owns or uses this pipeline.',
+        'name' : 'Name or title of the pipeline. E.g., Sales Pipeline, Tendering Process',
+        'description' : 'A brief overview or purpose of this specific pipeline.',
+        'created_date' : 'Timestamp when the pipeline was first created.',
+        'last_updated' : 'Timestamp when the pipeline was last updated.',
+        'is_active' : 'Flag to indicate if the pipeline is currently active.',
+        'order' : 'To define the order of pipelines if there are multiple pipelines within an organization.',
+    }
+    # list_exclude_columns = ['owner', 'name', 'description', 'created_date', 'last_updated', 'is_active', 'order']
+    # show_exclude_columns = ['owner', 'name', 'description', 'created_date', 'last_updated', 'is_active', 'order']
+    # edit_exclude_columns = ['owner', 'name', 'description', 'created_date', 'last_updated', 'is_active', 'order']
+    # add_exclude_columns = ['owner', 'name', 'description', 'created_date', 'last_updated', 'is_active', 'order']
+    # search_exclude_columns = ['owner', 'name', 'description', 'created_date', 'last_updated', 'is_active', 'order']
+    # order_columns = ['owner', 'name', 'description', 'created_date', 'last_updated', 'is_active', 'order']
+    # add_columns = ['owner', 'name', 'description', 'created_date', 'last_updated', 'is_active', 'order']
+    # add_columns = ['owner', 'name', 'description', 'created_date', 'last_updated', 'is_active', 'order']
+    # add_columns = ['owner', 'name', 'description', 'created_date', 'last_updated', 'is_active', 'order']
+    
+    label_columns = {'owner':'Owner', 'name':'Name', 'description':'Description', 'created_date':'Created Date', 'last_updated':'Last Updated', 'is_active':'Is Active', 'order':'Order'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['owner', 'name', 'description', 'created_date', 'last_updated', 'is_active', 'order']
+class ProductSkuLinkModelView(ModelView):
+    datamodel = SQLAInterface(ProductSkuLink)
+    list_title = 'List Product Sku Link'
+    show_title = 'Show Product Sku Link'
+    edit_title = 'Edit Product Sku Link'
+    add_title  = 'Add Product Sku Link'
+ 
+    list_columns = ['product_class', 'org', 'product_sku', 'product_name', 'product_description', 'product_packaging', 'product_pack_quantity', 'upc', 'ean', 'jan', 'isbn', 'mbn', 'is_active', 'is_discontinued', 'currency', 'Offer_price', 'price_min', 'price_max', 'price_min_with_tax', 'price_max_with_tax', 'weight', 'length', 'height', 'minimum_order', 'dimensions', 'product_image_url', 'reorder_level', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # show_columns = ['product_class', 'org', 'product_sku', 'product_name', 'product_description', 'product_packaging', 'product_pack_quantity', 'upc', 'ean', 'jan', 'isbn', 'mbn', 'is_active', 'is_discontinued', 'currency', 'Offer_price', 'price_min', 'price_max', 'price_min_with_tax', 'price_max_with_tax', 'weight', 'length', 'height', 'minimum_order', 'dimensions', 'product_image_url', 'reorder_level', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # edit_columns = ['product_class', 'org', 'product_sku', 'product_name', 'product_description', 'product_packaging', 'product_pack_quantity', 'upc', 'ean', 'jan', 'isbn', 'mbn', 'is_active', 'is_discontinued', 'currency', 'Offer_price', 'price_min', 'price_max', 'price_min_with_tax', 'price_max_with_tax', 'weight', 'length', 'height', 'minimum_order', 'dimensions', 'product_image_url', 'reorder_level', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    add_columns = ['product_class', 'org', 'product_sku', 'product_name', 'product_description', 'product_packaging', 'product_pack_quantity', 'upc', 'ean', 'jan', 'isbn', 'mbn', 'is_active', 'is_discontinued', 'currency', 'Offer_price', 'price_min', 'price_max', 'price_min_with_tax', 'price_max_with_tax', 'weight', 'length', 'height', 'minimum_order', 'dimensions', 'product_image_url', 'reorder_level', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # search_columns = ['product_class', 'org', 'product_sku', 'product_name', 'product_description', 'product_packaging', 'product_pack_quantity', 'upc', 'ean', 'jan', 'isbn', 'mbn', 'is_active', 'is_discontinued', 'currency', 'Offer_price', 'price_min', 'price_max', 'price_min_with_tax', 'price_max_with_tax', 'weight', 'length', 'height', 'minimum_order', 'dimensions', 'product_image_url', 'reorder_level', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    description_columns = {
+        'id' : 'Primary Key for the SKU linkage',
+        'product_class_id_fk' : 'Reference to the general product class or category',
+        'org_id_fk' : 'Reference to the organization or company selling the product',
+        'product_sku' : 'Stock Keeping Unit identifier for the product',
+        'product_name' : 'Friendly name of the product',
+        'product_description' : 'Detailed description of the product',
+        'product_packaging' : 'Information about the product’s packaging',
+        'product_pack_quantity' : 'Quantity of items in a package or lot',
+        'upc' : 'None',
+        'ean' : 'None',
+        'jan' : 'None',
+        'isbn' : 'None',
+        'mbn' : 'None',
+        'is_active' : 'Indicates if the product SKU is active and available for sale',
+        'is_discontinued' : 'Indicates if the product SKU has been discontinued',
+        'currency_id_fk' : 'Currency used for the product pricing',
+        'Offer_price' : 'Offer or sale price of the product, if any',
+        'price_min' : 'Minimum selling price of the product',
+        'price_max' : 'Maximum retail price of the product',
+        'price_min_with_tax' : 'Minimum selling price inclusive of any applicable taxes',
+        'price_max_with_tax' : 'Maximum retail price inclusive of any applicable taxes',
+        'weight' : 'Weight of the product',
+        'length' : 'None',
+        'height' : 'None',
+        'minimum_order' : 'None',
+        'dimensions' : 'Dimensions of the product (L x W x H)',
+        'product_image_url' : 'URL to the product image',
+        'reorder_level' : 'The stock level at which new stock should be reordered',
+        'comment' : 'Any additional notes or comments about the product SKU',
+        'created_by_id_fk' : 'User who created this SKU entry',
+        'created_on' : 'Timestamp when this SKU entry was created',
+        'last_modified_by_id_fk' : 'User who last modified this SKU entry',
+        'last_modified_on' : 'Timestamp when this SKU entry was last updated',
+    }
+    # list_exclude_columns = ['product_class', 'org', 'product_sku', 'product_name', 'product_description', 'product_packaging', 'product_pack_quantity', 'upc', 'ean', 'jan', 'isbn', 'mbn', 'is_active', 'is_discontinued', 'currency', 'Offer_price', 'price_min', 'price_max', 'price_min_with_tax', 'price_max_with_tax', 'weight', 'length', 'height', 'minimum_order', 'dimensions', 'product_image_url', 'reorder_level', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # show_exclude_columns = ['product_class', 'org', 'product_sku', 'product_name', 'product_description', 'product_packaging', 'product_pack_quantity', 'upc', 'ean', 'jan', 'isbn', 'mbn', 'is_active', 'is_discontinued', 'currency', 'Offer_price', 'price_min', 'price_max', 'price_min_with_tax', 'price_max_with_tax', 'weight', 'length', 'height', 'minimum_order', 'dimensions', 'product_image_url', 'reorder_level', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # edit_exclude_columns = ['product_class', 'org', 'product_sku', 'product_name', 'product_description', 'product_packaging', 'product_pack_quantity', 'upc', 'ean', 'jan', 'isbn', 'mbn', 'is_active', 'is_discontinued', 'currency', 'Offer_price', 'price_min', 'price_max', 'price_min_with_tax', 'price_max_with_tax', 'weight', 'length', 'height', 'minimum_order', 'dimensions', 'product_image_url', 'reorder_level', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # add_exclude_columns = ['product_class', 'org', 'product_sku', 'product_name', 'product_description', 'product_packaging', 'product_pack_quantity', 'upc', 'ean', 'jan', 'isbn', 'mbn', 'is_active', 'is_discontinued', 'currency', 'Offer_price', 'price_min', 'price_max', 'price_min_with_tax', 'price_max_with_tax', 'weight', 'length', 'height', 'minimum_order', 'dimensions', 'product_image_url', 'reorder_level', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # search_exclude_columns = ['product_class', 'org', 'product_sku', 'product_name', 'product_description', 'product_packaging', 'product_pack_quantity', 'upc', 'ean', 'jan', 'isbn', 'mbn', 'is_active', 'is_discontinued', 'currency', 'Offer_price', 'price_min', 'price_max', 'price_min_with_tax', 'price_max_with_tax', 'weight', 'length', 'height', 'minimum_order', 'dimensions', 'product_image_url', 'reorder_level', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # order_columns = ['product_class', 'org', 'product_sku', 'product_name', 'product_description', 'product_packaging', 'product_pack_quantity', 'upc', 'ean', 'jan', 'isbn', 'mbn', 'is_active', 'is_discontinued', 'currency', 'Offer_price', 'price_min', 'price_max', 'price_min_with_tax', 'price_max_with_tax', 'weight', 'length', 'height', 'minimum_order', 'dimensions', 'product_image_url', 'reorder_level', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # add_columns = ['product_class', 'org', 'product_sku', 'product_name', 'product_description', 'product_packaging', 'product_pack_quantity', 'upc', 'ean', 'jan', 'isbn', 'mbn', 'is_active', 'is_discontinued', 'currency', 'Offer_price', 'price_min', 'price_max', 'price_min_with_tax', 'price_max_with_tax', 'weight', 'length', 'height', 'minimum_order', 'dimensions', 'product_image_url', 'reorder_level', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # add_columns = ['product_class', 'org', 'product_sku', 'product_name', 'product_description', 'product_packaging', 'product_pack_quantity', 'upc', 'ean', 'jan', 'isbn', 'mbn', 'is_active', 'is_discontinued', 'currency', 'Offer_price', 'price_min', 'price_max', 'price_min_with_tax', 'price_max_with_tax', 'weight', 'length', 'height', 'minimum_order', 'dimensions', 'product_image_url', 'reorder_level', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # add_columns = ['product_class', 'org', 'product_sku', 'product_name', 'product_description', 'product_packaging', 'product_pack_quantity', 'upc', 'ean', 'jan', 'isbn', 'mbn', 'is_active', 'is_discontinued', 'currency', 'Offer_price', 'price_min', 'price_max', 'price_min_with_tax', 'price_max_with_tax', 'weight', 'length', 'height', 'minimum_order', 'dimensions', 'product_image_url', 'reorder_level', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    
+    label_columns = {'product_class':'Product Class', 'org':'Org', 'product_sku':'Product Sku', 'product_name':'Product Name', 'product_description':'Product Description', 'product_packaging':'Product Packaging', 'product_pack_quantity':'Product Pack Quantity', 'upc':'Upc', 'ean':'Ean', 'jan':'Jan', 'isbn':'Isbn', 'mbn':'Mbn', 'is_active':'Is Active', 'is_discontinued':'Is Discontinued', 'currency':'Currency', 'Offer_price':'Offer Price', 'price_min':'Price Min', 'price_max':'Price Max', 'price_min_with_tax':'Price Min With Tax', 'price_max_with_tax':'Price Max With Tax', 'weight':'Weight', 'length':'Length', 'height':'Height', 'minimum_order':'Minimum Order', 'dimensions':'Dimensions', 'product_image_url':'Product Image Url', 'reorder_level':'Reorder Level', 'comment':'Comment', 'created_by':'Created By', 'created_on':'Created On', 'last_modified_by':'Last Modified By', 'last_modified_on':'Last Modified On'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['product_class', 'org', 'product_sku', 'product_name', 'product_description', 'product_packaging', 'product_pack_quantity', 'upc', 'ean', 'jan', 'isbn', 'mbn', 'is_active', 'is_discontinued', 'currency', 'Offer_price', 'price_min', 'price_max', 'price_min_with_tax', 'price_max_with_tax', 'weight', 'length', 'height', 'minimum_order', 'dimensions', 'product_image_url', 'reorder_level', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+class QuoteModelView(ModelView):
+    datamodel = SQLAInterface(Quote)
+    list_title = 'List Quote'
+    show_title = 'Show Quote'
+    edit_title = 'Edit Quote'
+    add_title  = 'Add Quote'
+ 
+    list_columns = ['customer', 'quote_subject', 'quote_date_created', 'quote_valid_until', 'quote_discount', 'quote_customer_notes', 'quote_status']
+    # show_columns = ['customer', 'quote_subject', 'quote_date_created', 'quote_valid_until', 'quote_discount', 'quote_customer_notes', 'quote_status']
+    # edit_columns = ['customer', 'quote_subject', 'quote_date_created', 'quote_valid_until', 'quote_discount', 'quote_customer_notes', 'quote_status']
+    add_columns = ['customer', 'quote_subject', 'quote_date_created', 'quote_valid_until', 'quote_discount', 'quote_customer_notes', 'quote_status']
+    # search_columns = ['customer', 'quote_subject', 'quote_date_created', 'quote_valid_until', 'quote_discount', 'quote_customer_notes', 'quote_status']
+    description_columns = {
+        'id' : 'None',
+        'customer_id_fk' : 'None',
+        'quote_subject' : 'None',
+        'quote_date_created' : 'None',
+        'quote_valid_until' : 'None',
+        'quote_discount' : 'None',
+        'quote_customer_notes' : 'None',
+        'quote_status' : 'None',
+    }
+    # list_exclude_columns = ['customer', 'quote_subject', 'quote_date_created', 'quote_valid_until', 'quote_discount', 'quote_customer_notes', 'quote_status']
+    # show_exclude_columns = ['customer', 'quote_subject', 'quote_date_created', 'quote_valid_until', 'quote_discount', 'quote_customer_notes', 'quote_status']
+    # edit_exclude_columns = ['customer', 'quote_subject', 'quote_date_created', 'quote_valid_until', 'quote_discount', 'quote_customer_notes', 'quote_status']
+    # add_exclude_columns = ['customer', 'quote_subject', 'quote_date_created', 'quote_valid_until', 'quote_discount', 'quote_customer_notes', 'quote_status']
+    # search_exclude_columns = ['customer', 'quote_subject', 'quote_date_created', 'quote_valid_until', 'quote_discount', 'quote_customer_notes', 'quote_status']
+    # order_columns = ['customer', 'quote_subject', 'quote_date_created', 'quote_valid_until', 'quote_discount', 'quote_customer_notes', 'quote_status']
+    # add_columns = ['customer', 'quote_subject', 'quote_date_created', 'quote_valid_until', 'quote_discount', 'quote_customer_notes', 'quote_status']
+    # add_columns = ['customer', 'quote_subject', 'quote_date_created', 'quote_valid_until', 'quote_discount', 'quote_customer_notes', 'quote_status']
+    # add_columns = ['customer', 'quote_subject', 'quote_date_created', 'quote_valid_until', 'quote_discount', 'quote_customer_notes', 'quote_status']
+    
+    label_columns = {'customer':'Customer', 'quote_subject':'Quote Subject', 'quote_date_created':'Quote Date Created', 'quote_valid_until':'Quote Valid Until', 'quote_discount':'Quote Discount', 'quote_customer_notes':'Quote Customer Notes', 'quote_status':'Quote Status'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['customer', 'quote_subject', 'quote_date_created', 'quote_valid_until', 'quote_discount', 'quote_customer_notes', 'quote_status']
+class ScoringModelModelView(ModelView):
+    datamodel = SQLAInterface(ScoringModel)
+    list_title = 'List Scoring Model'
+    show_title = 'Show Scoring Model'
+    edit_title = 'Edit Scoring Model'
+    add_title  = 'Add Scoring Model'
+ 
+    list_columns = ['org', 'model_name', 'model_version', 'model_description', 'model_parameters', 'model_type', 'created_at', 'updated_at']
+    # show_columns = ['org', 'model_name', 'model_version', 'model_description', 'model_parameters', 'model_type', 'created_at', 'updated_at']
+    # edit_columns = ['org', 'model_name', 'model_version', 'model_description', 'model_parameters', 'model_type', 'created_at', 'updated_at']
+    add_columns = ['org', 'model_name', 'model_version', 'model_description', 'model_parameters', 'model_type', 'created_at', 'updated_at']
+    # search_columns = ['org', 'model_name', 'model_version', 'model_description', 'model_parameters', 'model_type', 'created_at', 'updated_at']
+    description_columns = {
+        'id' : 'Unique identifier for each scoring model.',
+        'org_id_fk' : 'Link to the organization the model belongs to.',
+        'model_name' : 'Name of the scoring model.',
+        'model_version' : 'Version of the scoring model.',
+        'model_description' : 'Brief description about what the model does and how it scores leads.',
+        'model_parameters' : 'JSON structure containing model parameters e.g., weights, coefficients, etc.',
+        'model_type' : 'Type of the model e.g., Linear Regression, Decision Tree, Neural Network.',
+        'created_at' : 'Timestamp when the scoring model was created.',
+        'updated_at' : 'Timestamp when the scoring model was last updated.',
+    }
+    # list_exclude_columns = ['org', 'model_name', 'model_version', 'model_description', 'model_parameters', 'model_type', 'created_at', 'updated_at']
+    # show_exclude_columns = ['org', 'model_name', 'model_version', 'model_description', 'model_parameters', 'model_type', 'created_at', 'updated_at']
+    # edit_exclude_columns = ['org', 'model_name', 'model_version', 'model_description', 'model_parameters', 'model_type', 'created_at', 'updated_at']
+    # add_exclude_columns = ['org', 'model_name', 'model_version', 'model_description', 'model_parameters', 'model_type', 'created_at', 'updated_at']
+    # search_exclude_columns = ['org', 'model_name', 'model_version', 'model_description', 'model_parameters', 'model_type', 'created_at', 'updated_at']
+    # order_columns = ['org', 'model_name', 'model_version', 'model_description', 'model_parameters', 'model_type', 'created_at', 'updated_at']
+    # add_columns = ['org', 'model_name', 'model_version', 'model_description', 'model_parameters', 'model_type', 'created_at', 'updated_at']
+    # add_columns = ['org', 'model_name', 'model_version', 'model_description', 'model_parameters', 'model_type', 'created_at', 'updated_at']
+    # add_columns = ['org', 'model_name', 'model_version', 'model_description', 'model_parameters', 'model_type', 'created_at', 'updated_at']
+    
+    label_columns = {'org':'Org', 'model_name':'Model Name', 'model_version':'Model Version', 'model_description':'Model Description', 'model_parameters':'Model Parameters', 'model_type':'Model Type', 'created_at':'Created At', 'updated_at':'Updated At'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['org', 'model_name', 'model_version', 'model_description', 'model_parameters', 'model_type', 'created_at', 'updated_at']
+class SupplierParamModelView(ModelView):
+    datamodel = SQLAInterface(SupplierParam)
+    list_title = 'List Supplier Param'
+    show_title = 'Show Supplier Param'
+    edit_title = 'Edit Supplier Param'
+    add_title  = 'Add Supplier Param'
+ 
+    list_columns = ['supplier', 'param_calc_date', 'satisfaction_ethics_rank', 'contract_invoice_accuracy_rate', 'satisfaction_weight_percent', 'contract_on_time_delivery_rate', 'active_from_date', 'active_to_date', 'competitive_warranty_rank', 'competitive_marketing_rank', 'contract_delivery_correctness_rate', 'competitive_weight_score', 'contract_sl_aissue_rate', 'competitive_weight_percent', 'supplier_score', 'competitive_product_price_rank', 'contract_weight_percent', 'supplier_spend', 'satisfaction_technical_support_rank', 'contract_weight_score', 'satisfaction_customer_service_rank', 'satisfaction_weight_score', 'contract_sourcing_cycle_days', 'supplier_type', 'is_carrier', 'contract_product_return_rate', 'competitive_cost_avoidance_rank', 'contract_product_quality_rate', 'contract_budget_cost_rate']
+    # show_columns = ['supplier', 'param_calc_date', 'satisfaction_ethics_rank', 'contract_invoice_accuracy_rate', 'satisfaction_weight_percent', 'contract_on_time_delivery_rate', 'active_from_date', 'active_to_date', 'competitive_warranty_rank', 'competitive_marketing_rank', 'contract_delivery_correctness_rate', 'competitive_weight_score', 'contract_sl_aissue_rate', 'competitive_weight_percent', 'supplier_score', 'competitive_product_price_rank', 'contract_weight_percent', 'supplier_spend', 'satisfaction_technical_support_rank', 'contract_weight_score', 'satisfaction_customer_service_rank', 'satisfaction_weight_score', 'contract_sourcing_cycle_days', 'supplier_type', 'is_carrier', 'contract_product_return_rate', 'competitive_cost_avoidance_rank', 'contract_product_quality_rate', 'contract_budget_cost_rate']
+    # edit_columns = ['supplier', 'param_calc_date', 'satisfaction_ethics_rank', 'contract_invoice_accuracy_rate', 'satisfaction_weight_percent', 'contract_on_time_delivery_rate', 'active_from_date', 'active_to_date', 'competitive_warranty_rank', 'competitive_marketing_rank', 'contract_delivery_correctness_rate', 'competitive_weight_score', 'contract_sl_aissue_rate', 'competitive_weight_percent', 'supplier_score', 'competitive_product_price_rank', 'contract_weight_percent', 'supplier_spend', 'satisfaction_technical_support_rank', 'contract_weight_score', 'satisfaction_customer_service_rank', 'satisfaction_weight_score', 'contract_sourcing_cycle_days', 'supplier_type', 'is_carrier', 'contract_product_return_rate', 'competitive_cost_avoidance_rank', 'contract_product_quality_rate', 'contract_budget_cost_rate']
+    add_columns = ['supplier', 'param_calc_date', 'satisfaction_ethics_rank', 'contract_invoice_accuracy_rate', 'satisfaction_weight_percent', 'contract_on_time_delivery_rate', 'active_from_date', 'active_to_date', 'competitive_warranty_rank', 'competitive_marketing_rank', 'contract_delivery_correctness_rate', 'competitive_weight_score', 'contract_sl_aissue_rate', 'competitive_weight_percent', 'supplier_score', 'competitive_product_price_rank', 'contract_weight_percent', 'supplier_spend', 'satisfaction_technical_support_rank', 'contract_weight_score', 'satisfaction_customer_service_rank', 'satisfaction_weight_score', 'contract_sourcing_cycle_days', 'supplier_type', 'is_carrier', 'contract_product_return_rate', 'competitive_cost_avoidance_rank', 'contract_product_quality_rate', 'contract_budget_cost_rate']
+    # search_columns = ['supplier', 'param_calc_date', 'satisfaction_ethics_rank', 'contract_invoice_accuracy_rate', 'satisfaction_weight_percent', 'contract_on_time_delivery_rate', 'active_from_date', 'active_to_date', 'competitive_warranty_rank', 'competitive_marketing_rank', 'contract_delivery_correctness_rate', 'competitive_weight_score', 'contract_sl_aissue_rate', 'competitive_weight_percent', 'supplier_score', 'competitive_product_price_rank', 'contract_weight_percent', 'supplier_spend', 'satisfaction_technical_support_rank', 'contract_weight_score', 'satisfaction_customer_service_rank', 'satisfaction_weight_score', 'contract_sourcing_cycle_days', 'supplier_type', 'is_carrier', 'contract_product_return_rate', 'competitive_cost_avoidance_rank', 'contract_product_quality_rate', 'contract_budget_cost_rate']
+    description_columns = {
+        'id' : 'None',
+        'supplier_id_fk' : 'None',
+        'param_calc_date' : 'None',
+        'satisfaction_ethics_rank' : 'None',
+        'contract_invoice_accuracy_rate' : 'None',
+        'satisfaction_weight_percent' : 'None',
+        'contract_on_time_delivery_rate' : 'None',
+        'active_from_date' : 'None',
+        'active_to_date' : 'None',
+        'competitive_warranty_rank' : 'None',
+        'competitive_marketing_rank' : 'None',
+        'contract_delivery_correctness_rate' : 'None',
+        'competitive_weight_score' : 'None',
+        'contract_sl_aissue_rate' : 'None',
+        'competitive_weight_percent' : 'None',
+        'supplier_score' : 'None',
+        'competitive_product_price_rank' : 'None',
+        'contract_weight_percent' : 'None',
+        'supplier_spend' : 'None',
+        'satisfaction_technical_support_rank' : 'None',
+        'contract_weight_score' : 'None',
+        'satisfaction_customer_service_rank' : 'None',
+        'satisfaction_weight_score' : 'None',
+        'contract_sourcing_cycle_days' : 'None',
+        'supplier_type' : 'None',
+        'is_carrier' : 'None',
+        'contract_product_return_rate' : 'None',
+        'competitive_cost_avoidance_rank' : 'None',
+        'contract_product_quality_rate' : 'None',
+        'contract_budget_cost_rate' : 'None',
+    }
+    # list_exclude_columns = ['supplier', 'param_calc_date', 'satisfaction_ethics_rank', 'contract_invoice_accuracy_rate', 'satisfaction_weight_percent', 'contract_on_time_delivery_rate', 'active_from_date', 'active_to_date', 'competitive_warranty_rank', 'competitive_marketing_rank', 'contract_delivery_correctness_rate', 'competitive_weight_score', 'contract_sl_aissue_rate', 'competitive_weight_percent', 'supplier_score', 'competitive_product_price_rank', 'contract_weight_percent', 'supplier_spend', 'satisfaction_technical_support_rank', 'contract_weight_score', 'satisfaction_customer_service_rank', 'satisfaction_weight_score', 'contract_sourcing_cycle_days', 'supplier_type', 'is_carrier', 'contract_product_return_rate', 'competitive_cost_avoidance_rank', 'contract_product_quality_rate', 'contract_budget_cost_rate']
+    # show_exclude_columns = ['supplier', 'param_calc_date', 'satisfaction_ethics_rank', 'contract_invoice_accuracy_rate', 'satisfaction_weight_percent', 'contract_on_time_delivery_rate', 'active_from_date', 'active_to_date', 'competitive_warranty_rank', 'competitive_marketing_rank', 'contract_delivery_correctness_rate', 'competitive_weight_score', 'contract_sl_aissue_rate', 'competitive_weight_percent', 'supplier_score', 'competitive_product_price_rank', 'contract_weight_percent', 'supplier_spend', 'satisfaction_technical_support_rank', 'contract_weight_score', 'satisfaction_customer_service_rank', 'satisfaction_weight_score', 'contract_sourcing_cycle_days', 'supplier_type', 'is_carrier', 'contract_product_return_rate', 'competitive_cost_avoidance_rank', 'contract_product_quality_rate', 'contract_budget_cost_rate']
+    # edit_exclude_columns = ['supplier', 'param_calc_date', 'satisfaction_ethics_rank', 'contract_invoice_accuracy_rate', 'satisfaction_weight_percent', 'contract_on_time_delivery_rate', 'active_from_date', 'active_to_date', 'competitive_warranty_rank', 'competitive_marketing_rank', 'contract_delivery_correctness_rate', 'competitive_weight_score', 'contract_sl_aissue_rate', 'competitive_weight_percent', 'supplier_score', 'competitive_product_price_rank', 'contract_weight_percent', 'supplier_spend', 'satisfaction_technical_support_rank', 'contract_weight_score', 'satisfaction_customer_service_rank', 'satisfaction_weight_score', 'contract_sourcing_cycle_days', 'supplier_type', 'is_carrier', 'contract_product_return_rate', 'competitive_cost_avoidance_rank', 'contract_product_quality_rate', 'contract_budget_cost_rate']
+    # add_exclude_columns = ['supplier', 'param_calc_date', 'satisfaction_ethics_rank', 'contract_invoice_accuracy_rate', 'satisfaction_weight_percent', 'contract_on_time_delivery_rate', 'active_from_date', 'active_to_date', 'competitive_warranty_rank', 'competitive_marketing_rank', 'contract_delivery_correctness_rate', 'competitive_weight_score', 'contract_sl_aissue_rate', 'competitive_weight_percent', 'supplier_score', 'competitive_product_price_rank', 'contract_weight_percent', 'supplier_spend', 'satisfaction_technical_support_rank', 'contract_weight_score', 'satisfaction_customer_service_rank', 'satisfaction_weight_score', 'contract_sourcing_cycle_days', 'supplier_type', 'is_carrier', 'contract_product_return_rate', 'competitive_cost_avoidance_rank', 'contract_product_quality_rate', 'contract_budget_cost_rate']
+    # search_exclude_columns = ['supplier', 'param_calc_date', 'satisfaction_ethics_rank', 'contract_invoice_accuracy_rate', 'satisfaction_weight_percent', 'contract_on_time_delivery_rate', 'active_from_date', 'active_to_date', 'competitive_warranty_rank', 'competitive_marketing_rank', 'contract_delivery_correctness_rate', 'competitive_weight_score', 'contract_sl_aissue_rate', 'competitive_weight_percent', 'supplier_score', 'competitive_product_price_rank', 'contract_weight_percent', 'supplier_spend', 'satisfaction_technical_support_rank', 'contract_weight_score', 'satisfaction_customer_service_rank', 'satisfaction_weight_score', 'contract_sourcing_cycle_days', 'supplier_type', 'is_carrier', 'contract_product_return_rate', 'competitive_cost_avoidance_rank', 'contract_product_quality_rate', 'contract_budget_cost_rate']
+    # order_columns = ['supplier', 'param_calc_date', 'satisfaction_ethics_rank', 'contract_invoice_accuracy_rate', 'satisfaction_weight_percent', 'contract_on_time_delivery_rate', 'active_from_date', 'active_to_date', 'competitive_warranty_rank', 'competitive_marketing_rank', 'contract_delivery_correctness_rate', 'competitive_weight_score', 'contract_sl_aissue_rate', 'competitive_weight_percent', 'supplier_score', 'competitive_product_price_rank', 'contract_weight_percent', 'supplier_spend', 'satisfaction_technical_support_rank', 'contract_weight_score', 'satisfaction_customer_service_rank', 'satisfaction_weight_score', 'contract_sourcing_cycle_days', 'supplier_type', 'is_carrier', 'contract_product_return_rate', 'competitive_cost_avoidance_rank', 'contract_product_quality_rate', 'contract_budget_cost_rate']
+    # add_columns = ['supplier', 'param_calc_date', 'satisfaction_ethics_rank', 'contract_invoice_accuracy_rate', 'satisfaction_weight_percent', 'contract_on_time_delivery_rate', 'active_from_date', 'active_to_date', 'competitive_warranty_rank', 'competitive_marketing_rank', 'contract_delivery_correctness_rate', 'competitive_weight_score', 'contract_sl_aissue_rate', 'competitive_weight_percent', 'supplier_score', 'competitive_product_price_rank', 'contract_weight_percent', 'supplier_spend', 'satisfaction_technical_support_rank', 'contract_weight_score', 'satisfaction_customer_service_rank', 'satisfaction_weight_score', 'contract_sourcing_cycle_days', 'supplier_type', 'is_carrier', 'contract_product_return_rate', 'competitive_cost_avoidance_rank', 'contract_product_quality_rate', 'contract_budget_cost_rate']
+    # add_columns = ['supplier', 'param_calc_date', 'satisfaction_ethics_rank', 'contract_invoice_accuracy_rate', 'satisfaction_weight_percent', 'contract_on_time_delivery_rate', 'active_from_date', 'active_to_date', 'competitive_warranty_rank', 'competitive_marketing_rank', 'contract_delivery_correctness_rate', 'competitive_weight_score', 'contract_sl_aissue_rate', 'competitive_weight_percent', 'supplier_score', 'competitive_product_price_rank', 'contract_weight_percent', 'supplier_spend', 'satisfaction_technical_support_rank', 'contract_weight_score', 'satisfaction_customer_service_rank', 'satisfaction_weight_score', 'contract_sourcing_cycle_days', 'supplier_type', 'is_carrier', 'contract_product_return_rate', 'competitive_cost_avoidance_rank', 'contract_product_quality_rate', 'contract_budget_cost_rate']
+    # add_columns = ['supplier', 'param_calc_date', 'satisfaction_ethics_rank', 'contract_invoice_accuracy_rate', 'satisfaction_weight_percent', 'contract_on_time_delivery_rate', 'active_from_date', 'active_to_date', 'competitive_warranty_rank', 'competitive_marketing_rank', 'contract_delivery_correctness_rate', 'competitive_weight_score', 'contract_sl_aissue_rate', 'competitive_weight_percent', 'supplier_score', 'competitive_product_price_rank', 'contract_weight_percent', 'supplier_spend', 'satisfaction_technical_support_rank', 'contract_weight_score', 'satisfaction_customer_service_rank', 'satisfaction_weight_score', 'contract_sourcing_cycle_days', 'supplier_type', 'is_carrier', 'contract_product_return_rate', 'competitive_cost_avoidance_rank', 'contract_product_quality_rate', 'contract_budget_cost_rate']
+    
+    label_columns = {'supplier':'Supplier', 'param_calc_date':'Param Calc Date', 'satisfaction_ethics_rank':'Satisfaction Ethics Rank', 'contract_invoice_accuracy_rate':'Contract Invoice Accuracy Rate', 'satisfaction_weight_percent':'Satisfaction Weight Percent', 'contract_on_time_delivery_rate':'Contract On Time Delivery Rate', 'active_from_date':'Active From Date', 'active_to_date':'Active To Date', 'competitive_warranty_rank':'Competitive Warranty Rank', 'competitive_marketing_rank':'Competitive Marketing Rank', 'contract_delivery_correctness_rate':'Contract Delivery Correctness Rate', 'competitive_weight_score':'Competitive Weight Score', 'contract_sl_aissue_rate':'Contract Sl Aissue Rate', 'competitive_weight_percent':'Competitive Weight Percent', 'supplier_score':'Supplier Score', 'competitive_product_price_rank':'Competitive Product Price Rank', 'contract_weight_percent':'Contract Weight Percent', 'supplier_spend':'Supplier Spend', 'satisfaction_technical_support_rank':'Satisfaction Technical Support Rank', 'contract_weight_score':'Contract Weight Score', 'satisfaction_customer_service_rank':'Satisfaction Customer Service Rank', 'satisfaction_weight_score':'Satisfaction Weight Score', 'contract_sourcing_cycle_days':'Contract Sourcing Cycle Days', 'supplier_type':'Supplier Type', 'is_carrier':'Is Carrier', 'contract_product_return_rate':'Contract Product Return Rate', 'competitive_cost_avoidance_rank':'Competitive Cost Avoidance Rank', 'contract_product_quality_rate':'Contract Product Quality Rate', 'contract_budget_cost_rate':'Contract Budget Cost Rate'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['supplier', 'param_calc_date', 'satisfaction_ethics_rank', 'contract_invoice_accuracy_rate', 'satisfaction_weight_percent', 'contract_on_time_delivery_rate', 'active_from_date', 'active_to_date', 'competitive_warranty_rank', 'competitive_marketing_rank', 'contract_delivery_correctness_rate', 'competitive_weight_score', 'contract_sl_aissue_rate', 'competitive_weight_percent', 'supplier_score', 'competitive_product_price_rank', 'contract_weight_percent', 'supplier_spend', 'satisfaction_technical_support_rank', 'contract_weight_score', 'satisfaction_customer_service_rank', 'satisfaction_weight_score', 'contract_sourcing_cycle_days', 'supplier_type', 'is_carrier', 'contract_product_return_rate', 'competitive_cost_avoidance_rank', 'contract_product_quality_rate', 'contract_budget_cost_rate']
+class UserResponseModelView(ModelView):
+    datamodel = SQLAInterface(UserResponse)
+    list_title = 'List User Response'
+    show_title = 'Show User Response'
+    edit_title = 'Edit User Response'
+    add_title  = 'Add User Response'
+ 
+    list_columns = ['question', 'person', 'selected_option', 'long_answer', 'answered_at']
+    # show_columns = ['question', 'person', 'selected_option', 'long_answer', 'answered_at']
+    # edit_columns = ['question', 'person', 'selected_option', 'long_answer', 'answered_at']
+    add_columns = ['question', 'person', 'selected_option', 'long_answer', 'answered_at']
+    # search_columns = ['question', 'person', 'selected_option', 'long_answer', 'answered_at']
+    description_columns = {
+        'id' : 'None',
+        'question_id_fk' : 'None',
+        'person_id_fk' : 'None',
+        'selected_option' : 'None',
+        'long_answer' : 'None',
+        'answered_at' : 'None',
+    }
+    # list_exclude_columns = ['question', 'person', 'selected_option', 'long_answer', 'answered_at']
+    # show_exclude_columns = ['question', 'person', 'selected_option', 'long_answer', 'answered_at']
+    # edit_exclude_columns = ['question', 'person', 'selected_option', 'long_answer', 'answered_at']
+    # add_exclude_columns = ['question', 'person', 'selected_option', 'long_answer', 'answered_at']
+    # search_exclude_columns = ['question', 'person', 'selected_option', 'long_answer', 'answered_at']
+    # order_columns = ['question', 'person', 'selected_option', 'long_answer', 'answered_at']
+    # add_columns = ['question', 'person', 'selected_option', 'long_answer', 'answered_at']
+    # add_columns = ['question', 'person', 'selected_option', 'long_answer', 'answered_at']
+    # add_columns = ['question', 'person', 'selected_option', 'long_answer', 'answered_at']
+    
+    label_columns = {'question':'Question', 'person':'Person', 'selected_option':'Selected Option', 'long_answer':'Long Answer', 'answered_at':'Answered At'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['question', 'person', 'selected_option', 'long_answer', 'answered_at']
+class WarehouseModelView(ModelView):
+    datamodel = SQLAInterface(Warehouse)
+    list_title = 'List Warehouse'
+    show_title = 'Show Warehouse'
+    edit_title = 'Edit Warehouse'
+    add_title  = 'Add Warehouse'
+ 
+    list_columns = ['org', 'name', 'location', 'geo', 'is_active', 'created_at']
+    # show_columns = ['org', 'name', 'location', 'geo', 'is_active', 'created_at']
+    # edit_columns = ['org', 'name', 'location', 'geo', 'is_active', 'created_at']
+    add_columns = ['org', 'name', 'location', 'geo', 'is_active', 'created_at']
+    # search_columns = ['org', 'name', 'location', 'geo', 'is_active', 'created_at']
+    description_columns = {
+        'id' : 'None',
+        'org_id_fk' : 'Link to the organization owning the warehouse',
+        'name' : 'Name or identifier of the warehouse',
+        'location' : 'Physical address of the warehouse',
+        'geo_id_fk' : 'None',
+        'is_active' : 'Is the warehouse in active use?',
+        'created_at' : 'None',
+    }
+    # list_exclude_columns = ['org', 'name', 'location', 'geo', 'is_active', 'created_at']
+    # show_exclude_columns = ['org', 'name', 'location', 'geo', 'is_active', 'created_at']
+    # edit_exclude_columns = ['org', 'name', 'location', 'geo', 'is_active', 'created_at']
+    # add_exclude_columns = ['org', 'name', 'location', 'geo', 'is_active', 'created_at']
+    # search_exclude_columns = ['org', 'name', 'location', 'geo', 'is_active', 'created_at']
+    # order_columns = ['org', 'name', 'location', 'geo', 'is_active', 'created_at']
+    # add_columns = ['org', 'name', 'location', 'geo', 'is_active', 'created_at']
+    # add_columns = ['org', 'name', 'location', 'geo', 'is_active', 'created_at']
+    # add_columns = ['org', 'name', 'location', 'geo', 'is_active', 'created_at']
+    
+    label_columns = {'org':'Org', 'name':'Name', 'location':'Location', 'geo':'Geo', 'is_active':'Is Active', 'created_at':'Created At'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['org', 'name', 'location', 'geo', 'is_active', 'created_at']
+class PurchaseOrderDetailsModelView(ModelView):
+    datamodel = SQLAInterface(PurchaseOrderDetails)
+    list_title = 'List Purchase Order Details'
+    show_title = 'Show Purchase Order Details'
+    edit_title = 'Edit Purchase Order Details'
+    add_title  = 'Add Purchase Order Details'
+ 
+    list_columns = ['purchase_order', 'product', 'quantity_ordered', 'unit_price', 'quantity_received', 'received_date', 'status']
+    # show_columns = ['purchase_order', 'product', 'quantity_ordered', 'unit_price', 'quantity_received', 'received_date', 'status']
+    # edit_columns = ['purchase_order', 'product', 'quantity_ordered', 'unit_price', 'quantity_received', 'received_date', 'status']
+    add_columns = ['purchase_order', 'product', 'quantity_ordered', 'unit_price', 'quantity_received', 'received_date', 'status']
+    # search_columns = ['purchase_order', 'product', 'quantity_ordered', 'unit_price', 'quantity_received', 'received_date', 'status']
+    description_columns = {
+        'id' : 'None',
+        'purchase_order_id_fk' : 'None',
+        'product_id_fk' : 'None',
+        'quantity_ordered' : 'None',
+        'unit_price' : 'None',
+        'quantity_received' : 'None',
+        'received_date' : 'None',
+        'status' : 'None',
+    }
+    # list_exclude_columns = ['purchase_order', 'product', 'quantity_ordered', 'unit_price', 'quantity_received', 'received_date', 'status']
+    # show_exclude_columns = ['purchase_order', 'product', 'quantity_ordered', 'unit_price', 'quantity_received', 'received_date', 'status']
+    # edit_exclude_columns = ['purchase_order', 'product', 'quantity_ordered', 'unit_price', 'quantity_received', 'received_date', 'status']
+    # add_exclude_columns = ['purchase_order', 'product', 'quantity_ordered', 'unit_price', 'quantity_received', 'received_date', 'status']
+    # search_exclude_columns = ['purchase_order', 'product', 'quantity_ordered', 'unit_price', 'quantity_received', 'received_date', 'status']
+    # order_columns = ['purchase_order', 'product', 'quantity_ordered', 'unit_price', 'quantity_received', 'received_date', 'status']
+    # add_columns = ['purchase_order', 'product', 'quantity_ordered', 'unit_price', 'quantity_received', 'received_date', 'status']
+    # add_columns = ['purchase_order', 'product', 'quantity_ordered', 'unit_price', 'quantity_received', 'received_date', 'status']
+    # add_columns = ['purchase_order', 'product', 'quantity_ordered', 'unit_price', 'quantity_received', 'received_date', 'status']
+    
+    label_columns = {'purchase_order':'Purchase Order', 'product':'Product', 'quantity_ordered':'Quantity Ordered', 'unit_price':'Unit Price', 'quantity_received':'Quantity Received', 'received_date':'Received Date', 'status':'Status'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['purchase_order', 'product', 'quantity_ordered', 'unit_price', 'quantity_received', 'received_date', 'status']
+class SalesOrderDetailsModelView(ModelView):
+    datamodel = SQLAInterface(SalesOrderDetails)
+    list_title = 'List Sales Order Details'
+    show_title = 'Show Sales Order Details'
+    edit_title = 'Edit Sales Order Details'
+    add_title  = 'Add Sales Order Details'
+ 
+    list_columns = ['sales_order', 'product', 'quantity_ordered', 'unit_price', 'shipped_quantity', 'shipped_date', 'status']
+    # show_columns = ['sales_order', 'product', 'quantity_ordered', 'unit_price', 'shipped_quantity', 'shipped_date', 'status']
+    # edit_columns = ['sales_order', 'product', 'quantity_ordered', 'unit_price', 'shipped_quantity', 'shipped_date', 'status']
+    add_columns = ['sales_order', 'product', 'quantity_ordered', 'unit_price', 'shipped_quantity', 'shipped_date', 'status']
+    # search_columns = ['sales_order', 'product', 'quantity_ordered', 'unit_price', 'shipped_quantity', 'shipped_date', 'status']
+    description_columns = {
+        'id' : 'None',
+        'sales_order_id_fk' : 'None',
+        'product_id_fk' : 'None',
+        'quantity_ordered' : 'None',
+        'unit_price' : 'None',
+        'shipped_quantity' : 'None',
+        'shipped_date' : 'None',
+        'status' : 'None',
+    }
+    # list_exclude_columns = ['sales_order', 'product', 'quantity_ordered', 'unit_price', 'shipped_quantity', 'shipped_date', 'status']
+    # show_exclude_columns = ['sales_order', 'product', 'quantity_ordered', 'unit_price', 'shipped_quantity', 'shipped_date', 'status']
+    # edit_exclude_columns = ['sales_order', 'product', 'quantity_ordered', 'unit_price', 'shipped_quantity', 'shipped_date', 'status']
+    # add_exclude_columns = ['sales_order', 'product', 'quantity_ordered', 'unit_price', 'shipped_quantity', 'shipped_date', 'status']
+    # search_exclude_columns = ['sales_order', 'product', 'quantity_ordered', 'unit_price', 'shipped_quantity', 'shipped_date', 'status']
+    # order_columns = ['sales_order', 'product', 'quantity_ordered', 'unit_price', 'shipped_quantity', 'shipped_date', 'status']
+    # add_columns = ['sales_order', 'product', 'quantity_ordered', 'unit_price', 'shipped_quantity', 'shipped_date', 'status']
+    # add_columns = ['sales_order', 'product', 'quantity_ordered', 'unit_price', 'shipped_quantity', 'shipped_date', 'status']
+    # add_columns = ['sales_order', 'product', 'quantity_ordered', 'unit_price', 'shipped_quantity', 'shipped_date', 'status']
+    
+    label_columns = {'sales_order':'Sales Order', 'product':'Product', 'quantity_ordered':'Quantity Ordered', 'unit_price':'Unit Price', 'shipped_quantity':'Shipped Quantity', 'shipped_date':'Shipped Date', 'status':'Status'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['sales_order', 'product', 'quantity_ordered', 'unit_price', 'shipped_quantity', 'shipped_date', 'status']
+class AccBalancesModelView(ModelView):
+    datamodel = SQLAInterface(AccBalances)
+    list_title = 'List Acc Balances'
+    show_title = 'Show Acc Balances'
+    edit_title = 'Edit Acc Balances'
+    add_title  = 'Add Acc Balances'
+ 
+    list_columns = ['account', 'closure_type', 'postmonth', 'value_date', 'amount', 'updated_at']
+    # show_columns = ['account', 'closure_type', 'postmonth', 'value_date', 'amount', 'updated_at']
+    # edit_columns = ['account', 'closure_type', 'postmonth', 'value_date', 'amount', 'updated_at']
+    add_columns = ['account', 'closure_type', 'postmonth', 'value_date', 'amount', 'updated_at']
+    # search_columns = ['account', 'closure_type', 'postmonth', 'value_date', 'amount', 'updated_at']
+    description_columns = {
+        'id' : 'None',
+        'account_id_fk' : 'None',
+        'closure_type' : 'Type of closure - Monthly, Quarterly, or Yearly',
+        'postmonth' : 'yyyymm format',
+        'value_date' : 'None',
+        'amount' : 'None',
+        'updated_at' : 'None',
+    }
+    # list_exclude_columns = ['account', 'closure_type', 'postmonth', 'value_date', 'amount', 'updated_at']
+    # show_exclude_columns = ['account', 'closure_type', 'postmonth', 'value_date', 'amount', 'updated_at']
+    # edit_exclude_columns = ['account', 'closure_type', 'postmonth', 'value_date', 'amount', 'updated_at']
+    # add_exclude_columns = ['account', 'closure_type', 'postmonth', 'value_date', 'amount', 'updated_at']
+    # search_exclude_columns = ['account', 'closure_type', 'postmonth', 'value_date', 'amount', 'updated_at']
+    # order_columns = ['account', 'closure_type', 'postmonth', 'value_date', 'amount', 'updated_at']
+    # add_columns = ['account', 'closure_type', 'postmonth', 'value_date', 'amount', 'updated_at']
+    # add_columns = ['account', 'closure_type', 'postmonth', 'value_date', 'amount', 'updated_at']
+    # add_columns = ['account', 'closure_type', 'postmonth', 'value_date', 'amount', 'updated_at']
+    
+    label_columns = {'account':'Account', 'closure_type':'Closure Type', 'postmonth':'Postmonth', 'value_date':'Value Date', 'amount':'Amount', 'updated_at':'Updated At'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['account', 'closure_type', 'postmonth', 'value_date', 'amount', 'updated_at']
+class AccGlJournalEntryModelView(ModelView):
+    datamodel = SQLAInterface(AccGlJournalEntry)
+    list_title = 'List Acc Gl Journal Entry'
+    show_title = 'Show Acc Gl Journal Entry'
+    edit_title = 'Edit Acc Gl Journal Entry'
+    add_title  = 'Add Acc Gl Journal Entry'
+ 
+    list_columns = ['account', 'org', 'reversal', 'transaction_id', 'reversed', 'manual_entry', 'entry_date', 'effective_date', 'trans_status', 'amount', 'payment_mode', 'comments', 'is_deleted', 'transaction_type', 'currency', 'exchange_rate', 'batch_id', 'tags', 'entered_by', 'transaction_source', 'third_party_reference', 'checksum', 'is_locked']
+    # show_columns = ['account', 'org', 'reversal', 'transaction_id', 'reversed', 'manual_entry', 'entry_date', 'effective_date', 'trans_status', 'amount', 'payment_mode', 'comments', 'is_deleted', 'transaction_type', 'currency', 'exchange_rate', 'batch_id', 'tags', 'entered_by', 'transaction_source', 'third_party_reference', 'checksum', 'is_locked']
+    # edit_columns = ['account', 'org', 'reversal', 'transaction_id', 'reversed', 'manual_entry', 'entry_date', 'effective_date', 'trans_status', 'amount', 'payment_mode', 'comments', 'is_deleted', 'transaction_type', 'currency', 'exchange_rate', 'batch_id', 'tags', 'entered_by', 'transaction_source', 'third_party_reference', 'checksum', 'is_locked']
+    add_columns = ['account', 'org', 'reversal', 'transaction_id', 'reversed', 'manual_entry', 'entry_date', 'effective_date', 'trans_status', 'amount', 'payment_mode', 'comments', 'is_deleted', 'transaction_type', 'currency', 'exchange_rate', 'batch_id', 'tags', 'entered_by', 'transaction_source', 'third_party_reference', 'checksum', 'is_locked']
+    # search_columns = ['account', 'org', 'reversal', 'transaction_id', 'reversed', 'manual_entry', 'entry_date', 'effective_date', 'trans_status', 'amount', 'payment_mode', 'comments', 'is_deleted', 'transaction_type', 'currency', 'exchange_rate', 'batch_id', 'tags', 'entered_by', 'transaction_source', 'third_party_reference', 'checksum', 'is_locked']
+    description_columns = {
+        'id' : 'Unique identifier for the journal entry',
+        'account_id_fk' : 'Account associated with this journal entry',
+        'org_id_fk' : 'Organization for which the transaction is recorded',
+        'reversal_id_fk' : 'If this is a reversal, reference to the original transaction',
+        'transaction_id' : 'Unique transaction ID, might come from external systems',
+        'reversed' : 'Indicates if this transaction is a reversal of another',
+        'manual_entry' : 'Flag to indicate if this was manually entered',
+        'entry_date' : 'Date of the journal entry',
+        'effective_date' : 'Effective date for accounting purposes',
+        'trans_status' : 'None',
+        'amount' : 'Transaction amount',
+        'payment_mode' : 'None',
+        'comments' : 'Any additional notes or comments about the journal entry',
+        'is_deleted' : 'Flag to mark the transaction as deleted or inactive',
+        'transaction_type' : 'Type of the transaction (Debit, Credit, etc.)',
+        'currency_id_fk' : 'Currency in which the transaction was recorded',
+        'exchange_rate' : 'Exchange rate applied, useful if dealing with multi-currency operations',
+        'batch_id' : 'Batch or group ID if transactions are batched',
+        'tags' : 'Array of tags for categorization and easy search',
+        'entered_by_id_fk' : 'User who recorded or entered the transaction',
+        'transaction_source' : 'Source mechanism of the transaction (manual, API, etc.)',
+        'third_party_reference' : 'Reference number or ID from a third-party system, if any',
+        'checksum' : 'Checksum for data integrity validation',
+        'is_locked' : 'Flag to indicate if the transaction is locked from edits',
+    }
+    # list_exclude_columns = ['account', 'org', 'reversal', 'transaction_id', 'reversed', 'manual_entry', 'entry_date', 'effective_date', 'trans_status', 'amount', 'payment_mode', 'comments', 'is_deleted', 'transaction_type', 'currency', 'exchange_rate', 'batch_id', 'tags', 'entered_by', 'transaction_source', 'third_party_reference', 'checksum', 'is_locked']
+    # show_exclude_columns = ['account', 'org', 'reversal', 'transaction_id', 'reversed', 'manual_entry', 'entry_date', 'effective_date', 'trans_status', 'amount', 'payment_mode', 'comments', 'is_deleted', 'transaction_type', 'currency', 'exchange_rate', 'batch_id', 'tags', 'entered_by', 'transaction_source', 'third_party_reference', 'checksum', 'is_locked']
+    # edit_exclude_columns = ['account', 'org', 'reversal', 'transaction_id', 'reversed', 'manual_entry', 'entry_date', 'effective_date', 'trans_status', 'amount', 'payment_mode', 'comments', 'is_deleted', 'transaction_type', 'currency', 'exchange_rate', 'batch_id', 'tags', 'entered_by', 'transaction_source', 'third_party_reference', 'checksum', 'is_locked']
+    # add_exclude_columns = ['account', 'org', 'reversal', 'transaction_id', 'reversed', 'manual_entry', 'entry_date', 'effective_date', 'trans_status', 'amount', 'payment_mode', 'comments', 'is_deleted', 'transaction_type', 'currency', 'exchange_rate', 'batch_id', 'tags', 'entered_by', 'transaction_source', 'third_party_reference', 'checksum', 'is_locked']
+    # search_exclude_columns = ['account', 'org', 'reversal', 'transaction_id', 'reversed', 'manual_entry', 'entry_date', 'effective_date', 'trans_status', 'amount', 'payment_mode', 'comments', 'is_deleted', 'transaction_type', 'currency', 'exchange_rate', 'batch_id', 'tags', 'entered_by', 'transaction_source', 'third_party_reference', 'checksum', 'is_locked']
+    # order_columns = ['account', 'org', 'reversal', 'transaction_id', 'reversed', 'manual_entry', 'entry_date', 'effective_date', 'trans_status', 'amount', 'payment_mode', 'comments', 'is_deleted', 'transaction_type', 'currency', 'exchange_rate', 'batch_id', 'tags', 'entered_by', 'transaction_source', 'third_party_reference', 'checksum', 'is_locked']
+    # add_columns = ['account', 'org', 'reversal', 'transaction_id', 'reversed', 'manual_entry', 'entry_date', 'effective_date', 'trans_status', 'amount', 'payment_mode', 'comments', 'is_deleted', 'transaction_type', 'currency', 'exchange_rate', 'batch_id', 'tags', 'entered_by', 'transaction_source', 'third_party_reference', 'checksum', 'is_locked']
+    # add_columns = ['account', 'org', 'reversal', 'transaction_id', 'reversed', 'manual_entry', 'entry_date', 'effective_date', 'trans_status', 'amount', 'payment_mode', 'comments', 'is_deleted', 'transaction_type', 'currency', 'exchange_rate', 'batch_id', 'tags', 'entered_by', 'transaction_source', 'third_party_reference', 'checksum', 'is_locked']
+    # add_columns = ['account', 'org', 'reversal', 'transaction_id', 'reversed', 'manual_entry', 'entry_date', 'effective_date', 'trans_status', 'amount', 'payment_mode', 'comments', 'is_deleted', 'transaction_type', 'currency', 'exchange_rate', 'batch_id', 'tags', 'entered_by', 'transaction_source', 'third_party_reference', 'checksum', 'is_locked']
+    
+    label_columns = {'account':'Account', 'org':'Org', 'reversal':'Reversal', 'transaction_id':'Transaction Id', 'reversed':'Reversed', 'manual_entry':'Manual Entry', 'entry_date':'Entry Date', 'effective_date':'Effective Date', 'trans_status':'Trans Status', 'amount':'Amount', 'payment_mode':'Payment Mode', 'comments':'Comments', 'is_deleted':'Is Deleted', 'transaction_type':'Transaction Type', 'currency':'Currency', 'exchange_rate':'Exchange Rate', 'batch_id':'Batch Id', 'tags':'Tags', 'entered_by':'Entered By', 'transaction_source':'Transaction Source', 'third_party_reference':'Third Party Reference', 'checksum':'Checksum', 'is_locked':'Is Locked'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['account', 'org', 'reversal', 'transaction_id', 'reversed', 'manual_entry', 'entry_date', 'effective_date', 'trans_status', 'amount', 'payment_mode', 'comments', 'is_deleted', 'transaction_type', 'currency', 'exchange_rate', 'batch_id', 'tags', 'entered_by', 'transaction_source', 'third_party_reference', 'checksum', 'is_locked']
+class AccProductLinkModelView(ModelView):
+    datamodel = SQLAInterface(AccProductLink)
+    list_title = 'List Acc Product Link'
+    show_title = 'Show Acc Product Link'
+    edit_title = 'Edit Acc Product Link'
+    add_title  = 'Add Acc Product Link'
+ 
+    list_columns = ['account', 'product_class', 'financial_account_type', 'is_active', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # show_columns = ['account', 'product_class', 'financial_account_type', 'is_active', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # edit_columns = ['account', 'product_class', 'financial_account_type', 'is_active', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    add_columns = ['account', 'product_class', 'financial_account_type', 'is_active', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # search_columns = ['account', 'product_class', 'financial_account_type', 'is_active', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    description_columns = {
+        'account_id_fk' : 'Reference to the account being linked',
+        'product_class_id_fk' : 'Reference to the product class being linked to the account',
+        'financial_account_type' : 'Type of the financial account linked to the product class',
+        'is_active' : 'Flag indicating if the link between account and product class is active',
+        'comment' : 'Any additional notes or comments about this linkage',
+        'created_by_id_fk' : 'User who created this linkage',
+        'created_on' : 'Timestamp when this linkage was created',
+        'last_modified_by_id_fk' : 'User who last modified this linkage',
+        'last_modified_on' : 'Timestamp when this linkage was last updated',
+    }
+    # list_exclude_columns = ['account', 'product_class', 'financial_account_type', 'is_active', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # show_exclude_columns = ['account', 'product_class', 'financial_account_type', 'is_active', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # edit_exclude_columns = ['account', 'product_class', 'financial_account_type', 'is_active', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # add_exclude_columns = ['account', 'product_class', 'financial_account_type', 'is_active', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # search_exclude_columns = ['account', 'product_class', 'financial_account_type', 'is_active', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # order_columns = ['account', 'product_class', 'financial_account_type', 'is_active', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # add_columns = ['account', 'product_class', 'financial_account_type', 'is_active', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # add_columns = ['account', 'product_class', 'financial_account_type', 'is_active', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    # add_columns = ['account', 'product_class', 'financial_account_type', 'is_active', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+    
+    label_columns = {'account':'Account', 'product_class':'Product Class', 'financial_account_type':'Financial Account Type', 'is_active':'Is Active', 'comment':'Comment', 'created_by':'Created By', 'created_on':'Created On', 'last_modified_by':'Last Modified By', 'last_modified_on':'Last Modified On'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['account', 'product_class', 'financial_account_type', 'is_active', 'comment', 'created_by', 'created_on', 'last_modified_by', 'last_modified_on']
+class AisleModelView(ModelView):
+    datamodel = SQLAInterface(Aisle)
+    list_title = 'List Aisle'
+    show_title = 'Show Aisle'
+    edit_title = 'Edit Aisle'
+    add_title  = 'Add Aisle'
+ 
+    list_columns = ['warehouse', 'aisle_code', 'is_active']
+    # show_columns = ['warehouse', 'aisle_code', 'is_active']
+    # edit_columns = ['warehouse', 'aisle_code', 'is_active']
+    add_columns = ['warehouse', 'aisle_code', 'is_active']
+    # search_columns = ['warehouse', 'aisle_code', 'is_active']
+    description_columns = {
+        'id' : 'None',
+        'warehouse_id_fk' : 'Link to the parent warehouse',
+        'aisle_code' : 'Unique identifier for the aisle',
+        'is_active' : 'Is the aisle in active use?',
+    }
+    # list_exclude_columns = ['warehouse', 'aisle_code', 'is_active']
+    # show_exclude_columns = ['warehouse', 'aisle_code', 'is_active']
+    # edit_exclude_columns = ['warehouse', 'aisle_code', 'is_active']
+    # add_exclude_columns = ['warehouse', 'aisle_code', 'is_active']
+    # search_exclude_columns = ['warehouse', 'aisle_code', 'is_active']
+    # order_columns = ['warehouse', 'aisle_code', 'is_active']
+    # add_columns = ['warehouse', 'aisle_code', 'is_active']
+    # add_columns = ['warehouse', 'aisle_code', 'is_active']
+    # add_columns = ['warehouse', 'aisle_code', 'is_active']
+    
+    label_columns = {'warehouse':'Warehouse', 'aisle_code':'Aisle Code', 'is_active':'Is Active'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['warehouse', 'aisle_code', 'is_active']
+class CalendarEventModelView(ModelView):
+    datamodel = SQLAInterface(CalendarEvent)
+    list_title = 'List Calendar Event'
+    show_title = 'Show Calendar Event'
+    edit_title = 'Edit Calendar Event'
+    add_title  = 'Add Calendar Event'
+ 
+    list_columns = ['calendar', 'uid', 'summary', 'description', 'interaction_mode', 'meeting_minutes', 'location', 'start_at', 'end_at', 'duration', 'rrule', 'dtstamp', 'last_modified', 'organizer', 'priority', 'status', 'categories', 'geo', 'is_busy', 'sequence', 'url', 'related_to', 'comments', 'is_deleted', 'freebusy_start', 'freebusy_end', 'freebusy_type']
+    # show_columns = ['calendar', 'uid', 'summary', 'description', 'interaction_mode', 'meeting_minutes', 'location', 'start_at', 'end_at', 'duration', 'rrule', 'dtstamp', 'last_modified', 'organizer', 'priority', 'status', 'categories', 'geo', 'is_busy', 'sequence', 'url', 'related_to', 'comments', 'is_deleted', 'freebusy_start', 'freebusy_end', 'freebusy_type']
+    # edit_columns = ['calendar', 'uid', 'summary', 'description', 'interaction_mode', 'meeting_minutes', 'location', 'start_at', 'end_at', 'duration', 'rrule', 'dtstamp', 'last_modified', 'organizer', 'priority', 'status', 'categories', 'geo', 'is_busy', 'sequence', 'url', 'related_to', 'comments', 'is_deleted', 'freebusy_start', 'freebusy_end', 'freebusy_type']
+    add_columns = ['calendar', 'uid', 'summary', 'description', 'interaction_mode', 'meeting_minutes', 'location', 'start_at', 'end_at', 'duration', 'rrule', 'dtstamp', 'last_modified', 'organizer', 'priority', 'status', 'categories', 'geo', 'is_busy', 'sequence', 'url', 'related_to', 'comments', 'is_deleted', 'freebusy_start', 'freebusy_end', 'freebusy_type']
+    # search_columns = ['calendar', 'uid', 'summary', 'description', 'interaction_mode', 'meeting_minutes', 'location', 'start_at', 'end_at', 'duration', 'rrule', 'dtstamp', 'last_modified', 'organizer', 'priority', 'status', 'categories', 'geo', 'is_busy', 'sequence', 'url', 'related_to', 'comments', 'is_deleted', 'freebusy_start', 'freebusy_end', 'freebusy_type']
+    description_columns = {
+        'id' : 'Primary key for calendar events',
+        'calendar_id_fk' : 'Reference to the associated calendar',
+        'uid' : 'Unique identifier for the event',
+        'summary' : 'Short summary or title for the event',
+        'description' : 'Detailed description or agenda of the event',
+        'interaction_mode' : 'Phone, Zoom, WhatsApp, etc',
+        'meeting_minutes' : 'None',
+        'location' : 'Location or venue of the event',
+        'start_at' : 'Start time of the event',
+        'end_at' : 'End time of the event',
+        'duration' : 'Duration of the event',
+        'rrule' : 'Recurrence rule for repeating events',
+        'dtstamp' : 'Timestamp the event entry was created',
+        'last_modified' : 'Timestamp of the last modification',
+        'organizer_id_fk' : 'Email or identifier of the event organizer',
+        'priority' : 'Priority level of the event',
+        'status' : 'Current status of the event (e.g., Confirmed, Cancelled)',
+        'categories' : 'Category or type of event',
+        'geo' : 'Geographical coordinates for the event',
+        'is_busy' : 'Specifies whether this event should be transparent or opaque to busy time searches',
+        'sequence' : 'Sequence number - used to track changes in events',
+        'url' : 'URL related to the event',
+        'related_to_id_fk' : 'Links to another event, often used for recurring events',
+        'comments' : 'Additional comments or notes about the event',
+        'is_deleted' : 'Flag to mark deleted events',
+        'freebusy_start' : 'Start time for marking free/busy status',
+        'freebusy_end' : 'End time for marking free/busy status',
+        'freebusy_type' : 'The type of status being marked (e.g., busy, free)',
+    }
+    # list_exclude_columns = ['calendar', 'uid', 'summary', 'description', 'interaction_mode', 'meeting_minutes', 'location', 'start_at', 'end_at', 'duration', 'rrule', 'dtstamp', 'last_modified', 'organizer', 'priority', 'status', 'categories', 'geo', 'is_busy', 'sequence', 'url', 'related_to', 'comments', 'is_deleted', 'freebusy_start', 'freebusy_end', 'freebusy_type']
+    # show_exclude_columns = ['calendar', 'uid', 'summary', 'description', 'interaction_mode', 'meeting_minutes', 'location', 'start_at', 'end_at', 'duration', 'rrule', 'dtstamp', 'last_modified', 'organizer', 'priority', 'status', 'categories', 'geo', 'is_busy', 'sequence', 'url', 'related_to', 'comments', 'is_deleted', 'freebusy_start', 'freebusy_end', 'freebusy_type']
+    # edit_exclude_columns = ['calendar', 'uid', 'summary', 'description', 'interaction_mode', 'meeting_minutes', 'location', 'start_at', 'end_at', 'duration', 'rrule', 'dtstamp', 'last_modified', 'organizer', 'priority', 'status', 'categories', 'geo', 'is_busy', 'sequence', 'url', 'related_to', 'comments', 'is_deleted', 'freebusy_start', 'freebusy_end', 'freebusy_type']
+    # add_exclude_columns = ['calendar', 'uid', 'summary', 'description', 'interaction_mode', 'meeting_minutes', 'location', 'start_at', 'end_at', 'duration', 'rrule', 'dtstamp', 'last_modified', 'organizer', 'priority', 'status', 'categories', 'geo', 'is_busy', 'sequence', 'url', 'related_to', 'comments', 'is_deleted', 'freebusy_start', 'freebusy_end', 'freebusy_type']
+    # search_exclude_columns = ['calendar', 'uid', 'summary', 'description', 'interaction_mode', 'meeting_minutes', 'location', 'start_at', 'end_at', 'duration', 'rrule', 'dtstamp', 'last_modified', 'organizer', 'priority', 'status', 'categories', 'geo', 'is_busy', 'sequence', 'url', 'related_to', 'comments', 'is_deleted', 'freebusy_start', 'freebusy_end', 'freebusy_type']
+    # order_columns = ['calendar', 'uid', 'summary', 'description', 'interaction_mode', 'meeting_minutes', 'location', 'start_at', 'end_at', 'duration', 'rrule', 'dtstamp', 'last_modified', 'organizer', 'priority', 'status', 'categories', 'geo', 'is_busy', 'sequence', 'url', 'related_to', 'comments', 'is_deleted', 'freebusy_start', 'freebusy_end', 'freebusy_type']
+    # add_columns = ['calendar', 'uid', 'summary', 'description', 'interaction_mode', 'meeting_minutes', 'location', 'start_at', 'end_at', 'duration', 'rrule', 'dtstamp', 'last_modified', 'organizer', 'priority', 'status', 'categories', 'geo', 'is_busy', 'sequence', 'url', 'related_to', 'comments', 'is_deleted', 'freebusy_start', 'freebusy_end', 'freebusy_type']
+    # add_columns = ['calendar', 'uid', 'summary', 'description', 'interaction_mode', 'meeting_minutes', 'location', 'start_at', 'end_at', 'duration', 'rrule', 'dtstamp', 'last_modified', 'organizer', 'priority', 'status', 'categories', 'geo', 'is_busy', 'sequence', 'url', 'related_to', 'comments', 'is_deleted', 'freebusy_start', 'freebusy_end', 'freebusy_type']
+    # add_columns = ['calendar', 'uid', 'summary', 'description', 'interaction_mode', 'meeting_minutes', 'location', 'start_at', 'end_at', 'duration', 'rrule', 'dtstamp', 'last_modified', 'organizer', 'priority', 'status', 'categories', 'geo', 'is_busy', 'sequence', 'url', 'related_to', 'comments', 'is_deleted', 'freebusy_start', 'freebusy_end', 'freebusy_type']
+    
+    label_columns = {'calendar':'Calendar', 'uid':'Uid', 'summary':'Summary', 'description':'Description', 'interaction_mode':'Interaction Mode', 'meeting_minutes':'Meeting Minutes', 'location':'Location', 'start_at':'Start At', 'end_at':'End At', 'duration':'Duration', 'rrule':'Rrule', 'dtstamp':'Dtstamp', 'last_modified':'Last Modified', 'organizer':'Organizer', 'priority':'Priority', 'status':'Status', 'categories':'Categories', 'geo':'Geo', 'is_busy':'Is Busy', 'sequence':'Sequence', 'url':'Url', 'related_to':'Related To', 'comments':'Comments', 'is_deleted':'Is Deleted', 'freebusy_start':'Freebusy Start', 'freebusy_end':'Freebusy End', 'freebusy_type':'Freebusy Type'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['calendar', 'uid', 'summary', 'description', 'interaction_mode', 'meeting_minutes', 'location', 'start_at', 'end_at', 'duration', 'rrule', 'dtstamp', 'last_modified', 'organizer', 'priority', 'status', 'categories', 'geo', 'is_busy', 'sequence', 'url', 'related_to', 'comments', 'is_deleted', 'freebusy_start', 'freebusy_end', 'freebusy_type']
+class InventoryOrderMapModelView(ModelView):
+    datamodel = SQLAInterface(InventoryOrderMap)
+    list_title = 'List Inventory Order Map'
+    show_title = 'Show Inventory Order Map'
+    edit_title = 'Edit Inventory Order Map'
+    add_title  = 'Add Inventory Order Map'
+ 
+    list_columns = ['supplier', 'org', 'quote', 'sales_order', 'order_date', 'expected_delivery_date', 'status']
+    # show_columns = ['supplier', 'org', 'quote', 'sales_order', 'order_date', 'expected_delivery_date', 'status']
+    # edit_columns = ['supplier', 'org', 'quote', 'sales_order', 'order_date', 'expected_delivery_date', 'status']
+    add_columns = ['supplier', 'org', 'quote', 'sales_order', 'order_date', 'expected_delivery_date', 'status']
+    # search_columns = ['supplier', 'org', 'quote', 'sales_order', 'order_date', 'expected_delivery_date', 'status']
+    description_columns = {
+        'id' : 'None',
+        'supplier_id_fk' : 'None',
+        'org_id_fk' : 'None',
+        'quote_id_fk' : 'None',
+        'sales_order_id_fk' : 'None',
+        'order_date' : 'None',
+        'expected_delivery_date' : 'None',
+        'status' : 'None',
+    }
+    # list_exclude_columns = ['supplier', 'org', 'quote', 'sales_order', 'order_date', 'expected_delivery_date', 'status']
+    # show_exclude_columns = ['supplier', 'org', 'quote', 'sales_order', 'order_date', 'expected_delivery_date', 'status']
+    # edit_exclude_columns = ['supplier', 'org', 'quote', 'sales_order', 'order_date', 'expected_delivery_date', 'status']
+    # add_exclude_columns = ['supplier', 'org', 'quote', 'sales_order', 'order_date', 'expected_delivery_date', 'status']
+    # search_exclude_columns = ['supplier', 'org', 'quote', 'sales_order', 'order_date', 'expected_delivery_date', 'status']
+    # order_columns = ['supplier', 'org', 'quote', 'sales_order', 'order_date', 'expected_delivery_date', 'status']
+    # add_columns = ['supplier', 'org', 'quote', 'sales_order', 'order_date', 'expected_delivery_date', 'status']
+    # add_columns = ['supplier', 'org', 'quote', 'sales_order', 'order_date', 'expected_delivery_date', 'status']
+    # add_columns = ['supplier', 'org', 'quote', 'sales_order', 'order_date', 'expected_delivery_date', 'status']
+    
+    label_columns = {'supplier':'Supplier', 'org':'Org', 'quote':'Quote', 'sales_order':'Sales Order', 'order_date':'Order Date', 'expected_delivery_date':'Expected Delivery Date', 'status':'Status'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['supplier', 'org', 'quote', 'sales_order', 'order_date', 'expected_delivery_date', 'status']
+class InvoiceModelView(ModelView):
+    datamodel = SQLAInterface(Invoice)
+    list_title = 'List Invoice'
+    show_title = 'Show Invoice'
+    edit_title = 'Edit Invoice'
+    add_title  = 'Add Invoice'
+ 
+    list_columns = ['issue_org', 'dest_org', 'quote', 'invoice_subject', 'invoice_date_created', 'invoice_number', 'invoice_customer_notes', 'invoice_valid_until', 'invoice_status']
+    # show_columns = ['issue_org', 'dest_org', 'quote', 'invoice_subject', 'invoice_date_created', 'invoice_number', 'invoice_customer_notes', 'invoice_valid_until', 'invoice_status']
+    # edit_columns = ['issue_org', 'dest_org', 'quote', 'invoice_subject', 'invoice_date_created', 'invoice_number', 'invoice_customer_notes', 'invoice_valid_until', 'invoice_status']
+    add_columns = ['issue_org', 'dest_org', 'quote', 'invoice_subject', 'invoice_date_created', 'invoice_number', 'invoice_customer_notes', 'invoice_valid_until', 'invoice_status']
+    # search_columns = ['issue_org', 'dest_org', 'quote', 'invoice_subject', 'invoice_date_created', 'invoice_number', 'invoice_customer_notes', 'invoice_valid_until', 'invoice_status']
+    description_columns = {
+        'id' : 'None',
+        'issue_org_id_fk' : 'None',
+        'dest_org_id_fk' : 'None',
+        'quote_id_fk' : 'None',
+        'invoice_subject' : 'None',
+        'invoice_date_created' : 'None',
+        'invoice_number' : 'None',
+        'invoice_customer_notes' : 'None',
+        'invoice_valid_until' : 'None',
+        'invoice_status' : 'None',
+    }
+    # list_exclude_columns = ['issue_org', 'dest_org', 'quote', 'invoice_subject', 'invoice_date_created', 'invoice_number', 'invoice_customer_notes', 'invoice_valid_until', 'invoice_status']
+    # show_exclude_columns = ['issue_org', 'dest_org', 'quote', 'invoice_subject', 'invoice_date_created', 'invoice_number', 'invoice_customer_notes', 'invoice_valid_until', 'invoice_status']
+    # edit_exclude_columns = ['issue_org', 'dest_org', 'quote', 'invoice_subject', 'invoice_date_created', 'invoice_number', 'invoice_customer_notes', 'invoice_valid_until', 'invoice_status']
+    # add_exclude_columns = ['issue_org', 'dest_org', 'quote', 'invoice_subject', 'invoice_date_created', 'invoice_number', 'invoice_customer_notes', 'invoice_valid_until', 'invoice_status']
+    # search_exclude_columns = ['issue_org', 'dest_org', 'quote', 'invoice_subject', 'invoice_date_created', 'invoice_number', 'invoice_customer_notes', 'invoice_valid_until', 'invoice_status']
+    # order_columns = ['issue_org', 'dest_org', 'quote', 'invoice_subject', 'invoice_date_created', 'invoice_number', 'invoice_customer_notes', 'invoice_valid_until', 'invoice_status']
+    # add_columns = ['issue_org', 'dest_org', 'quote', 'invoice_subject', 'invoice_date_created', 'invoice_number', 'invoice_customer_notes', 'invoice_valid_until', 'invoice_status']
+    # add_columns = ['issue_org', 'dest_org', 'quote', 'invoice_subject', 'invoice_date_created', 'invoice_number', 'invoice_customer_notes', 'invoice_valid_until', 'invoice_status']
+    # add_columns = ['issue_org', 'dest_org', 'quote', 'invoice_subject', 'invoice_date_created', 'invoice_number', 'invoice_customer_notes', 'invoice_valid_until', 'invoice_status']
+    
+    label_columns = {'issue_org':'Issue Org', 'dest_org':'Dest Org', 'quote':'Quote', 'invoice_subject':'Invoice Subject', 'invoice_date_created':'Invoice Date Created', 'invoice_number':'Invoice Number', 'invoice_customer_notes':'Invoice Customer Notes', 'invoice_valid_until':'Invoice Valid Until', 'invoice_status':'Invoice Status'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['issue_org', 'dest_org', 'quote', 'invoice_subject', 'invoice_date_created', 'invoice_number', 'invoice_customer_notes', 'invoice_valid_until', 'invoice_status']
+class LandParcelModelView(ModelView):
+    datamodel = SQLAInterface(LandParcel)
+    list_title = 'List Land Parcel'
+    show_title = 'Show Land Parcel'
+    edit_title = 'Edit Land Parcel'
+    add_title  = 'Add Land Parcel'
+ 
+    list_columns = ['owner', 'latitude', 'longitude', 'altitude', 'nearest_geoname', 'area', 'soil_type', 'land_use', 'water_source', 'land_title', 'land_title_doc', 'is_leased', 'lease_expiry_date', 'land_notes']
+    # show_columns = ['owner', 'latitude', 'longitude', 'altitude', 'nearest_geoname', 'area', 'soil_type', 'land_use', 'water_source', 'land_title', 'land_title_doc', 'is_leased', 'lease_expiry_date', 'land_notes']
+    # edit_columns = ['owner', 'latitude', 'longitude', 'altitude', 'nearest_geoname', 'area', 'soil_type', 'land_use', 'water_source', 'land_title', 'land_title_doc', 'is_leased', 'lease_expiry_date', 'land_notes']
+    add_columns = ['owner', 'latitude', 'longitude', 'altitude', 'nearest_geoname', 'area', 'soil_type', 'land_use', 'water_source', 'land_title', 'land_title_doc', 'is_leased', 'lease_expiry_date', 'land_notes']
+    # search_columns = ['owner', 'latitude', 'longitude', 'altitude', 'nearest_geoname', 'area', 'soil_type', 'land_use', 'water_source', 'land_title', 'land_title_doc', 'is_leased', 'lease_expiry_date', 'land_notes']
+    description_columns = {
+        'id' : 'Unique identifier for the land parcel.',
+        'owner_id_fk' : 'Reference to the organization or individual that owns the land.',
+        'latitude' : 'Latitude coordinate of a reference point in the parcel.',
+        'longitude' : 'Longitude coordinate of a reference point in the parcel.',
+        'altitude' : 'Altitude or elevation of the reference point.',
+        'nearest_geoname_id_fk' : 'Reference to the nearest recognized geographical name.',
+        'area' : 'Calculated area of the land parcel.',
+        'soil_type' : 'Type of soil present in the parcel. e.g., sandy, loamy, etc.',
+        'land_use' : 'Current use of the land parcel e.g., farming, grazing, etc.',
+        'water_source' : 'Primary source of water for the parcel e.g., well, river, etc.',
+        'land_title' : 'Land title or registration details.',
+        'land_title_doc_id_fk' : 'None',
+        'is_leased' : 'Indicates if the land is leased.',
+        'lease_expiry_date' : 'Expiration date if the land is leased.',
+        'land_notes' : 'Additional notes or remarks about the land parcel.',
+    }
+    # list_exclude_columns = ['owner', 'latitude', 'longitude', 'altitude', 'nearest_geoname', 'area', 'soil_type', 'land_use', 'water_source', 'land_title', 'land_title_doc', 'is_leased', 'lease_expiry_date', 'land_notes']
+    # show_exclude_columns = ['owner', 'latitude', 'longitude', 'altitude', 'nearest_geoname', 'area', 'soil_type', 'land_use', 'water_source', 'land_title', 'land_title_doc', 'is_leased', 'lease_expiry_date', 'land_notes']
+    # edit_exclude_columns = ['owner', 'latitude', 'longitude', 'altitude', 'nearest_geoname', 'area', 'soil_type', 'land_use', 'water_source', 'land_title', 'land_title_doc', 'is_leased', 'lease_expiry_date', 'land_notes']
+    # add_exclude_columns = ['owner', 'latitude', 'longitude', 'altitude', 'nearest_geoname', 'area', 'soil_type', 'land_use', 'water_source', 'land_title', 'land_title_doc', 'is_leased', 'lease_expiry_date', 'land_notes']
+    # search_exclude_columns = ['owner', 'latitude', 'longitude', 'altitude', 'nearest_geoname', 'area', 'soil_type', 'land_use', 'water_source', 'land_title', 'land_title_doc', 'is_leased', 'lease_expiry_date', 'land_notes']
+    # order_columns = ['owner', 'latitude', 'longitude', 'altitude', 'nearest_geoname', 'area', 'soil_type', 'land_use', 'water_source', 'land_title', 'land_title_doc', 'is_leased', 'lease_expiry_date', 'land_notes']
+    # add_columns = ['owner', 'latitude', 'longitude', 'altitude', 'nearest_geoname', 'area', 'soil_type', 'land_use', 'water_source', 'land_title', 'land_title_doc', 'is_leased', 'lease_expiry_date', 'land_notes']
+    # add_columns = ['owner', 'latitude', 'longitude', 'altitude', 'nearest_geoname', 'area', 'soil_type', 'land_use', 'water_source', 'land_title', 'land_title_doc', 'is_leased', 'lease_expiry_date', 'land_notes']
+    # add_columns = ['owner', 'latitude', 'longitude', 'altitude', 'nearest_geoname', 'area', 'soil_type', 'land_use', 'water_source', 'land_title', 'land_title_doc', 'is_leased', 'lease_expiry_date', 'land_notes']
+    
+    label_columns = {'owner':'Owner', 'latitude':'Latitude', 'longitude':'Longitude', 'altitude':'Altitude', 'nearest_geoname':'Nearest Geoname', 'area':'Area', 'soil_type':'Soil Type', 'land_use':'Land Use', 'water_source':'Water Source', 'land_title':'Land Title', 'land_title_doc':'Land Title Doc', 'is_leased':'Is Leased', 'lease_expiry_date':'Lease Expiry Date', 'land_notes':'Land Notes'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['owner', 'latitude', 'longitude', 'altitude', 'nearest_geoname', 'area', 'soil_type', 'land_use', 'water_source', 'land_title', 'land_title_doc', 'is_leased', 'lease_expiry_date', 'land_notes']
+class LeadScoreModelView(ModelView):
+    datamodel = SQLAInterface(LeadScore)
+    list_title = 'List Lead Score'
+    show_title = 'Show Lead Score'
+    edit_title = 'Edit Lead Score'
+    add_title  = 'Add Lead Score'
+ 
+    list_columns = ['org', 'opportunity', 'score', 'criteria', 'predictive_score', 'behavior_score', 'demographic_score', 'engagement_level', 'lead_source', 'lead_status', 'last_engagement', 'last_updated', 'scoring_model']
+    # show_columns = ['org', 'opportunity', 'score', 'criteria', 'predictive_score', 'behavior_score', 'demographic_score', 'engagement_level', 'lead_source', 'lead_status', 'last_engagement', 'last_updated', 'scoring_model']
+    # edit_columns = ['org', 'opportunity', 'score', 'criteria', 'predictive_score', 'behavior_score', 'demographic_score', 'engagement_level', 'lead_source', 'lead_status', 'last_engagement', 'last_updated', 'scoring_model']
+    add_columns = ['org', 'opportunity', 'score', 'criteria', 'predictive_score', 'behavior_score', 'demographic_score', 'engagement_level', 'lead_source', 'lead_status', 'last_engagement', 'last_updated', 'scoring_model']
+    # search_columns = ['org', 'opportunity', 'score', 'criteria', 'predictive_score', 'behavior_score', 'demographic_score', 'engagement_level', 'lead_source', 'lead_status', 'last_engagement', 'last_updated', 'scoring_model']
+    description_columns = {
+        'id' : 'Unique identifier for each lead score entry.',
+        'org_id_fk' : 'Link to the organization the lead belongs to.',
+        'opportunity_id_fk' : 'Link to the specific lead being scored.',
+        'score' : 'Quantitative representation of the leads potential value, typically a value between 0 and 100.',
+        'criteria' : 'JSON structure containing scoring breakdown based on various criteria e.g., {website_visits: 5, email_opened: 3}.',
+        'predictive_score' : 'Score derived from predictive analytics models which predicts the likelihood of lead conversion.',
+        'behavior_score' : 'Score based on the leads interactions like website visits, email clicks, etc.',
+        'demographic_score' : 'Score based on demographic data like job title, company size, etc.',
+        'engagement_level' : 'Categorization of the leads engagement level, e.g., High, Medium, Low.',
+        'lead_source' : 'Source from which the lead was generated, e.g., Email Campaign, Webinar.',
+        'lead_status' : 'Current status of the lead e.g., New, In Progress, Converted, Lost.',
+        'last_engagement' : 'Timestamp of the last engagement activity by the lead.',
+        'last_updated' : 'Timestamp when the lead score was last updated.',
+        'scoring_model_id_fk' : 'Link to the scoring model used to compute this score.',
+    }
+    # list_exclude_columns = ['org', 'opportunity', 'score', 'criteria', 'predictive_score', 'behavior_score', 'demographic_score', 'engagement_level', 'lead_source', 'lead_status', 'last_engagement', 'last_updated', 'scoring_model']
+    # show_exclude_columns = ['org', 'opportunity', 'score', 'criteria', 'predictive_score', 'behavior_score', 'demographic_score', 'engagement_level', 'lead_source', 'lead_status', 'last_engagement', 'last_updated', 'scoring_model']
+    # edit_exclude_columns = ['org', 'opportunity', 'score', 'criteria', 'predictive_score', 'behavior_score', 'demographic_score', 'engagement_level', 'lead_source', 'lead_status', 'last_engagement', 'last_updated', 'scoring_model']
+    # add_exclude_columns = ['org', 'opportunity', 'score', 'criteria', 'predictive_score', 'behavior_score', 'demographic_score', 'engagement_level', 'lead_source', 'lead_status', 'last_engagement', 'last_updated', 'scoring_model']
+    # search_exclude_columns = ['org', 'opportunity', 'score', 'criteria', 'predictive_score', 'behavior_score', 'demographic_score', 'engagement_level', 'lead_source', 'lead_status', 'last_engagement', 'last_updated', 'scoring_model']
+    # order_columns = ['org', 'opportunity', 'score', 'criteria', 'predictive_score', 'behavior_score', 'demographic_score', 'engagement_level', 'lead_source', 'lead_status', 'last_engagement', 'last_updated', 'scoring_model']
+    # add_columns = ['org', 'opportunity', 'score', 'criteria', 'predictive_score', 'behavior_score', 'demographic_score', 'engagement_level', 'lead_source', 'lead_status', 'last_engagement', 'last_updated', 'scoring_model']
+    # add_columns = ['org', 'opportunity', 'score', 'criteria', 'predictive_score', 'behavior_score', 'demographic_score', 'engagement_level', 'lead_source', 'lead_status', 'last_engagement', 'last_updated', 'scoring_model']
+    # add_columns = ['org', 'opportunity', 'score', 'criteria', 'predictive_score', 'behavior_score', 'demographic_score', 'engagement_level', 'lead_source', 'lead_status', 'last_engagement', 'last_updated', 'scoring_model']
+    
+    label_columns = {'org':'Org', 'opportunity':'Opportunity', 'score':'Score', 'criteria':'Criteria', 'predictive_score':'Predictive Score', 'behavior_score':'Behavior Score', 'demographic_score':'Demographic Score', 'engagement_level':'Engagement Level', 'lead_source':'Lead Source', 'lead_status':'Lead Status', 'last_engagement':'Last Engagement', 'last_updated':'Last Updated', 'scoring_model':'Scoring Model'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['org', 'opportunity', 'score', 'criteria', 'predictive_score', 'behavior_score', 'demographic_score', 'engagement_level', 'lead_source', 'lead_status', 'last_engagement', 'last_updated', 'scoring_model']
+class LoanProductModelView(ModelView):
+    datamodel = SQLAInterface(LoanProduct)
+    list_title = 'List Loan Product'
+    show_title = 'Show Loan Product'
+    edit_title = 'Edit Loan Product'
+    add_title  = 'Add Loan Product'
+ 
+    list_columns = ['currency_code', 'principal_amount', 'arrearstolerance_amount', 'name', 'description', 'fund', 'nominal_interest_rate_per_period', 'interest_period_frequency_enum', 'annual_nominal_interest_rate', 'interest_method_enum', 'interest_calculated_in_period_enum', 'repay_every', 'repayment_period_frequency_enum', 'number_of_repayments', 'amortization_method_enum', 'accounting_type', 'loan_transaction_strategy', 'note']
+    # show_columns = ['currency_code', 'principal_amount', 'arrearstolerance_amount', 'name', 'description', 'fund', 'nominal_interest_rate_per_period', 'interest_period_frequency_enum', 'annual_nominal_interest_rate', 'interest_method_enum', 'interest_calculated_in_period_enum', 'repay_every', 'repayment_period_frequency_enum', 'number_of_repayments', 'amortization_method_enum', 'accounting_type', 'loan_transaction_strategy', 'note']
+    # edit_columns = ['currency_code', 'principal_amount', 'arrearstolerance_amount', 'name', 'description', 'fund', 'nominal_interest_rate_per_period', 'interest_period_frequency_enum', 'annual_nominal_interest_rate', 'interest_method_enum', 'interest_calculated_in_period_enum', 'repay_every', 'repayment_period_frequency_enum', 'number_of_repayments', 'amortization_method_enum', 'accounting_type', 'loan_transaction_strategy', 'note']
+    add_columns = ['currency_code', 'principal_amount', 'arrearstolerance_amount', 'name', 'description', 'fund', 'nominal_interest_rate_per_period', 'interest_period_frequency_enum', 'annual_nominal_interest_rate', 'interest_method_enum', 'interest_calculated_in_period_enum', 'repay_every', 'repayment_period_frequency_enum', 'number_of_repayments', 'amortization_method_enum', 'accounting_type', 'loan_transaction_strategy', 'note']
+    # search_columns = ['currency_code', 'principal_amount', 'arrearstolerance_amount', 'name', 'description', 'fund', 'nominal_interest_rate_per_period', 'interest_period_frequency_enum', 'annual_nominal_interest_rate', 'interest_method_enum', 'interest_calculated_in_period_enum', 'repay_every', 'repayment_period_frequency_enum', 'number_of_repayments', 'amortization_method_enum', 'accounting_type', 'loan_transaction_strategy', 'note']
+    description_columns = {
+        'id' : 'Primary key, auto-incremented',
+        'currency_code_id_fk' : 'ISO currency code for the loan',
+        'principal_amount' : 'Principal loan amount',
+        'arrearstolerance_amount' : 'Tolerance amount for arrears',
+        'name' : 'Human-readable name of the loan product',
+        'description' : 'Description of the loan product',
+        'fund_id_fk' : 'Foreign Key referencing the associated fund',
+        'nominal_interest_rate_per_period' : 'Nominal interest rate for each period',
+        'interest_period_frequency_enum' : 'Frequency of interest calculation per period',
+        'annual_nominal_interest_rate' : 'Annual nominal interest rate',
+        'interest_method_enum' : 'Method used for interest calculation',
+        'interest_calculated_in_period_enum' : 'How interest is calculated in each period',
+        'repay_every' : 'Frequency of repayment',
+        'repayment_period_frequency_enum' : 'Frequency type of repayment (e.g., monthly, quarterly)',
+        'number_of_repayments' : 'Total number of repayments for the loan',
+        'amortization_method_enum' : 'Method used for loan amortization',
+        'accounting_type' : 'Type of accounting method to be used',
+        'loan_transaction_strategy_id_fk' : 'Foreign key referring to the transaction strategy',
+        'note' : 'None',
+    }
+    # list_exclude_columns = ['currency_code', 'principal_amount', 'arrearstolerance_amount', 'name', 'description', 'fund', 'nominal_interest_rate_per_period', 'interest_period_frequency_enum', 'annual_nominal_interest_rate', 'interest_method_enum', 'interest_calculated_in_period_enum', 'repay_every', 'repayment_period_frequency_enum', 'number_of_repayments', 'amortization_method_enum', 'accounting_type', 'loan_transaction_strategy', 'note']
+    # show_exclude_columns = ['currency_code', 'principal_amount', 'arrearstolerance_amount', 'name', 'description', 'fund', 'nominal_interest_rate_per_period', 'interest_period_frequency_enum', 'annual_nominal_interest_rate', 'interest_method_enum', 'interest_calculated_in_period_enum', 'repay_every', 'repayment_period_frequency_enum', 'number_of_repayments', 'amortization_method_enum', 'accounting_type', 'loan_transaction_strategy', 'note']
+    # edit_exclude_columns = ['currency_code', 'principal_amount', 'arrearstolerance_amount', 'name', 'description', 'fund', 'nominal_interest_rate_per_period', 'interest_period_frequency_enum', 'annual_nominal_interest_rate', 'interest_method_enum', 'interest_calculated_in_period_enum', 'repay_every', 'repayment_period_frequency_enum', 'number_of_repayments', 'amortization_method_enum', 'accounting_type', 'loan_transaction_strategy', 'note']
+    # add_exclude_columns = ['currency_code', 'principal_amount', 'arrearstolerance_amount', 'name', 'description', 'fund', 'nominal_interest_rate_per_period', 'interest_period_frequency_enum', 'annual_nominal_interest_rate', 'interest_method_enum', 'interest_calculated_in_period_enum', 'repay_every', 'repayment_period_frequency_enum', 'number_of_repayments', 'amortization_method_enum', 'accounting_type', 'loan_transaction_strategy', 'note']
+    # search_exclude_columns = ['currency_code', 'principal_amount', 'arrearstolerance_amount', 'name', 'description', 'fund', 'nominal_interest_rate_per_period', 'interest_period_frequency_enum', 'annual_nominal_interest_rate', 'interest_method_enum', 'interest_calculated_in_period_enum', 'repay_every', 'repayment_period_frequency_enum', 'number_of_repayments', 'amortization_method_enum', 'accounting_type', 'loan_transaction_strategy', 'note']
+    # order_columns = ['currency_code', 'principal_amount', 'arrearstolerance_amount', 'name', 'description', 'fund', 'nominal_interest_rate_per_period', 'interest_period_frequency_enum', 'annual_nominal_interest_rate', 'interest_method_enum', 'interest_calculated_in_period_enum', 'repay_every', 'repayment_period_frequency_enum', 'number_of_repayments', 'amortization_method_enum', 'accounting_type', 'loan_transaction_strategy', 'note']
+    # add_columns = ['currency_code', 'principal_amount', 'arrearstolerance_amount', 'name', 'description', 'fund', 'nominal_interest_rate_per_period', 'interest_period_frequency_enum', 'annual_nominal_interest_rate', 'interest_method_enum', 'interest_calculated_in_period_enum', 'repay_every', 'repayment_period_frequency_enum', 'number_of_repayments', 'amortization_method_enum', 'accounting_type', 'loan_transaction_strategy', 'note']
+    # add_columns = ['currency_code', 'principal_amount', 'arrearstolerance_amount', 'name', 'description', 'fund', 'nominal_interest_rate_per_period', 'interest_period_frequency_enum', 'annual_nominal_interest_rate', 'interest_method_enum', 'interest_calculated_in_period_enum', 'repay_every', 'repayment_period_frequency_enum', 'number_of_repayments', 'amortization_method_enum', 'accounting_type', 'loan_transaction_strategy', 'note']
+    # add_columns = ['currency_code', 'principal_amount', 'arrearstolerance_amount', 'name', 'description', 'fund', 'nominal_interest_rate_per_period', 'interest_period_frequency_enum', 'annual_nominal_interest_rate', 'interest_method_enum', 'interest_calculated_in_period_enum', 'repay_every', 'repayment_period_frequency_enum', 'number_of_repayments', 'amortization_method_enum', 'accounting_type', 'loan_transaction_strategy', 'note']
+    
+    label_columns = {'currency_code':'Currency Code', 'principal_amount':'Principal Amount', 'arrearstolerance_amount':'Arrearstolerance Amount', 'name':'Name', 'description':'Description', 'fund':'Fund', 'nominal_interest_rate_per_period':'Nominal Interest Rate Per Period', 'interest_period_frequency_enum':'Interest Period Frequency Enum', 'annual_nominal_interest_rate':'Annual Nominal Interest Rate', 'interest_method_enum':'Interest Method Enum', 'interest_calculated_in_period_enum':'Interest Calculated In Period Enum', 'repay_every':'Repay Every', 'repayment_period_frequency_enum':'Repayment Period Frequency Enum', 'number_of_repayments':'Number Of Repayments', 'amortization_method_enum':'Amortization Method Enum', 'accounting_type':'Accounting Type', 'loan_transaction_strategy':'Loan Transaction Strategy', 'note':'Note'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['currency_code', 'principal_amount', 'arrearstolerance_amount', 'name', 'description', 'fund', 'nominal_interest_rate_per_period', 'interest_period_frequency_enum', 'annual_nominal_interest_rate', 'interest_method_enum', 'interest_calculated_in_period_enum', 'repay_every', 'repayment_period_frequency_enum', 'number_of_repayments', 'amortization_method_enum', 'accounting_type', 'loan_transaction_strategy', 'note']
+class LtagModelView(ModelView):
+    datamodel = SQLAInterface(Ltag)
+    list_title = 'List Ltag'
+    show_title = 'Show Ltag'
+    edit_title = 'Edit Ltag'
+    add_title  = 'Add Ltag'
+ 
+    list_columns = ['ltag_batch', 'serial_number', 'rfid_code', 'colour', 'is_active', 'is_issued', 'issued_to', 'issue_date', 'location', 'manufactured_on', 'expired_on', 'activated_on', 'deactivated_on', 'deactivation_reason', 'durability_rating', 'notes']
+    # show_columns = ['ltag_batch', 'serial_number', 'rfid_code', 'colour', 'is_active', 'is_issued', 'issued_to', 'issue_date', 'location', 'manufactured_on', 'expired_on', 'activated_on', 'deactivated_on', 'deactivation_reason', 'durability_rating', 'notes']
+    # edit_columns = ['ltag_batch', 'serial_number', 'rfid_code', 'colour', 'is_active', 'is_issued', 'issued_to', 'issue_date', 'location', 'manufactured_on', 'expired_on', 'activated_on', 'deactivated_on', 'deactivation_reason', 'durability_rating', 'notes']
+    add_columns = ['ltag_batch', 'serial_number', 'rfid_code', 'colour', 'is_active', 'is_issued', 'issued_to', 'issue_date', 'location', 'manufactured_on', 'expired_on', 'activated_on', 'deactivated_on', 'deactivation_reason', 'durability_rating', 'notes']
+    # search_columns = ['ltag_batch', 'serial_number', 'rfid_code', 'colour', 'is_active', 'is_issued', 'issued_to', 'issue_date', 'location', 'manufactured_on', 'expired_on', 'activated_on', 'deactivated_on', 'deactivation_reason', 'durability_rating', 'notes']
+    description_columns = {
+        'id' : 'Unique identifier for each individual animal tag',
+        'ltag_batch_id_fk' : 'Reference to the batch from which the tag originates',
+        'serial_number' : 'Unique serial number or identifier for the tag',
+        'rfid_code' : 'RFID code, if the tag is RFID enabled',
+        'colour' : 'Colour of the individual tag, which might differ even in the same batch',
+        'is_active' : 'Indicates if the tag is currently active or functional',
+        'is_issued' : 'Indicates if the tag has been issued/assigned to an animal',
+        'issued_to_id_fk' : 'Reference to animal entity if the tag is issued',
+        'issue_date' : 'Date and time when the tag was issued to an animal',
+        'location' : 'Current location or warehouse where the tag is stored if not issued',
+        'manufactured_on' : 'Manufacturing date of the individual tag',
+        'expired_on' : 'Expiry date if the tag has a limited usable lifespan',
+        'activated_on' : 'Date and time when the tag was activated',
+        'deactivated_on' : 'Date and time when the tag was deactivated',
+        'deactivation_reason' : 'Reason for deactivation if applicable',
+        'durability_rating' : 'Rating or description of the tag’s durability e.g., high, medium, low',
+        'notes' : 'Any additional notes or remarks about the individual tag',
+    }
+    # list_exclude_columns = ['ltag_batch', 'serial_number', 'rfid_code', 'colour', 'is_active', 'is_issued', 'issued_to', 'issue_date', 'location', 'manufactured_on', 'expired_on', 'activated_on', 'deactivated_on', 'deactivation_reason', 'durability_rating', 'notes']
+    # show_exclude_columns = ['ltag_batch', 'serial_number', 'rfid_code', 'colour', 'is_active', 'is_issued', 'issued_to', 'issue_date', 'location', 'manufactured_on', 'expired_on', 'activated_on', 'deactivated_on', 'deactivation_reason', 'durability_rating', 'notes']
+    # edit_exclude_columns = ['ltag_batch', 'serial_number', 'rfid_code', 'colour', 'is_active', 'is_issued', 'issued_to', 'issue_date', 'location', 'manufactured_on', 'expired_on', 'activated_on', 'deactivated_on', 'deactivation_reason', 'durability_rating', 'notes']
+    # add_exclude_columns = ['ltag_batch', 'serial_number', 'rfid_code', 'colour', 'is_active', 'is_issued', 'issued_to', 'issue_date', 'location', 'manufactured_on', 'expired_on', 'activated_on', 'deactivated_on', 'deactivation_reason', 'durability_rating', 'notes']
+    # search_exclude_columns = ['ltag_batch', 'serial_number', 'rfid_code', 'colour', 'is_active', 'is_issued', 'issued_to', 'issue_date', 'location', 'manufactured_on', 'expired_on', 'activated_on', 'deactivated_on', 'deactivation_reason', 'durability_rating', 'notes']
+    # order_columns = ['ltag_batch', 'serial_number', 'rfid_code', 'colour', 'is_active', 'is_issued', 'issued_to', 'issue_date', 'location', 'manufactured_on', 'expired_on', 'activated_on', 'deactivated_on', 'deactivation_reason', 'durability_rating', 'notes']
+    # add_columns = ['ltag_batch', 'serial_number', 'rfid_code', 'colour', 'is_active', 'is_issued', 'issued_to', 'issue_date', 'location', 'manufactured_on', 'expired_on', 'activated_on', 'deactivated_on', 'deactivation_reason', 'durability_rating', 'notes']
+    # add_columns = ['ltag_batch', 'serial_number', 'rfid_code', 'colour', 'is_active', 'is_issued', 'issued_to', 'issue_date', 'location', 'manufactured_on', 'expired_on', 'activated_on', 'deactivated_on', 'deactivation_reason', 'durability_rating', 'notes']
+    # add_columns = ['ltag_batch', 'serial_number', 'rfid_code', 'colour', 'is_active', 'is_issued', 'issued_to', 'issue_date', 'location', 'manufactured_on', 'expired_on', 'activated_on', 'deactivated_on', 'deactivation_reason', 'durability_rating', 'notes']
+    
+    label_columns = {'ltag_batch':'Ltag Batch', 'serial_number':'Serial Number', 'rfid_code':'Rfid Code', 'colour':'Colour', 'is_active':'Is Active', 'is_issued':'Is Issued', 'issued_to':'Issued To', 'issue_date':'Issue Date', 'location':'Location', 'manufactured_on':'Manufactured On', 'expired_on':'Expired On', 'activated_on':'Activated On', 'deactivated_on':'Deactivated On', 'deactivation_reason':'Deactivation Reason', 'durability_rating':'Durability Rating', 'notes':'Notes'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['ltag_batch', 'serial_number', 'rfid_code', 'colour', 'is_active', 'is_issued', 'issued_to', 'issue_date', 'location', 'manufactured_on', 'expired_on', 'activated_on', 'deactivated_on', 'deactivation_reason', 'durability_rating', 'notes']
+class OpportunityContactLinkModelView(ModelView):
+    datamodel = SQLAInterface(OpportunityContactLink)
+    list_title = 'List Opportunity Contact Link'
+    show_title = 'Show Opportunity Contact Link'
+    edit_title = 'Edit Opportunity Contact Link'
+    add_title  = 'Add Opportunity Contact Link'
+ 
+    list_columns = ['opportunity', 'contact']
+    # show_columns = ['opportunity', 'contact']
+    # edit_columns = ['opportunity', 'contact']
+    add_columns = ['opportunity', 'contact']
+    # search_columns = ['opportunity', 'contact']
+    description_columns = {
+        'opportunity_id_fk' : 'None',
+        'contact_id_fk' : 'None',
+    }
+    # list_exclude_columns = ['opportunity', 'contact']
+    # show_exclude_columns = ['opportunity', 'contact']
+    # edit_exclude_columns = ['opportunity', 'contact']
+    # add_exclude_columns = ['opportunity', 'contact']
+    # search_exclude_columns = ['opportunity', 'contact']
+    # order_columns = ['opportunity', 'contact']
+    # add_columns = ['opportunity', 'contact']
+    # add_columns = ['opportunity', 'contact']
+    # add_columns = ['opportunity', 'contact']
+    
+    label_columns = {'opportunity':'Opportunity', 'contact':'Contact'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['opportunity', 'contact']
+class OpportunityIsicClassLinkModelView(ModelView):
+    datamodel = SQLAInterface(OpportunityIsicClassLink)
+    list_title = 'List Opportunity Isic Class Link'
+    show_title = 'Show Opportunity Isic Class Link'
+    edit_title = 'Edit Opportunity Isic Class Link'
+    add_title  = 'Add Opportunity Isic Class Link'
+ 
+    list_columns = ['opportunity', 'isic_class_code']
+    # show_columns = ['opportunity', 'isic_class_code']
+    # edit_columns = ['opportunity', 'isic_class_code']
+    add_columns = ['opportunity', 'isic_class_code']
+    # search_columns = ['opportunity', 'isic_class_code']
+    description_columns = {
+        'opportunity_id_fk' : 'None',
+        'isic_class_code_id_fk' : 'None',
+    }
+    # list_exclude_columns = ['opportunity', 'isic_class_code']
+    # show_exclude_columns = ['opportunity', 'isic_class_code']
+    # edit_exclude_columns = ['opportunity', 'isic_class_code']
+    # add_exclude_columns = ['opportunity', 'isic_class_code']
+    # search_exclude_columns = ['opportunity', 'isic_class_code']
+    # order_columns = ['opportunity', 'isic_class_code']
+    # add_columns = ['opportunity', 'isic_class_code']
+    # add_columns = ['opportunity', 'isic_class_code']
+    # add_columns = ['opportunity', 'isic_class_code']
+    
+    label_columns = {'opportunity':'Opportunity', 'isic_class_code':'Isic Class Code'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['opportunity', 'isic_class_code']
+class PipelineStagesModelView(ModelView):
+    datamodel = SQLAInterface(PipelineStages)
+    list_title = 'List Pipeline Stages'
+    show_title = 'Show Pipeline Stages'
+    edit_title = 'Edit Pipeline Stages'
+    add_title  = 'Add Pipeline Stages'
+ 
+    list_columns = ['pipeline', 'name', 'description', 'pipeline_stage', 'std_win_probability', 'std_duration_estimate', 'std_entry_criteria', 'std_exit_criteria', 'is_active', 'is_expired']
+    # show_columns = ['pipeline', 'name', 'description', 'pipeline_stage', 'std_win_probability', 'std_duration_estimate', 'std_entry_criteria', 'std_exit_criteria', 'is_active', 'is_expired']
+    # edit_columns = ['pipeline', 'name', 'description', 'pipeline_stage', 'std_win_probability', 'std_duration_estimate', 'std_entry_criteria', 'std_exit_criteria', 'is_active', 'is_expired']
+    add_columns = ['pipeline', 'name', 'description', 'pipeline_stage', 'std_win_probability', 'std_duration_estimate', 'std_entry_criteria', 'std_exit_criteria', 'is_active', 'is_expired']
+    # search_columns = ['pipeline', 'name', 'description', 'pipeline_stage', 'std_win_probability', 'std_duration_estimate', 'std_entry_criteria', 'std_exit_criteria', 'is_active', 'is_expired']
+    description_columns = {
+        'id' : 'Unique identifier for each stage within a pipeline.',
+        'pipeline_id_fk' : 'Link to the pipeline this stage belongs to.',
+        'name' : 'Name or title of the stage. E.g., Initial Contact, Proposal Submitted, Negotiation',
+        'description' : 'A brief overview or purpose of this specific stage.',
+        'pipeline_stage' : 'Defines the order in which stages progress in the pipeline.',
+        'std_win_probability' : 'A percentage indicating the likelihood of a deal closing when it reaches this stage. E.g., 0.5 for 50%.',
+        'std_duration_estimate' : 'Optional field indicating the average or expected duration (in days) an opportunity might stay in this stage.',
+        'std_entry_criteria' : 'Criteria that an opportunity should meet to enter this stage.',
+        'std_exit_criteria' : 'Criteria that need to be met before moving the opportunity to the next stage.',
+        'is_active' : 'Flag to indicate if the stage is currently active within its pipeline.',
+        'is_expired' : 'None',
+    }
+    # list_exclude_columns = ['pipeline', 'name', 'description', 'pipeline_stage', 'std_win_probability', 'std_duration_estimate', 'std_entry_criteria', 'std_exit_criteria', 'is_active', 'is_expired']
+    # show_exclude_columns = ['pipeline', 'name', 'description', 'pipeline_stage', 'std_win_probability', 'std_duration_estimate', 'std_entry_criteria', 'std_exit_criteria', 'is_active', 'is_expired']
+    # edit_exclude_columns = ['pipeline', 'name', 'description', 'pipeline_stage', 'std_win_probability', 'std_duration_estimate', 'std_entry_criteria', 'std_exit_criteria', 'is_active', 'is_expired']
+    # add_exclude_columns = ['pipeline', 'name', 'description', 'pipeline_stage', 'std_win_probability', 'std_duration_estimate', 'std_entry_criteria', 'std_exit_criteria', 'is_active', 'is_expired']
+    # search_exclude_columns = ['pipeline', 'name', 'description', 'pipeline_stage', 'std_win_probability', 'std_duration_estimate', 'std_entry_criteria', 'std_exit_criteria', 'is_active', 'is_expired']
+    # order_columns = ['pipeline', 'name', 'description', 'pipeline_stage', 'std_win_probability', 'std_duration_estimate', 'std_entry_criteria', 'std_exit_criteria', 'is_active', 'is_expired']
+    # add_columns = ['pipeline', 'name', 'description', 'pipeline_stage', 'std_win_probability', 'std_duration_estimate', 'std_entry_criteria', 'std_exit_criteria', 'is_active', 'is_expired']
+    # add_columns = ['pipeline', 'name', 'description', 'pipeline_stage', 'std_win_probability', 'std_duration_estimate', 'std_entry_criteria', 'std_exit_criteria', 'is_active', 'is_expired']
+    # add_columns = ['pipeline', 'name', 'description', 'pipeline_stage', 'std_win_probability', 'std_duration_estimate', 'std_entry_criteria', 'std_exit_criteria', 'is_active', 'is_expired']
+    
+    label_columns = {'pipeline':'Pipeline', 'name':'Name', 'description':'Description', 'pipeline_stage':'Pipeline Stage', 'std_win_probability':'Std Win Probability', 'std_duration_estimate':'Std Duration Estimate', 'std_entry_criteria':'Std Entry Criteria', 'std_exit_criteria':'Std Exit Criteria', 'is_active':'Is Active', 'is_expired':'Is Expired'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['pipeline', 'name', 'description', 'pipeline_stage', 'std_win_probability', 'std_duration_estimate', 'std_entry_criteria', 'std_exit_criteria', 'is_active', 'is_expired']
+class ProductReturnModelView(ModelView):
+    datamodel = SQLAInterface(ProductReturn)
+    list_title = 'List Product Return'
+    show_title = 'Show Product Return'
+    edit_title = 'Edit Product Return'
+    add_title  = 'Add Product Return'
+ 
+    list_columns = ['order_id', 'product', 'customer_id', 'firstname', 'lastname', 'email', 'telephone', 'product', 'model', 'quantity', 'opened', 'return_action', 'return_reason', 'comment', 'date_ordered', 'date_added', 'date_modified']
+    # show_columns = ['order_id', 'product', 'customer_id', 'firstname', 'lastname', 'email', 'telephone', 'product', 'model', 'quantity', 'opened', 'return_action', 'return_reason', 'comment', 'date_ordered', 'date_added', 'date_modified']
+    # edit_columns = ['order_id', 'product', 'customer_id', 'firstname', 'lastname', 'email', 'telephone', 'product', 'model', 'quantity', 'opened', 'return_action', 'return_reason', 'comment', 'date_ordered', 'date_added', 'date_modified']
+    add_columns = ['order_id', 'product', 'customer_id', 'firstname', 'lastname', 'email', 'telephone', 'product', 'model', 'quantity', 'opened', 'return_action', 'return_reason', 'comment', 'date_ordered', 'date_added', 'date_modified']
+    # search_columns = ['order_id', 'product', 'customer_id', 'firstname', 'lastname', 'email', 'telephone', 'product', 'model', 'quantity', 'opened', 'return_action', 'return_reason', 'comment', 'date_ordered', 'date_added', 'date_modified']
+    description_columns = {
+        'id' : 'None',
+        'order_id' : 'None',
+        'product_id_fk' : 'None',
+        'customer_id' : 'None',
+        'firstname' : 'None',
+        'lastname' : 'None',
+        'email' : 'None',
+        'telephone' : 'None',
+        'product' : 'None',
+        'model' : 'None',
+        'quantity' : 'None',
+        'opened' : 'None',
+        'return_action' : 'None',
+        'return_reason' : 'None',
+        'comment' : 'None',
+        'date_ordered' : 'None',
+        'date_added' : 'None',
+        'date_modified' : 'None',
+    }
+    # list_exclude_columns = ['order_id', 'product', 'customer_id', 'firstname', 'lastname', 'email', 'telephone', 'product', 'model', 'quantity', 'opened', 'return_action', 'return_reason', 'comment', 'date_ordered', 'date_added', 'date_modified']
+    # show_exclude_columns = ['order_id', 'product', 'customer_id', 'firstname', 'lastname', 'email', 'telephone', 'product', 'model', 'quantity', 'opened', 'return_action', 'return_reason', 'comment', 'date_ordered', 'date_added', 'date_modified']
+    # edit_exclude_columns = ['order_id', 'product', 'customer_id', 'firstname', 'lastname', 'email', 'telephone', 'product', 'model', 'quantity', 'opened', 'return_action', 'return_reason', 'comment', 'date_ordered', 'date_added', 'date_modified']
+    # add_exclude_columns = ['order_id', 'product', 'customer_id', 'firstname', 'lastname', 'email', 'telephone', 'product', 'model', 'quantity', 'opened', 'return_action', 'return_reason', 'comment', 'date_ordered', 'date_added', 'date_modified']
+    # search_exclude_columns = ['order_id', 'product', 'customer_id', 'firstname', 'lastname', 'email', 'telephone', 'product', 'model', 'quantity', 'opened', 'return_action', 'return_reason', 'comment', 'date_ordered', 'date_added', 'date_modified']
+    # order_columns = ['order_id', 'product', 'customer_id', 'firstname', 'lastname', 'email', 'telephone', 'product', 'model', 'quantity', 'opened', 'return_action', 'return_reason', 'comment', 'date_ordered', 'date_added', 'date_modified']
+    # add_columns = ['order_id', 'product', 'customer_id', 'firstname', 'lastname', 'email', 'telephone', 'product', 'model', 'quantity', 'opened', 'return_action', 'return_reason', 'comment', 'date_ordered', 'date_added', 'date_modified']
+    # add_columns = ['order_id', 'product', 'customer_id', 'firstname', 'lastname', 'email', 'telephone', 'product', 'model', 'quantity', 'opened', 'return_action', 'return_reason', 'comment', 'date_ordered', 'date_added', 'date_modified']
+    # add_columns = ['order_id', 'product', 'customer_id', 'firstname', 'lastname', 'email', 'telephone', 'product', 'model', 'quantity', 'opened', 'return_action', 'return_reason', 'comment', 'date_ordered', 'date_added', 'date_modified']
+    
+    label_columns = {'order_id':'Order Id', 'product':'Product', 'customer_id':'Customer Id', 'firstname':'Firstname', 'lastname':'Lastname', 'email':'Email', 'telephone':'Telephone', 'product':'Product', 'model':'Model', 'quantity':'Quantity', 'opened':'Opened', 'return_action':'Return Action', 'return_reason':'Return Reason', 'comment':'Comment', 'date_ordered':'Date Ordered', 'date_added':'Date Added', 'date_modified':'Date Modified'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['order_id', 'product', 'customer_id', 'firstname', 'lastname', 'email', 'telephone', 'product', 'model', 'quantity', 'opened', 'return_action', 'return_reason', 'comment', 'date_ordered', 'date_added', 'date_modified']
+class QuoteDetailsModelView(ModelView):
+    datamodel = SQLAInterface(QuoteDetails)
+    list_title = 'List Quote Details'
+    show_title = 'Show Quote Details'
+    edit_title = 'Edit Quote Details'
+    add_title  = 'Add Quote Details'
+ 
+    list_columns = ['quote_item_id', 'quote', 'product', 'quote_item_name', 'quote_item_description', 'quote_item_price', 'quote_item_quantity', 'quote_item_discount', 'quote_item_subtotal', 'quote_item_discounted_subtotal']
+    # show_columns = ['quote_item_id', 'quote', 'product', 'quote_item_name', 'quote_item_description', 'quote_item_price', 'quote_item_quantity', 'quote_item_discount', 'quote_item_subtotal', 'quote_item_discounted_subtotal']
+    # edit_columns = ['quote_item_id', 'quote', 'product', 'quote_item_name', 'quote_item_description', 'quote_item_price', 'quote_item_quantity', 'quote_item_discount', 'quote_item_subtotal', 'quote_item_discounted_subtotal']
+    add_columns = ['quote_item_id', 'quote', 'product', 'quote_item_name', 'quote_item_description', 'quote_item_price', 'quote_item_quantity', 'quote_item_discount', 'quote_item_subtotal', 'quote_item_discounted_subtotal']
+    # search_columns = ['quote_item_id', 'quote', 'product', 'quote_item_name', 'quote_item_description', 'quote_item_price', 'quote_item_quantity', 'quote_item_discount', 'quote_item_subtotal', 'quote_item_discounted_subtotal']
+    description_columns = {
+        'quote_item_id' : 'None',
+        'quote_id_fk' : 'None',
+        'product_id_fk' : 'None',
+        'quote_item_name' : 'None',
+        'quote_item_description' : 'None',
+        'quote_item_price' : 'None',
+        'quote_item_quantity' : 'None',
+        'quote_item_discount' : 'None',
+        'quote_item_subtotal' : 'None',
+        'quote_item_discounted_subtotal' : 'None',
+    }
+    # list_exclude_columns = ['quote_item_id', 'quote', 'product', 'quote_item_name', 'quote_item_description', 'quote_item_price', 'quote_item_quantity', 'quote_item_discount', 'quote_item_subtotal', 'quote_item_discounted_subtotal']
+    # show_exclude_columns = ['quote_item_id', 'quote', 'product', 'quote_item_name', 'quote_item_description', 'quote_item_price', 'quote_item_quantity', 'quote_item_discount', 'quote_item_subtotal', 'quote_item_discounted_subtotal']
+    # edit_exclude_columns = ['quote_item_id', 'quote', 'product', 'quote_item_name', 'quote_item_description', 'quote_item_price', 'quote_item_quantity', 'quote_item_discount', 'quote_item_subtotal', 'quote_item_discounted_subtotal']
+    # add_exclude_columns = ['quote_item_id', 'quote', 'product', 'quote_item_name', 'quote_item_description', 'quote_item_price', 'quote_item_quantity', 'quote_item_discount', 'quote_item_subtotal', 'quote_item_discounted_subtotal']
+    # search_exclude_columns = ['quote_item_id', 'quote', 'product', 'quote_item_name', 'quote_item_description', 'quote_item_price', 'quote_item_quantity', 'quote_item_discount', 'quote_item_subtotal', 'quote_item_discounted_subtotal']
+    # order_columns = ['quote_item_id', 'quote', 'product', 'quote_item_name', 'quote_item_description', 'quote_item_price', 'quote_item_quantity', 'quote_item_discount', 'quote_item_subtotal', 'quote_item_discounted_subtotal']
+    # add_columns = ['quote_item_id', 'quote', 'product', 'quote_item_name', 'quote_item_description', 'quote_item_price', 'quote_item_quantity', 'quote_item_discount', 'quote_item_subtotal', 'quote_item_discounted_subtotal']
+    # add_columns = ['quote_item_id', 'quote', 'product', 'quote_item_name', 'quote_item_description', 'quote_item_price', 'quote_item_quantity', 'quote_item_discount', 'quote_item_subtotal', 'quote_item_discounted_subtotal']
+    # add_columns = ['quote_item_id', 'quote', 'product', 'quote_item_name', 'quote_item_description', 'quote_item_price', 'quote_item_quantity', 'quote_item_discount', 'quote_item_subtotal', 'quote_item_discounted_subtotal']
+    
+    label_columns = {'quote_item_id':'Quote Item Id', 'quote':'Quote', 'product':'Product', 'quote_item_name':'Quote Item Name', 'quote_item_description':'Quote Item Description', 'quote_item_price':'Quote Item Price', 'quote_item_quantity':'Quote Item Quantity', 'quote_item_discount':'Quote Item Discount', 'quote_item_subtotal':'Quote Item Subtotal', 'quote_item_discounted_subtotal':'Quote Item Discounted Subtotal'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['quote_item_id', 'quote', 'product', 'quote_item_name', 'quote_item_description', 'quote_item_price', 'quote_item_quantity', 'quote_item_discount', 'quote_item_subtotal', 'quote_item_discounted_subtotal']
+class CalendarEventAttachmentModelView(ModelView):
+    datamodel = SQLAInterface(CalendarEventAttachment)
+    list_title = 'List Calendar Event Attachment'
+    show_title = 'Show Calendar Event Attachment'
+    edit_title = 'Edit Calendar Event Attachment'
+    add_title  = 'Add Calendar Event Attachment'
+ 
+    list_columns = ['event', 'attachment_url']
+    # show_columns = ['event', 'attachment_url']
+    # edit_columns = ['event', 'attachment_url']
+    add_columns = ['event', 'attachment_url']
+    # search_columns = ['event', 'attachment_url']
+    description_columns = {
+        'id' : 'None',
+        'event_id_fk' : 'None',
+        'attachment_url' : 'None',
+    }
+    # list_exclude_columns = ['event', 'attachment_url']
+    # show_exclude_columns = ['event', 'attachment_url']
+    # edit_exclude_columns = ['event', 'attachment_url']
+    # add_exclude_columns = ['event', 'attachment_url']
+    # search_exclude_columns = ['event', 'attachment_url']
+    # order_columns = ['event', 'attachment_url']
+    # add_columns = ['event', 'attachment_url']
+    # add_columns = ['event', 'attachment_url']
+    # add_columns = ['event', 'attachment_url']
+    
+    label_columns = {'event':'Event', 'attachment_url':'Attachment Url'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['event', 'attachment_url']
+class CalendarEventAttendeeModelView(ModelView):
+    datamodel = SQLAInterface(CalendarEventAttendee)
+    list_title = 'List Calendar Event Attendee'
+    show_title = 'Show Calendar Event Attendee'
+    edit_title = 'Edit Calendar Event Attendee'
+    add_title  = 'Add Calendar Event Attendee'
+ 
+    list_columns = ['event', 'contact', 'invitee', 'role', 'participation_status', 'rsvp', 'is_confirmed']
+    # show_columns = ['event', 'contact', 'invitee', 'role', 'participation_status', 'rsvp', 'is_confirmed']
+    # edit_columns = ['event', 'contact', 'invitee', 'role', 'participation_status', 'rsvp', 'is_confirmed']
+    add_columns = ['event', 'contact', 'invitee', 'role', 'participation_status', 'rsvp', 'is_confirmed']
+    # search_columns = ['event', 'contact', 'invitee', 'role', 'participation_status', 'rsvp', 'is_confirmed']
+    description_columns = {
+        'id' : 'Primary key for event attendees',
+        'event_id_fk' : 'Reference to the associated event',
+        'contact_id_fk' : 'Email of the attendee',
+        'invitee_id_fk' : 'None',
+        'role' : 'Role of the attendee (e.g., chair, participant)',
+        'participation_status' : 'Current participation status of the attendee (e.g., accepted, declined)',
+        'rsvp' : 'Flag to indicate if the attendee needs to respond',
+        'is_confirmed' : 'None',
+    }
+    # list_exclude_columns = ['event', 'contact', 'invitee', 'role', 'participation_status', 'rsvp', 'is_confirmed']
+    # show_exclude_columns = ['event', 'contact', 'invitee', 'role', 'participation_status', 'rsvp', 'is_confirmed']
+    # edit_exclude_columns = ['event', 'contact', 'invitee', 'role', 'participation_status', 'rsvp', 'is_confirmed']
+    # add_exclude_columns = ['event', 'contact', 'invitee', 'role', 'participation_status', 'rsvp', 'is_confirmed']
+    # search_exclude_columns = ['event', 'contact', 'invitee', 'role', 'participation_status', 'rsvp', 'is_confirmed']
+    # order_columns = ['event', 'contact', 'invitee', 'role', 'participation_status', 'rsvp', 'is_confirmed']
+    # add_columns = ['event', 'contact', 'invitee', 'role', 'participation_status', 'rsvp', 'is_confirmed']
+    # add_columns = ['event', 'contact', 'invitee', 'role', 'participation_status', 'rsvp', 'is_confirmed']
+    # add_columns = ['event', 'contact', 'invitee', 'role', 'participation_status', 'rsvp', 'is_confirmed']
+    
+    label_columns = {'event':'Event', 'contact':'Contact', 'invitee':'Invitee', 'role':'Role', 'participation_status':'Participation Status', 'rsvp':'Rsvp', 'is_confirmed':'Is Confirmed'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['event', 'contact', 'invitee', 'role', 'participation_status', 'rsvp', 'is_confirmed']
+class CalendarEventRecurrenceModelView(ModelView):
+    datamodel = SQLAInterface(CalendarEventRecurrence)
+    list_title = 'List Calendar Event Recurrence'
+    show_title = 'Show Calendar Event Recurrence'
+    edit_title = 'Edit Calendar Event Recurrence'
+    add_title  = 'Add Calendar Event Recurrence'
+ 
+    list_columns = ['event', 'recurrence_pattern_cron', 'recurrence_end_date', 'is_active']
+    # show_columns = ['event', 'recurrence_pattern_cron', 'recurrence_end_date', 'is_active']
+    # edit_columns = ['event', 'recurrence_pattern_cron', 'recurrence_end_date', 'is_active']
+    add_columns = ['event', 'recurrence_pattern_cron', 'recurrence_end_date', 'is_active']
+    # search_columns = ['event', 'recurrence_pattern_cron', 'recurrence_end_date', 'is_active']
+    description_columns = {
+        'id' : 'None',
+        'event_id_fk' : 'Link to the event',
+        'recurrence_pattern_cron' : 'CRON-style pattern for recurrence',
+        'recurrence_end_date' : 'Optional end date for recurrence pattern',
+        'is_active' : 'Allows for pausing a recurrence without deleting it',
+    }
+    # list_exclude_columns = ['event', 'recurrence_pattern_cron', 'recurrence_end_date', 'is_active']
+    # show_exclude_columns = ['event', 'recurrence_pattern_cron', 'recurrence_end_date', 'is_active']
+    # edit_exclude_columns = ['event', 'recurrence_pattern_cron', 'recurrence_end_date', 'is_active']
+    # add_exclude_columns = ['event', 'recurrence_pattern_cron', 'recurrence_end_date', 'is_active']
+    # search_exclude_columns = ['event', 'recurrence_pattern_cron', 'recurrence_end_date', 'is_active']
+    # order_columns = ['event', 'recurrence_pattern_cron', 'recurrence_end_date', 'is_active']
+    # add_columns = ['event', 'recurrence_pattern_cron', 'recurrence_end_date', 'is_active']
+    # add_columns = ['event', 'recurrence_pattern_cron', 'recurrence_end_date', 'is_active']
+    # add_columns = ['event', 'recurrence_pattern_cron', 'recurrence_end_date', 'is_active']
+    
+    label_columns = {'event':'Event', 'recurrence_pattern_cron':'Recurrence Pattern Cron', 'recurrence_end_date':'Recurrence End Date', 'is_active':'Is Active'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['event', 'recurrence_pattern_cron', 'recurrence_end_date', 'is_active']
+class CalendarEventRemindersModelView(ModelView):
+    datamodel = SQLAInterface(CalendarEventReminders)
+    list_title = 'List Calendar Event Reminders'
+    show_title = 'Show Calendar Event Reminders'
+    edit_title = 'Edit Calendar Event Reminders'
+    add_title  = 'Add Calendar Event Reminders'
+ 
+    list_columns = ['event', 'reminder_unit', 'reminder_interval_type', 'remind_by', 'action', 'trigger_time', 'trigger_type', 'repeat_count', 'duration', 'is_expired']
+    # show_columns = ['event', 'reminder_unit', 'reminder_interval_type', 'remind_by', 'action', 'trigger_time', 'trigger_type', 'repeat_count', 'duration', 'is_expired']
+    # edit_columns = ['event', 'reminder_unit', 'reminder_interval_type', 'remind_by', 'action', 'trigger_time', 'trigger_type', 'repeat_count', 'duration', 'is_expired']
+    add_columns = ['event', 'reminder_unit', 'reminder_interval_type', 'remind_by', 'action', 'trigger_time', 'trigger_type', 'repeat_count', 'duration', 'is_expired']
+    # search_columns = ['event', 'reminder_unit', 'reminder_interval_type', 'remind_by', 'action', 'trigger_time', 'trigger_type', 'repeat_count', 'duration', 'is_expired']
+    description_columns = {
+        'id' : 'None',
+        'event_id_fk' : 'Link to the event',
+        'reminder_unit' : 'Time quantity for the reminder',
+        'reminder_interval_type' : 'Units like Minutes, Hours, Days for the reminder',
+        'remind_by' : 'How the user wants to be reminded',
+        'action' : 'None',
+        'trigger_time' : 'None',
+        'trigger_type' : 'None',
+        'repeat_count' : 'None',
+        'duration' : 'Duration of the alert',
+        'is_expired' : 'None',
+    }
+    # list_exclude_columns = ['event', 'reminder_unit', 'reminder_interval_type', 'remind_by', 'action', 'trigger_time', 'trigger_type', 'repeat_count', 'duration', 'is_expired']
+    # show_exclude_columns = ['event', 'reminder_unit', 'reminder_interval_type', 'remind_by', 'action', 'trigger_time', 'trigger_type', 'repeat_count', 'duration', 'is_expired']
+    # edit_exclude_columns = ['event', 'reminder_unit', 'reminder_interval_type', 'remind_by', 'action', 'trigger_time', 'trigger_type', 'repeat_count', 'duration', 'is_expired']
+    # add_exclude_columns = ['event', 'reminder_unit', 'reminder_interval_type', 'remind_by', 'action', 'trigger_time', 'trigger_type', 'repeat_count', 'duration', 'is_expired']
+    # search_exclude_columns = ['event', 'reminder_unit', 'reminder_interval_type', 'remind_by', 'action', 'trigger_time', 'trigger_type', 'repeat_count', 'duration', 'is_expired']
+    # order_columns = ['event', 'reminder_unit', 'reminder_interval_type', 'remind_by', 'action', 'trigger_time', 'trigger_type', 'repeat_count', 'duration', 'is_expired']
+    # add_columns = ['event', 'reminder_unit', 'reminder_interval_type', 'remind_by', 'action', 'trigger_time', 'trigger_type', 'repeat_count', 'duration', 'is_expired']
+    # add_columns = ['event', 'reminder_unit', 'reminder_interval_type', 'remind_by', 'action', 'trigger_time', 'trigger_type', 'repeat_count', 'duration', 'is_expired']
+    # add_columns = ['event', 'reminder_unit', 'reminder_interval_type', 'remind_by', 'action', 'trigger_time', 'trigger_type', 'repeat_count', 'duration', 'is_expired']
+    
+    label_columns = {'event':'Event', 'reminder_unit':'Reminder Unit', 'reminder_interval_type':'Reminder Interval Type', 'remind_by':'Remind By', 'action':'Action', 'trigger_time':'Trigger Time', 'trigger_type':'Trigger Type', 'repeat_count':'Repeat Count', 'duration':'Duration', 'is_expired':'Is Expired'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['event', 'reminder_unit', 'reminder_interval_type', 'remind_by', 'action', 'trigger_time', 'trigger_type', 'repeat_count', 'duration', 'is_expired']
+class InventoryOrderDetailModelView(ModelView):
+    datamodel = SQLAInterface(InventoryOrderDetail)
+    list_title = 'List Inventory Order Detail'
+    show_title = 'Show Inventory Order Detail'
+    edit_title = 'Edit Inventory Order Detail'
+    add_title  = 'Add Inventory Order Detail'
+ 
+    list_columns = ['inventory_order', 'product', 'quantity', 'price']
+    # show_columns = ['inventory_order', 'product', 'quantity', 'price']
+    # edit_columns = ['inventory_order', 'product', 'quantity', 'price']
+    add_columns = ['inventory_order', 'product', 'quantity', 'price']
+    # search_columns = ['inventory_order', 'product', 'quantity', 'price']
+    description_columns = {
+        'id' : 'None',
+        'inventory_order_id_fk' : 'None',
+        'product_id_fk' : 'None',
+        'quantity' : 'None',
+        'price' : 'None',
+    }
+    # list_exclude_columns = ['inventory_order', 'product', 'quantity', 'price']
+    # show_exclude_columns = ['inventory_order', 'product', 'quantity', 'price']
+    # edit_exclude_columns = ['inventory_order', 'product', 'quantity', 'price']
+    # add_exclude_columns = ['inventory_order', 'product', 'quantity', 'price']
+    # search_exclude_columns = ['inventory_order', 'product', 'quantity', 'price']
+    # order_columns = ['inventory_order', 'product', 'quantity', 'price']
+    # add_columns = ['inventory_order', 'product', 'quantity', 'price']
+    # add_columns = ['inventory_order', 'product', 'quantity', 'price']
+    # add_columns = ['inventory_order', 'product', 'quantity', 'price']
+    
+    label_columns = {'inventory_order':'Inventory Order', 'product':'Product', 'quantity':'Quantity', 'price':'Price'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['inventory_order', 'product', 'quantity', 'price']
+class InvoiceDetailsModelView(ModelView):
+    datamodel = SQLAInterface(InvoiceDetails)
+    list_title = 'List Invoice Details'
+    show_title = 'Show Invoice Details'
+    edit_title = 'Edit Invoice Details'
+    add_title  = 'Add Invoice Details'
+ 
+    list_columns = ['invoice_item_id', 'invoice', 'product_sku', 'invoice_item_name', 'invoice_item_description', 'invoice_item_price', 'invoice_item_quantity', 'invoice_item_discount', 'invoice_item_subtotal', 'invoice_item_discounted_subtotal', 'invoice_item_notes']
+    # show_columns = ['invoice_item_id', 'invoice', 'product_sku', 'invoice_item_name', 'invoice_item_description', 'invoice_item_price', 'invoice_item_quantity', 'invoice_item_discount', 'invoice_item_subtotal', 'invoice_item_discounted_subtotal', 'invoice_item_notes']
+    # edit_columns = ['invoice_item_id', 'invoice', 'product_sku', 'invoice_item_name', 'invoice_item_description', 'invoice_item_price', 'invoice_item_quantity', 'invoice_item_discount', 'invoice_item_subtotal', 'invoice_item_discounted_subtotal', 'invoice_item_notes']
+    add_columns = ['invoice_item_id', 'invoice', 'product_sku', 'invoice_item_name', 'invoice_item_description', 'invoice_item_price', 'invoice_item_quantity', 'invoice_item_discount', 'invoice_item_subtotal', 'invoice_item_discounted_subtotal', 'invoice_item_notes']
+    # search_columns = ['invoice_item_id', 'invoice', 'product_sku', 'invoice_item_name', 'invoice_item_description', 'invoice_item_price', 'invoice_item_quantity', 'invoice_item_discount', 'invoice_item_subtotal', 'invoice_item_discounted_subtotal', 'invoice_item_notes']
+    description_columns = {
+        'invoice_item_id' : 'None',
+        'invoice_id_fk' : 'None',
+        'product_sku_id_fk' : 'None',
+        'invoice_item_name' : 'None',
+        'invoice_item_description' : 'None',
+        'invoice_item_price' : 'None',
+        'invoice_item_quantity' : 'None',
+        'invoice_item_discount' : 'None',
+        'invoice_item_subtotal' : 'None',
+        'invoice_item_discounted_subtotal' : 'None',
+        'invoice_item_notes' : 'None',
+    }
+    # list_exclude_columns = ['invoice_item_id', 'invoice', 'product_sku', 'invoice_item_name', 'invoice_item_description', 'invoice_item_price', 'invoice_item_quantity', 'invoice_item_discount', 'invoice_item_subtotal', 'invoice_item_discounted_subtotal', 'invoice_item_notes']
+    # show_exclude_columns = ['invoice_item_id', 'invoice', 'product_sku', 'invoice_item_name', 'invoice_item_description', 'invoice_item_price', 'invoice_item_quantity', 'invoice_item_discount', 'invoice_item_subtotal', 'invoice_item_discounted_subtotal', 'invoice_item_notes']
+    # edit_exclude_columns = ['invoice_item_id', 'invoice', 'product_sku', 'invoice_item_name', 'invoice_item_description', 'invoice_item_price', 'invoice_item_quantity', 'invoice_item_discount', 'invoice_item_subtotal', 'invoice_item_discounted_subtotal', 'invoice_item_notes']
+    # add_exclude_columns = ['invoice_item_id', 'invoice', 'product_sku', 'invoice_item_name', 'invoice_item_description', 'invoice_item_price', 'invoice_item_quantity', 'invoice_item_discount', 'invoice_item_subtotal', 'invoice_item_discounted_subtotal', 'invoice_item_notes']
+    # search_exclude_columns = ['invoice_item_id', 'invoice', 'product_sku', 'invoice_item_name', 'invoice_item_description', 'invoice_item_price', 'invoice_item_quantity', 'invoice_item_discount', 'invoice_item_subtotal', 'invoice_item_discounted_subtotal', 'invoice_item_notes']
+    # order_columns = ['invoice_item_id', 'invoice', 'product_sku', 'invoice_item_name', 'invoice_item_description', 'invoice_item_price', 'invoice_item_quantity', 'invoice_item_discount', 'invoice_item_subtotal', 'invoice_item_discounted_subtotal', 'invoice_item_notes']
+    # add_columns = ['invoice_item_id', 'invoice', 'product_sku', 'invoice_item_name', 'invoice_item_description', 'invoice_item_price', 'invoice_item_quantity', 'invoice_item_discount', 'invoice_item_subtotal', 'invoice_item_discounted_subtotal', 'invoice_item_notes']
+    # add_columns = ['invoice_item_id', 'invoice', 'product_sku', 'invoice_item_name', 'invoice_item_description', 'invoice_item_price', 'invoice_item_quantity', 'invoice_item_discount', 'invoice_item_subtotal', 'invoice_item_discounted_subtotal', 'invoice_item_notes']
+    # add_columns = ['invoice_item_id', 'invoice', 'product_sku', 'invoice_item_name', 'invoice_item_description', 'invoice_item_price', 'invoice_item_quantity', 'invoice_item_discount', 'invoice_item_subtotal', 'invoice_item_discounted_subtotal', 'invoice_item_notes']
+    
+    label_columns = {'invoice_item_id':'Invoice Item Id', 'invoice':'Invoice', 'product_sku':'Product Sku', 'invoice_item_name':'Invoice Item Name', 'invoice_item_description':'Invoice Item Description', 'invoice_item_price':'Invoice Item Price', 'invoice_item_quantity':'Invoice Item Quantity', 'invoice_item_discount':'Invoice Item Discount', 'invoice_item_subtotal':'Invoice Item Subtotal', 'invoice_item_discounted_subtotal':'Invoice Item Discounted Subtotal', 'invoice_item_notes':'Invoice Item Notes'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['invoice_item_id', 'invoice', 'product_sku', 'invoice_item_name', 'invoice_item_description', 'invoice_item_price', 'invoice_item_quantity', 'invoice_item_discount', 'invoice_item_subtotal', 'invoice_item_discounted_subtotal', 'invoice_item_notes']
+class InvoicePaymentsModelView(ModelView):
+    datamodel = SQLAInterface(InvoicePayments)
+    list_title = 'List Invoice Payments'
+    show_title = 'Show Invoice Payments'
+    edit_title = 'Edit Invoice Payments'
+    add_title  = 'Add Invoice Payments'
+ 
+    list_columns = ['invoice', 'payment_posting', 'payment_method', 'invoice_payment_amount', 'invoice_payment_date', 'invoice_payment_note', 'invoice_status']
+    # show_columns = ['invoice', 'payment_posting', 'payment_method', 'invoice_payment_amount', 'invoice_payment_date', 'invoice_payment_note', 'invoice_status']
+    # edit_columns = ['invoice', 'payment_posting', 'payment_method', 'invoice_payment_amount', 'invoice_payment_date', 'invoice_payment_note', 'invoice_status']
+    add_columns = ['invoice', 'payment_posting', 'payment_method', 'invoice_payment_amount', 'invoice_payment_date', 'invoice_payment_note', 'invoice_status']
+    # search_columns = ['invoice', 'payment_posting', 'payment_method', 'invoice_payment_amount', 'invoice_payment_date', 'invoice_payment_note', 'invoice_status']
+    description_columns = {
+        'id' : 'None',
+        'invoice_id_fk' : 'None',
+        'payment_posting_id_fk' : 'None',
+        'payment_method' : 'None',
+        'invoice_payment_amount' : 'None',
+        'invoice_payment_date' : 'None',
+        'invoice_payment_note' : 'None',
+        'invoice_status' : 'None',
+    }
+    # list_exclude_columns = ['invoice', 'payment_posting', 'payment_method', 'invoice_payment_amount', 'invoice_payment_date', 'invoice_payment_note', 'invoice_status']
+    # show_exclude_columns = ['invoice', 'payment_posting', 'payment_method', 'invoice_payment_amount', 'invoice_payment_date', 'invoice_payment_note', 'invoice_status']
+    # edit_exclude_columns = ['invoice', 'payment_posting', 'payment_method', 'invoice_payment_amount', 'invoice_payment_date', 'invoice_payment_note', 'invoice_status']
+    # add_exclude_columns = ['invoice', 'payment_posting', 'payment_method', 'invoice_payment_amount', 'invoice_payment_date', 'invoice_payment_note', 'invoice_status']
+    # search_exclude_columns = ['invoice', 'payment_posting', 'payment_method', 'invoice_payment_amount', 'invoice_payment_date', 'invoice_payment_note', 'invoice_status']
+    # order_columns = ['invoice', 'payment_posting', 'payment_method', 'invoice_payment_amount', 'invoice_payment_date', 'invoice_payment_note', 'invoice_status']
+    # add_columns = ['invoice', 'payment_posting', 'payment_method', 'invoice_payment_amount', 'invoice_payment_date', 'invoice_payment_note', 'invoice_status']
+    # add_columns = ['invoice', 'payment_posting', 'payment_method', 'invoice_payment_amount', 'invoice_payment_date', 'invoice_payment_note', 'invoice_status']
+    # add_columns = ['invoice', 'payment_posting', 'payment_method', 'invoice_payment_amount', 'invoice_payment_date', 'invoice_payment_note', 'invoice_status']
+    
+    label_columns = {'invoice':'Invoice', 'payment_posting':'Payment Posting', 'payment_method':'Payment Method', 'invoice_payment_amount':'Invoice Payment Amount', 'invoice_payment_date':'Invoice Payment Date', 'invoice_payment_note':'Invoice Payment Note', 'invoice_status':'Invoice Status'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['invoice', 'payment_posting', 'payment_method', 'invoice_payment_amount', 'invoice_payment_date', 'invoice_payment_note', 'invoice_status']
+class LandImprovementsModelView(ModelView):
+    datamodel = SQLAInterface(LandImprovements)
+    list_title = 'List Land Improvements'
+    show_title = 'Show Land Improvements'
+    edit_title = 'Edit Land Improvements'
+    add_title  = 'Add Land Improvements'
+ 
+    list_columns = ['land_parcel', 'improvement_type', 'improved_on', 'improved_by', 'cost', 'notes']
+    # show_columns = ['land_parcel', 'improvement_type', 'improved_on', 'improved_by', 'cost', 'notes']
+    # edit_columns = ['land_parcel', 'improvement_type', 'improved_on', 'improved_by', 'cost', 'notes']
+    add_columns = ['land_parcel', 'improvement_type', 'improved_on', 'improved_by', 'cost', 'notes']
+    # search_columns = ['land_parcel', 'improvement_type', 'improved_on', 'improved_by', 'cost', 'notes']
+    description_columns = {
+        'id' : 'None',
+        'land_parcel_id_fk' : 'None',
+        'improvement_type' : 'None',
+        'improved_on' : 'None',
+        'improved_by_id_fk' : 'None',
+        'cost' : 'None',
+        'notes' : 'None',
+    }
+    # list_exclude_columns = ['land_parcel', 'improvement_type', 'improved_on', 'improved_by', 'cost', 'notes']
+    # show_exclude_columns = ['land_parcel', 'improvement_type', 'improved_on', 'improved_by', 'cost', 'notes']
+    # edit_exclude_columns = ['land_parcel', 'improvement_type', 'improved_on', 'improved_by', 'cost', 'notes']
+    # add_exclude_columns = ['land_parcel', 'improvement_type', 'improved_on', 'improved_by', 'cost', 'notes']
+    # search_exclude_columns = ['land_parcel', 'improvement_type', 'improved_on', 'improved_by', 'cost', 'notes']
+    # order_columns = ['land_parcel', 'improvement_type', 'improved_on', 'improved_by', 'cost', 'notes']
+    # add_columns = ['land_parcel', 'improvement_type', 'improved_on', 'improved_by', 'cost', 'notes']
+    # add_columns = ['land_parcel', 'improvement_type', 'improved_on', 'improved_by', 'cost', 'notes']
+    # add_columns = ['land_parcel', 'improvement_type', 'improved_on', 'improved_by', 'cost', 'notes']
+    
+    label_columns = {'land_parcel':'Land Parcel', 'improvement_type':'Improvement Type', 'improved_on':'Improved On', 'improved_by':'Improved By', 'cost':'Cost', 'notes':'Notes'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['land_parcel', 'improvement_type', 'improved_on', 'improved_by', 'cost', 'notes']
+class LandOwnershipHistoryModelView(ModelView):
+    datamodel = SQLAInterface(LandOwnershipHistory)
+    list_title = 'List Land Ownership History'
+    show_title = 'Show Land Ownership History'
+    edit_title = 'Edit Land Ownership History'
+    add_title  = 'Add Land Ownership History'
+ 
+    list_columns = ['land_parcel', 'previous_owner', 'current_owner', 'date_of_transfer', 'transfer_type']
+    # show_columns = ['land_parcel', 'previous_owner', 'current_owner', 'date_of_transfer', 'transfer_type']
+    # edit_columns = ['land_parcel', 'previous_owner', 'current_owner', 'date_of_transfer', 'transfer_type']
+    add_columns = ['land_parcel', 'previous_owner', 'current_owner', 'date_of_transfer', 'transfer_type']
+    # search_columns = ['land_parcel', 'previous_owner', 'current_owner', 'date_of_transfer', 'transfer_type']
+    description_columns = {
+        'id' : 'None',
+        'land_parcel_id_fk' : 'None',
+        'previous_owner_id_fk' : 'None',
+        'current_owner_id_fk' : 'None',
+        'date_of_transfer' : 'None',
+        'transfer_type' : 'Eventually change this to an enum',
+    }
+    # list_exclude_columns = ['land_parcel', 'previous_owner', 'current_owner', 'date_of_transfer', 'transfer_type']
+    # show_exclude_columns = ['land_parcel', 'previous_owner', 'current_owner', 'date_of_transfer', 'transfer_type']
+    # edit_exclude_columns = ['land_parcel', 'previous_owner', 'current_owner', 'date_of_transfer', 'transfer_type']
+    # add_exclude_columns = ['land_parcel', 'previous_owner', 'current_owner', 'date_of_transfer', 'transfer_type']
+    # search_exclude_columns = ['land_parcel', 'previous_owner', 'current_owner', 'date_of_transfer', 'transfer_type']
+    # order_columns = ['land_parcel', 'previous_owner', 'current_owner', 'date_of_transfer', 'transfer_type']
+    # add_columns = ['land_parcel', 'previous_owner', 'current_owner', 'date_of_transfer', 'transfer_type']
+    # add_columns = ['land_parcel', 'previous_owner', 'current_owner', 'date_of_transfer', 'transfer_type']
+    # add_columns = ['land_parcel', 'previous_owner', 'current_owner', 'date_of_transfer', 'transfer_type']
+    
+    label_columns = {'land_parcel':'Land Parcel', 'previous_owner':'Previous Owner', 'current_owner':'Current Owner', 'date_of_transfer':'Date Of Transfer', 'transfer_type':'Transfer Type'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['land_parcel', 'previous_owner', 'current_owner', 'date_of_transfer', 'transfer_type']
+class LandUseHistoryModelView(ModelView):
+    datamodel = SQLAInterface(LandUseHistory)
+    list_title = 'List Land Use History'
+    show_title = 'Show Land Use History'
+    edit_title = 'Edit Land Use History'
+    add_title  = 'Add Land Use History'
+ 
+    list_columns = ['land_parcel', 'start_on', 'end_on', 'used_for', 'crop', 'notes']
+    # show_columns = ['land_parcel', 'start_on', 'end_on', 'used_for', 'crop', 'notes']
+    # edit_columns = ['land_parcel', 'start_on', 'end_on', 'used_for', 'crop', 'notes']
+    add_columns = ['land_parcel', 'start_on', 'end_on', 'used_for', 'crop', 'notes']
+    # search_columns = ['land_parcel', 'start_on', 'end_on', 'used_for', 'crop', 'notes']
+    description_columns = {
+        'id' : 'None',
+        'land_parcel_id_fk' : 'None',
+        'start_on' : 'None',
+        'end_on' : 'None',
+        'used_for' : 'None',
+        'crop_id_fk' : 'ID of the crop that was/is being grown',
+        'notes' : 'None',
+    }
+    # list_exclude_columns = ['land_parcel', 'start_on', 'end_on', 'used_for', 'crop', 'notes']
+    # show_exclude_columns = ['land_parcel', 'start_on', 'end_on', 'used_for', 'crop', 'notes']
+    # edit_exclude_columns = ['land_parcel', 'start_on', 'end_on', 'used_for', 'crop', 'notes']
+    # add_exclude_columns = ['land_parcel', 'start_on', 'end_on', 'used_for', 'crop', 'notes']
+    # search_exclude_columns = ['land_parcel', 'start_on', 'end_on', 'used_for', 'crop', 'notes']
+    # order_columns = ['land_parcel', 'start_on', 'end_on', 'used_for', 'crop', 'notes']
+    # add_columns = ['land_parcel', 'start_on', 'end_on', 'used_for', 'crop', 'notes']
+    # add_columns = ['land_parcel', 'start_on', 'end_on', 'used_for', 'crop', 'notes']
+    # add_columns = ['land_parcel', 'start_on', 'end_on', 'used_for', 'crop', 'notes']
+    
+    label_columns = {'land_parcel':'Land Parcel', 'start_on':'Start On', 'end_on':'End On', 'used_for':'Used For', 'crop':'Crop', 'notes':'Notes'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['land_parcel', 'start_on', 'end_on', 'used_for', 'crop', 'notes']
+class LandUseRecommendationsModelView(ModelView):
+    datamodel = SQLAInterface(LandUseRecommendations)
+    list_title = 'List Land Use Recommendations'
+    show_title = 'Show Land Use Recommendations'
+    edit_title = 'Edit Land Use Recommendations'
+    add_title  = 'Add Land Use Recommendations'
+ 
+    list_columns = ['land_parcel', 'recommended_crop_variety', 'recommendation', 'category', 'farm_input_recommendation', 'pesticide_recommendation', 'land_leveling_technique', 'expect_yield', 'actual_yield', 'recommended_on', 'recommendatio_Valid_till', 'recommended_by', 'based_on_weather', 'based_on_soil_test', 'based_on_nearby_performance']
+    # show_columns = ['land_parcel', 'recommended_crop_variety', 'recommendation', 'category', 'farm_input_recommendation', 'pesticide_recommendation', 'land_leveling_technique', 'expect_yield', 'actual_yield', 'recommended_on', 'recommendatio_Valid_till', 'recommended_by', 'based_on_weather', 'based_on_soil_test', 'based_on_nearby_performance']
+    # edit_columns = ['land_parcel', 'recommended_crop_variety', 'recommendation', 'category', 'farm_input_recommendation', 'pesticide_recommendation', 'land_leveling_technique', 'expect_yield', 'actual_yield', 'recommended_on', 'recommendatio_Valid_till', 'recommended_by', 'based_on_weather', 'based_on_soil_test', 'based_on_nearby_performance']
+    add_columns = ['land_parcel', 'recommended_crop_variety', 'recommendation', 'category', 'farm_input_recommendation', 'pesticide_recommendation', 'land_leveling_technique', 'expect_yield', 'actual_yield', 'recommended_on', 'recommendatio_Valid_till', 'recommended_by', 'based_on_weather', 'based_on_soil_test', 'based_on_nearby_performance']
+    # search_columns = ['land_parcel', 'recommended_crop_variety', 'recommendation', 'category', 'farm_input_recommendation', 'pesticide_recommendation', 'land_leveling_technique', 'expect_yield', 'actual_yield', 'recommended_on', 'recommendatio_Valid_till', 'recommended_by', 'based_on_weather', 'based_on_soil_test', 'based_on_nearby_performance']
+    description_columns = {
+        'id' : 'None',
+        'land_parcel_id_fk' : 'Link to the specific piece of land the recommendation pertains to.',
+        'recommended_crop_variety_id_fk' : 'Specific crop variety recommended.',
+        'recommendation' : 'Details about the specific recommendation given.',
+        'category' : 'The category of recommendation being given.',
+        'farm_input_recommendation' : 'Specific farm input (like a type of fertilizer) recommended.',
+        'pesticide_recommendation' : 'Specific pesticide recommended for use.',
+        'land_leveling_technique' : 'Recommended technique for land leveling.',
+        'expect_yield' : 'None',
+        'actual_yield' : 'None',
+        'recommended_on' : 'Date when the recommendation was given.',
+        'recommendatio_Valid_till' : 'None',
+        'recommended_by_id_fk' : 'The agronomist or expert who provided the recommendation.',
+        'based_on_weather' : 'Indicates if the recommendation was based on weather data.',
+        'based_on_soil_test' : 'Indicates if the recommendation was based on soil test results.',
+        'based_on_nearby_performance' : 'Indicates if the recommendation was based on performance of similar crops in nearby areas.',
+    }
+    # list_exclude_columns = ['land_parcel', 'recommended_crop_variety', 'recommendation', 'category', 'farm_input_recommendation', 'pesticide_recommendation', 'land_leveling_technique', 'expect_yield', 'actual_yield', 'recommended_on', 'recommendatio_Valid_till', 'recommended_by', 'based_on_weather', 'based_on_soil_test', 'based_on_nearby_performance']
+    # show_exclude_columns = ['land_parcel', 'recommended_crop_variety', 'recommendation', 'category', 'farm_input_recommendation', 'pesticide_recommendation', 'land_leveling_technique', 'expect_yield', 'actual_yield', 'recommended_on', 'recommendatio_Valid_till', 'recommended_by', 'based_on_weather', 'based_on_soil_test', 'based_on_nearby_performance']
+    # edit_exclude_columns = ['land_parcel', 'recommended_crop_variety', 'recommendation', 'category', 'farm_input_recommendation', 'pesticide_recommendation', 'land_leveling_technique', 'expect_yield', 'actual_yield', 'recommended_on', 'recommendatio_Valid_till', 'recommended_by', 'based_on_weather', 'based_on_soil_test', 'based_on_nearby_performance']
+    # add_exclude_columns = ['land_parcel', 'recommended_crop_variety', 'recommendation', 'category', 'farm_input_recommendation', 'pesticide_recommendation', 'land_leveling_technique', 'expect_yield', 'actual_yield', 'recommended_on', 'recommendatio_Valid_till', 'recommended_by', 'based_on_weather', 'based_on_soil_test', 'based_on_nearby_performance']
+    # search_exclude_columns = ['land_parcel', 'recommended_crop_variety', 'recommendation', 'category', 'farm_input_recommendation', 'pesticide_recommendation', 'land_leveling_technique', 'expect_yield', 'actual_yield', 'recommended_on', 'recommendatio_Valid_till', 'recommended_by', 'based_on_weather', 'based_on_soil_test', 'based_on_nearby_performance']
+    # order_columns = ['land_parcel', 'recommended_crop_variety', 'recommendation', 'category', 'farm_input_recommendation', 'pesticide_recommendation', 'land_leveling_technique', 'expect_yield', 'actual_yield', 'recommended_on', 'recommendatio_Valid_till', 'recommended_by', 'based_on_weather', 'based_on_soil_test', 'based_on_nearby_performance']
+    # add_columns = ['land_parcel', 'recommended_crop_variety', 'recommendation', 'category', 'farm_input_recommendation', 'pesticide_recommendation', 'land_leveling_technique', 'expect_yield', 'actual_yield', 'recommended_on', 'recommendatio_Valid_till', 'recommended_by', 'based_on_weather', 'based_on_soil_test', 'based_on_nearby_performance']
+    # add_columns = ['land_parcel', 'recommended_crop_variety', 'recommendation', 'category', 'farm_input_recommendation', 'pesticide_recommendation', 'land_leveling_technique', 'expect_yield', 'actual_yield', 'recommended_on', 'recommendatio_Valid_till', 'recommended_by', 'based_on_weather', 'based_on_soil_test', 'based_on_nearby_performance']
+    # add_columns = ['land_parcel', 'recommended_crop_variety', 'recommendation', 'category', 'farm_input_recommendation', 'pesticide_recommendation', 'land_leveling_technique', 'expect_yield', 'actual_yield', 'recommended_on', 'recommendatio_Valid_till', 'recommended_by', 'based_on_weather', 'based_on_soil_test', 'based_on_nearby_performance']
+    
+    label_columns = {'land_parcel':'Land Parcel', 'recommended_crop_variety':'Recommended Crop Variety', 'recommendation':'Recommendation', 'category':'Category', 'farm_input_recommendation':'Farm Input Recommendation', 'pesticide_recommendation':'Pesticide Recommendation', 'land_leveling_technique':'Land Leveling Technique', 'expect_yield':'Expect Yield', 'actual_yield':'Actual Yield', 'recommended_on':'Recommended On', 'recommendatio_Valid_till':'Recommendatio Valid Till', 'recommended_by':'Recommended By', 'based_on_weather':'Based On Weather', 'based_on_soil_test':'Based On Soil Test', 'based_on_nearby_performance':'Based On Nearby Performance'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['land_parcel', 'recommended_crop_variety', 'recommendation', 'category', 'farm_input_recommendation', 'pesticide_recommendation', 'land_leveling_technique', 'expect_yield', 'actual_yield', 'recommended_on', 'recommendatio_Valid_till', 'recommended_by', 'based_on_weather', 'based_on_soil_test', 'based_on_nearby_performance']
+class LoanModelView(ModelView):
+    datamodel = SQLAInterface(Loan)
+    list_title = 'List Loan'
+    show_title = 'Show Loan'
+    edit_title = 'Edit Loan'
+    add_title  = 'Add Loan'
+ 
+    list_columns = ['client', 'fund', 'loan_product', 'loan_officer', 'loan_purpose', 'loan_status', 'loan_sub_status', 'currency_code', 'principal_amount', 'arrears_tolerance_amount', 'nominal_interest_rate_per_period', 'interest_period_frequency', 'annual_nominal_interest_rate', 'interest_method', 'interest_calculated_in_period', 'term_frequency', 'loan_cycle_number', 'repay_every', 'number_of_repayments', 'amortization_method', 'submitted_on_date', 'submitted_on_user', 'approved_on_date', 'approved_on_user', 'expected_disbursed_on_date', 'expected_first_repayment_date', 'disbursed_on_date', 'disbursed_on_user', 'interest_calculated_from_date', 'closed_on_date', 'closed_on_user', 'rejected_on_date', 'rejected_on_user', 'rescheduled_on_date', 'withdrawn_on_date', 'withdrawn_on_user', 'written_off_date', 'written_off_user', 'expected_maturity_date', 'matured_on_date', 'loan_transaction_strategy', 'total_charges_due_at_disbursement_derived', 'principal_disbursed_derived', 'principal_repaid_derived', 'principal_writtenoff_derived', 'principal_outstanding_derived', 'interest_charged_derived', 'interest_repaid_derived', 'interest_waived_derived', 'interest_writtenoff_derived', 'interest_outstanding_derived', 'fee_charges_charged_derived', 'fee_charges_repaid_derived', 'fee_charges_waived_derived', 'fee_charges_writtenoff_derived', 'fee_charges_outstanding_derived', 'penalty_charges_charged_derived', 'penalty_charges_repaid_derived', 'penalty_charges_waived_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_outstanding_derived', 'total_expected_repayment_derived', 'total_repayment_derived', 'total_expected_cost_of_loan_derived', 'total_costofloan_derived', 'total_waived_derived', 'total_writtenoff_derived', 'total_outstanding_derived', 'loan_to_value_ratio_derived', 'debt_to_income_ratio_derived', 'credit_score_derived', 'payment_to_income_ratio_derived', 'interest_rate_spread_derived', 'yield_to_maturity_derived', 'effective_annual_rate_derived', 'days_past_due_derived', 'days_to_maturity_derived', 'missed_payments_count_derived', 'on_time_payments_count_derived', 'overpayments_count_derived', 'underpayments_count_derived', 'collateral_exposure_derived', 'unsecured_exposure_derived', 'sectoral_exposure_derived', 'inflation_adjusted_principal_outstanding_derived', 'inflation_adjusted_total_repayment_derived', 'prepayment_amount_derived', 'prepayment_frequency_derived', 'net_present_value_derived', 'internal_rate_of_return_derived', 'profitability_index_derived', 'note']
+    # show_columns = ['client', 'fund', 'loan_product', 'loan_officer', 'loan_purpose', 'loan_status', 'loan_sub_status', 'currency_code', 'principal_amount', 'arrears_tolerance_amount', 'nominal_interest_rate_per_period', 'interest_period_frequency', 'annual_nominal_interest_rate', 'interest_method', 'interest_calculated_in_period', 'term_frequency', 'loan_cycle_number', 'repay_every', 'number_of_repayments', 'amortization_method', 'submitted_on_date', 'submitted_on_user', 'approved_on_date', 'approved_on_user', 'expected_disbursed_on_date', 'expected_first_repayment_date', 'disbursed_on_date', 'disbursed_on_user', 'interest_calculated_from_date', 'closed_on_date', 'closed_on_user', 'rejected_on_date', 'rejected_on_user', 'rescheduled_on_date', 'withdrawn_on_date', 'withdrawn_on_user', 'written_off_date', 'written_off_user', 'expected_maturity_date', 'matured_on_date', 'loan_transaction_strategy', 'total_charges_due_at_disbursement_derived', 'principal_disbursed_derived', 'principal_repaid_derived', 'principal_writtenoff_derived', 'principal_outstanding_derived', 'interest_charged_derived', 'interest_repaid_derived', 'interest_waived_derived', 'interest_writtenoff_derived', 'interest_outstanding_derived', 'fee_charges_charged_derived', 'fee_charges_repaid_derived', 'fee_charges_waived_derived', 'fee_charges_writtenoff_derived', 'fee_charges_outstanding_derived', 'penalty_charges_charged_derived', 'penalty_charges_repaid_derived', 'penalty_charges_waived_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_outstanding_derived', 'total_expected_repayment_derived', 'total_repayment_derived', 'total_expected_cost_of_loan_derived', 'total_costofloan_derived', 'total_waived_derived', 'total_writtenoff_derived', 'total_outstanding_derived', 'loan_to_value_ratio_derived', 'debt_to_income_ratio_derived', 'credit_score_derived', 'payment_to_income_ratio_derived', 'interest_rate_spread_derived', 'yield_to_maturity_derived', 'effective_annual_rate_derived', 'days_past_due_derived', 'days_to_maturity_derived', 'missed_payments_count_derived', 'on_time_payments_count_derived', 'overpayments_count_derived', 'underpayments_count_derived', 'collateral_exposure_derived', 'unsecured_exposure_derived', 'sectoral_exposure_derived', 'inflation_adjusted_principal_outstanding_derived', 'inflation_adjusted_total_repayment_derived', 'prepayment_amount_derived', 'prepayment_frequency_derived', 'net_present_value_derived', 'internal_rate_of_return_derived', 'profitability_index_derived', 'note']
+    # edit_columns = ['client', 'fund', 'loan_product', 'loan_officer', 'loan_purpose', 'loan_status', 'loan_sub_status', 'currency_code', 'principal_amount', 'arrears_tolerance_amount', 'nominal_interest_rate_per_period', 'interest_period_frequency', 'annual_nominal_interest_rate', 'interest_method', 'interest_calculated_in_period', 'term_frequency', 'loan_cycle_number', 'repay_every', 'number_of_repayments', 'amortization_method', 'submitted_on_date', 'submitted_on_user', 'approved_on_date', 'approved_on_user', 'expected_disbursed_on_date', 'expected_first_repayment_date', 'disbursed_on_date', 'disbursed_on_user', 'interest_calculated_from_date', 'closed_on_date', 'closed_on_user', 'rejected_on_date', 'rejected_on_user', 'rescheduled_on_date', 'withdrawn_on_date', 'withdrawn_on_user', 'written_off_date', 'written_off_user', 'expected_maturity_date', 'matured_on_date', 'loan_transaction_strategy', 'total_charges_due_at_disbursement_derived', 'principal_disbursed_derived', 'principal_repaid_derived', 'principal_writtenoff_derived', 'principal_outstanding_derived', 'interest_charged_derived', 'interest_repaid_derived', 'interest_waived_derived', 'interest_writtenoff_derived', 'interest_outstanding_derived', 'fee_charges_charged_derived', 'fee_charges_repaid_derived', 'fee_charges_waived_derived', 'fee_charges_writtenoff_derived', 'fee_charges_outstanding_derived', 'penalty_charges_charged_derived', 'penalty_charges_repaid_derived', 'penalty_charges_waived_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_outstanding_derived', 'total_expected_repayment_derived', 'total_repayment_derived', 'total_expected_cost_of_loan_derived', 'total_costofloan_derived', 'total_waived_derived', 'total_writtenoff_derived', 'total_outstanding_derived', 'loan_to_value_ratio_derived', 'debt_to_income_ratio_derived', 'credit_score_derived', 'payment_to_income_ratio_derived', 'interest_rate_spread_derived', 'yield_to_maturity_derived', 'effective_annual_rate_derived', 'days_past_due_derived', 'days_to_maturity_derived', 'missed_payments_count_derived', 'on_time_payments_count_derived', 'overpayments_count_derived', 'underpayments_count_derived', 'collateral_exposure_derived', 'unsecured_exposure_derived', 'sectoral_exposure_derived', 'inflation_adjusted_principal_outstanding_derived', 'inflation_adjusted_total_repayment_derived', 'prepayment_amount_derived', 'prepayment_frequency_derived', 'net_present_value_derived', 'internal_rate_of_return_derived', 'profitability_index_derived', 'note']
+    add_columns = ['client', 'fund', 'loan_product', 'loan_officer', 'loan_purpose', 'loan_status', 'loan_sub_status', 'currency_code', 'principal_amount', 'arrears_tolerance_amount', 'nominal_interest_rate_per_period', 'interest_period_frequency', 'annual_nominal_interest_rate', 'interest_method', 'interest_calculated_in_period', 'term_frequency', 'loan_cycle_number', 'repay_every', 'number_of_repayments', 'amortization_method', 'submitted_on_date', 'submitted_on_user', 'approved_on_date', 'approved_on_user', 'expected_disbursed_on_date', 'expected_first_repayment_date', 'disbursed_on_date', 'disbursed_on_user', 'interest_calculated_from_date', 'closed_on_date', 'closed_on_user', 'rejected_on_date', 'rejected_on_user', 'rescheduled_on_date', 'withdrawn_on_date', 'withdrawn_on_user', 'written_off_date', 'written_off_user', 'expected_maturity_date', 'matured_on_date', 'loan_transaction_strategy', 'total_charges_due_at_disbursement_derived', 'principal_disbursed_derived', 'principal_repaid_derived', 'principal_writtenoff_derived', 'principal_outstanding_derived', 'interest_charged_derived', 'interest_repaid_derived', 'interest_waived_derived', 'interest_writtenoff_derived', 'interest_outstanding_derived', 'fee_charges_charged_derived', 'fee_charges_repaid_derived', 'fee_charges_waived_derived', 'fee_charges_writtenoff_derived', 'fee_charges_outstanding_derived', 'penalty_charges_charged_derived', 'penalty_charges_repaid_derived', 'penalty_charges_waived_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_outstanding_derived', 'total_expected_repayment_derived', 'total_repayment_derived', 'total_expected_cost_of_loan_derived', 'total_costofloan_derived', 'total_waived_derived', 'total_writtenoff_derived', 'total_outstanding_derived', 'loan_to_value_ratio_derived', 'debt_to_income_ratio_derived', 'credit_score_derived', 'payment_to_income_ratio_derived', 'interest_rate_spread_derived', 'yield_to_maturity_derived', 'effective_annual_rate_derived', 'days_past_due_derived', 'days_to_maturity_derived', 'missed_payments_count_derived', 'on_time_payments_count_derived', 'overpayments_count_derived', 'underpayments_count_derived', 'collateral_exposure_derived', 'unsecured_exposure_derived', 'sectoral_exposure_derived', 'inflation_adjusted_principal_outstanding_derived', 'inflation_adjusted_total_repayment_derived', 'prepayment_amount_derived', 'prepayment_frequency_derived', 'net_present_value_derived', 'internal_rate_of_return_derived', 'profitability_index_derived', 'note']
+    # search_columns = ['client', 'fund', 'loan_product', 'loan_officer', 'loan_purpose', 'loan_status', 'loan_sub_status', 'currency_code', 'principal_amount', 'arrears_tolerance_amount', 'nominal_interest_rate_per_period', 'interest_period_frequency', 'annual_nominal_interest_rate', 'interest_method', 'interest_calculated_in_period', 'term_frequency', 'loan_cycle_number', 'repay_every', 'number_of_repayments', 'amortization_method', 'submitted_on_date', 'submitted_on_user', 'approved_on_date', 'approved_on_user', 'expected_disbursed_on_date', 'expected_first_repayment_date', 'disbursed_on_date', 'disbursed_on_user', 'interest_calculated_from_date', 'closed_on_date', 'closed_on_user', 'rejected_on_date', 'rejected_on_user', 'rescheduled_on_date', 'withdrawn_on_date', 'withdrawn_on_user', 'written_off_date', 'written_off_user', 'expected_maturity_date', 'matured_on_date', 'loan_transaction_strategy', 'total_charges_due_at_disbursement_derived', 'principal_disbursed_derived', 'principal_repaid_derived', 'principal_writtenoff_derived', 'principal_outstanding_derived', 'interest_charged_derived', 'interest_repaid_derived', 'interest_waived_derived', 'interest_writtenoff_derived', 'interest_outstanding_derived', 'fee_charges_charged_derived', 'fee_charges_repaid_derived', 'fee_charges_waived_derived', 'fee_charges_writtenoff_derived', 'fee_charges_outstanding_derived', 'penalty_charges_charged_derived', 'penalty_charges_repaid_derived', 'penalty_charges_waived_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_outstanding_derived', 'total_expected_repayment_derived', 'total_repayment_derived', 'total_expected_cost_of_loan_derived', 'total_costofloan_derived', 'total_waived_derived', 'total_writtenoff_derived', 'total_outstanding_derived', 'loan_to_value_ratio_derived', 'debt_to_income_ratio_derived', 'credit_score_derived', 'payment_to_income_ratio_derived', 'interest_rate_spread_derived', 'yield_to_maturity_derived', 'effective_annual_rate_derived', 'days_past_due_derived', 'days_to_maturity_derived', 'missed_payments_count_derived', 'on_time_payments_count_derived', 'overpayments_count_derived', 'underpayments_count_derived', 'collateral_exposure_derived', 'unsecured_exposure_derived', 'sectoral_exposure_derived', 'inflation_adjusted_principal_outstanding_derived', 'inflation_adjusted_total_repayment_derived', 'prepayment_amount_derived', 'prepayment_frequency_derived', 'net_present_value_derived', 'internal_rate_of_return_derived', 'profitability_index_derived', 'note']
+    description_columns = {
+        'id' : 'Unique identifier for the loan',
+        'client_id_fk' : 'Foreign key reference to the client organization',
+        'fund_id_fk' : 'Foreign key reference to the funding source',
+        'loan_product_id_fk' : 'Foreign key reference to the loan product',
+        'loan_officer_id_fk' : 'Foreign key reference to the loan officer managing the loan',
+        'loan_purpose' : 'Purpose for which the loan was issued',
+        'loan_status' : 'Overall status of the loan',
+        'loan_sub_status' : 'Granular status of the loan, extending loan_status',
+        'currency_code_id_fk' : 'Foreign key reference to the currency code',
+        'principal_amount' : 'Initial loan amount',
+        'arrears_tolerance_amount' : 'Amount by which the borrower can be in arrears without triggering specific actions',
+        'nominal_interest_rate_per_period' : 'Nominal interest rate per defined period',
+        'interest_period_frequency' : 'Frequency at which interest is applied',
+        'annual_nominal_interest_rate' : 'Nominal annual interest rate',
+        'interest_method' : 'Method for calculating interest',
+        'interest_calculated_in_period' : 'Period for interest calculation',
+        'term_frequency' : 'Frequency of the loan term',
+        'loan_cycle_number' : 'Number of loan cycles client has gone through, e.g., first loan, second loan, etc.',
+        'repay_every' : 'Frequency at which repayments are to be made',
+        'number_of_repayments' : 'Total number of repayments for this loan',
+        'amortization_method' : 'Method used for amortizing the loan',
+        'submitted_on_date' : 'Date the loan was submitted for approval',
+        'submitted_on_user_id_fk' : 'User who submitted the loan for approval',
+        'approved_on_date' : 'Date the loan was approved',
+        'approved_on_user_id_fk' : 'User who approved the loan',
+        'expected_disbursed_on_date' : 'Expected date for loan disbursement',
+        'expected_first_repayment_date' : 'Expected date for the first repayment',
+        'disbursed_on_date' : 'Actual date of loan disbursement',
+        'disbursed_on_user_id_fk' : 'User who performed the loan disbursement',
+        'interest_calculated_from_date' : 'Date from which interest calculation starts',
+        'closed_on_date' : 'Date the loan was closed',
+        'closed_on_user_id_fk' : 'User who closed the loan',
+        'rejected_on_date' : 'Date the loan was rejected',
+        'rejected_on_user_id_fk' : 'User who rejected the loan',
+        'rescheduled_on_date' : 'Date the loan was rescheduled',
+        'withdrawn_on_date' : 'Date the loan was withdrawn',
+        'withdrawn_on_user_id_fk' : 'User who withdrew the loan',
+        'written_off_date' : 'Date the loan was written off',
+        'written_off_user_id_fk' : 'User who wrote off the loan',
+        'expected_maturity_date' : 'Expected date the loan will fully mature',
+        'matured_on_date' : 'Actual date the loan matured',
+        'loan_transaction_strategy_id_fk' : 'Strategy used for loan transactions, ref strategy table',
+        'total_charges_due_at_disbursement_derived' : 'Sum of all charges that are due at the time of loan disbursement',
+        'principal_disbursed_derived' : 'Total principal amount that has been disbursed',
+        'principal_repaid_derived' : 'Total principal amount that has been repaid',
+        'principal_writtenoff_derived' : 'Total principal amount that has been written off',
+        'principal_outstanding_derived' : 'Total principal amount that is currently outstanding',
+        'interest_charged_derived' : 'Total interest that has been charged',
+        'interest_repaid_derived' : 'Total interest that has been repaid',
+        'interest_waived_derived' : 'Total interest amount that has been waived',
+        'interest_writtenoff_derived' : 'Total interest amount that has been written off',
+        'interest_outstanding_derived' : 'Total interest amount that is currently outstanding',
+        'fee_charges_charged_derived' : 'Total fees that have been charged',
+        'fee_charges_repaid_derived' : 'Total fees that have been repaid',
+        'fee_charges_waived_derived' : 'Total fees that have been waived',
+        'fee_charges_writtenoff_derived' : 'Total fees that have been written off',
+        'fee_charges_outstanding_derived' : 'Total fees that are currently outstanding',
+        'penalty_charges_charged_derived' : 'Total penalty charges that have been levied',
+        'penalty_charges_repaid_derived' : 'Total penalty charges that have been repaid',
+        'penalty_charges_waived_derived' : 'Total penalty charges that have been waived',
+        'penalty_charges_writtenoff_derived' : 'Total penalty charges that have been written off',
+        'penalty_charges_outstanding_derived' : 'Total penalty charges that are currently outstanding',
+        'total_expected_repayment_derived' : 'Total amount expected to be repaid, including principal, interest, fees, and penalties',
+        'total_repayment_derived' : 'Total amount that has been actually repaid',
+        'total_expected_cost_of_loan_derived' : 'Total expected cost of the loan, calculated as the sum of principal, interest, fees, and penalties',
+        'total_costofloan_derived' : 'Total actual cost of the loan, calculated based on repayments and other derived fields',
+        'total_waived_derived' : 'Total amount that has been waived, including interest, fees, and penalties',
+        'total_writtenoff_derived' : 'Total amount that has been written off, including principal, interest, fees, and penalties',
+        'total_outstanding_derived' : 'Total amount currently outstanding, calculated as the difference between total_expected_repayment_derived and total_repayment_derived',
+        'loan_to_value_ratio_derived' : 'Calculated as the loan amount divided by the appraised value of the collateral. Useful for risk assessment.',
+        'debt_to_income_ratio_derived' : 'Ratio of borrower’s total debt payments to income. Important for evaluating borrower’s ability to repay.',
+        'credit_score_derived' : 'Credit score of the borrower at the time of loan origination or most recent update. Useful for risk profiling.',
+        'payment_to_income_ratio_derived' : 'Ratio of the monthly loan payment to the borrower’s monthly income.',
+        'interest_rate_spread_derived' : 'Difference between the loan interest rate and the current base rate.',
+        'yield_to_maturity_derived' : 'The total yield that would be received if the loan is held until maturity.',
+        'effective_annual_rate_derived' : 'The annual rate of interest adjusted for the effects of compounding over the course of a year.',
+        'days_past_due_derived' : 'Number of days payment is overdue.',
+        'days_to_maturity_derived' : 'Number of days left for the loan to reach maturity.',
+        'missed_payments_count_derived' : 'Number of missed payments.',
+        'on_time_payments_count_derived' : 'Number of payments made on time.',
+        'overpayments_count_derived' : 'Number of payments exceeding the required amount.',
+        'underpayments_count_derived' : 'Number of payments less than the required amount.',
+        'collateral_exposure_derived' : 'Value of collateralized assets, reduced by depreciation or other factors.',
+        'unsecured_exposure_derived' : 'Loan amount that is unsecured by any collateral.',
+        'sectoral_exposure_derived' : 'Type of economic sector the loan is exposed to (e.g., Real Estate, Agriculture).',
+        'inflation_adjusted_principal_outstanding_derived' : 'Principal outstanding, adjusted for inflation.',
+        'inflation_adjusted_total_repayment_derived' : 'Total repayment, adjusted for inflation.',
+        'prepayment_amount_derived' : 'Total amount that has been prepaid.',
+        'prepayment_frequency_derived' : 'Number of times prepayment has been made.',
+        'net_present_value_derived' : 'Net present value of the loan, considering cash flows and discount rate.',
+        'internal_rate_of_return_derived' : 'The discount rate that makes the net present value of the loan’s cash flow zero.',
+        'profitability_index_derived' : 'Ratio of the present value of cash inflows to the present value of cash outflows.',
+        'note' : 'None',
+    }
+    # list_exclude_columns = ['client', 'fund', 'loan_product', 'loan_officer', 'loan_purpose', 'loan_status', 'loan_sub_status', 'currency_code', 'principal_amount', 'arrears_tolerance_amount', 'nominal_interest_rate_per_period', 'interest_period_frequency', 'annual_nominal_interest_rate', 'interest_method', 'interest_calculated_in_period', 'term_frequency', 'loan_cycle_number', 'repay_every', 'number_of_repayments', 'amortization_method', 'submitted_on_date', 'submitted_on_user', 'approved_on_date', 'approved_on_user', 'expected_disbursed_on_date', 'expected_first_repayment_date', 'disbursed_on_date', 'disbursed_on_user', 'interest_calculated_from_date', 'closed_on_date', 'closed_on_user', 'rejected_on_date', 'rejected_on_user', 'rescheduled_on_date', 'withdrawn_on_date', 'withdrawn_on_user', 'written_off_date', 'written_off_user', 'expected_maturity_date', 'matured_on_date', 'loan_transaction_strategy', 'total_charges_due_at_disbursement_derived', 'principal_disbursed_derived', 'principal_repaid_derived', 'principal_writtenoff_derived', 'principal_outstanding_derived', 'interest_charged_derived', 'interest_repaid_derived', 'interest_waived_derived', 'interest_writtenoff_derived', 'interest_outstanding_derived', 'fee_charges_charged_derived', 'fee_charges_repaid_derived', 'fee_charges_waived_derived', 'fee_charges_writtenoff_derived', 'fee_charges_outstanding_derived', 'penalty_charges_charged_derived', 'penalty_charges_repaid_derived', 'penalty_charges_waived_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_outstanding_derived', 'total_expected_repayment_derived', 'total_repayment_derived', 'total_expected_cost_of_loan_derived', 'total_costofloan_derived', 'total_waived_derived', 'total_writtenoff_derived', 'total_outstanding_derived', 'loan_to_value_ratio_derived', 'debt_to_income_ratio_derived', 'credit_score_derived', 'payment_to_income_ratio_derived', 'interest_rate_spread_derived', 'yield_to_maturity_derived', 'effective_annual_rate_derived', 'days_past_due_derived', 'days_to_maturity_derived', 'missed_payments_count_derived', 'on_time_payments_count_derived', 'overpayments_count_derived', 'underpayments_count_derived', 'collateral_exposure_derived', 'unsecured_exposure_derived', 'sectoral_exposure_derived', 'inflation_adjusted_principal_outstanding_derived', 'inflation_adjusted_total_repayment_derived', 'prepayment_amount_derived', 'prepayment_frequency_derived', 'net_present_value_derived', 'internal_rate_of_return_derived', 'profitability_index_derived', 'note']
+    # show_exclude_columns = ['client', 'fund', 'loan_product', 'loan_officer', 'loan_purpose', 'loan_status', 'loan_sub_status', 'currency_code', 'principal_amount', 'arrears_tolerance_amount', 'nominal_interest_rate_per_period', 'interest_period_frequency', 'annual_nominal_interest_rate', 'interest_method', 'interest_calculated_in_period', 'term_frequency', 'loan_cycle_number', 'repay_every', 'number_of_repayments', 'amortization_method', 'submitted_on_date', 'submitted_on_user', 'approved_on_date', 'approved_on_user', 'expected_disbursed_on_date', 'expected_first_repayment_date', 'disbursed_on_date', 'disbursed_on_user', 'interest_calculated_from_date', 'closed_on_date', 'closed_on_user', 'rejected_on_date', 'rejected_on_user', 'rescheduled_on_date', 'withdrawn_on_date', 'withdrawn_on_user', 'written_off_date', 'written_off_user', 'expected_maturity_date', 'matured_on_date', 'loan_transaction_strategy', 'total_charges_due_at_disbursement_derived', 'principal_disbursed_derived', 'principal_repaid_derived', 'principal_writtenoff_derived', 'principal_outstanding_derived', 'interest_charged_derived', 'interest_repaid_derived', 'interest_waived_derived', 'interest_writtenoff_derived', 'interest_outstanding_derived', 'fee_charges_charged_derived', 'fee_charges_repaid_derived', 'fee_charges_waived_derived', 'fee_charges_writtenoff_derived', 'fee_charges_outstanding_derived', 'penalty_charges_charged_derived', 'penalty_charges_repaid_derived', 'penalty_charges_waived_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_outstanding_derived', 'total_expected_repayment_derived', 'total_repayment_derived', 'total_expected_cost_of_loan_derived', 'total_costofloan_derived', 'total_waived_derived', 'total_writtenoff_derived', 'total_outstanding_derived', 'loan_to_value_ratio_derived', 'debt_to_income_ratio_derived', 'credit_score_derived', 'payment_to_income_ratio_derived', 'interest_rate_spread_derived', 'yield_to_maturity_derived', 'effective_annual_rate_derived', 'days_past_due_derived', 'days_to_maturity_derived', 'missed_payments_count_derived', 'on_time_payments_count_derived', 'overpayments_count_derived', 'underpayments_count_derived', 'collateral_exposure_derived', 'unsecured_exposure_derived', 'sectoral_exposure_derived', 'inflation_adjusted_principal_outstanding_derived', 'inflation_adjusted_total_repayment_derived', 'prepayment_amount_derived', 'prepayment_frequency_derived', 'net_present_value_derived', 'internal_rate_of_return_derived', 'profitability_index_derived', 'note']
+    # edit_exclude_columns = ['client', 'fund', 'loan_product', 'loan_officer', 'loan_purpose', 'loan_status', 'loan_sub_status', 'currency_code', 'principal_amount', 'arrears_tolerance_amount', 'nominal_interest_rate_per_period', 'interest_period_frequency', 'annual_nominal_interest_rate', 'interest_method', 'interest_calculated_in_period', 'term_frequency', 'loan_cycle_number', 'repay_every', 'number_of_repayments', 'amortization_method', 'submitted_on_date', 'submitted_on_user', 'approved_on_date', 'approved_on_user', 'expected_disbursed_on_date', 'expected_first_repayment_date', 'disbursed_on_date', 'disbursed_on_user', 'interest_calculated_from_date', 'closed_on_date', 'closed_on_user', 'rejected_on_date', 'rejected_on_user', 'rescheduled_on_date', 'withdrawn_on_date', 'withdrawn_on_user', 'written_off_date', 'written_off_user', 'expected_maturity_date', 'matured_on_date', 'loan_transaction_strategy', 'total_charges_due_at_disbursement_derived', 'principal_disbursed_derived', 'principal_repaid_derived', 'principal_writtenoff_derived', 'principal_outstanding_derived', 'interest_charged_derived', 'interest_repaid_derived', 'interest_waived_derived', 'interest_writtenoff_derived', 'interest_outstanding_derived', 'fee_charges_charged_derived', 'fee_charges_repaid_derived', 'fee_charges_waived_derived', 'fee_charges_writtenoff_derived', 'fee_charges_outstanding_derived', 'penalty_charges_charged_derived', 'penalty_charges_repaid_derived', 'penalty_charges_waived_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_outstanding_derived', 'total_expected_repayment_derived', 'total_repayment_derived', 'total_expected_cost_of_loan_derived', 'total_costofloan_derived', 'total_waived_derived', 'total_writtenoff_derived', 'total_outstanding_derived', 'loan_to_value_ratio_derived', 'debt_to_income_ratio_derived', 'credit_score_derived', 'payment_to_income_ratio_derived', 'interest_rate_spread_derived', 'yield_to_maturity_derived', 'effective_annual_rate_derived', 'days_past_due_derived', 'days_to_maturity_derived', 'missed_payments_count_derived', 'on_time_payments_count_derived', 'overpayments_count_derived', 'underpayments_count_derived', 'collateral_exposure_derived', 'unsecured_exposure_derived', 'sectoral_exposure_derived', 'inflation_adjusted_principal_outstanding_derived', 'inflation_adjusted_total_repayment_derived', 'prepayment_amount_derived', 'prepayment_frequency_derived', 'net_present_value_derived', 'internal_rate_of_return_derived', 'profitability_index_derived', 'note']
+    # add_exclude_columns = ['client', 'fund', 'loan_product', 'loan_officer', 'loan_purpose', 'loan_status', 'loan_sub_status', 'currency_code', 'principal_amount', 'arrears_tolerance_amount', 'nominal_interest_rate_per_period', 'interest_period_frequency', 'annual_nominal_interest_rate', 'interest_method', 'interest_calculated_in_period', 'term_frequency', 'loan_cycle_number', 'repay_every', 'number_of_repayments', 'amortization_method', 'submitted_on_date', 'submitted_on_user', 'approved_on_date', 'approved_on_user', 'expected_disbursed_on_date', 'expected_first_repayment_date', 'disbursed_on_date', 'disbursed_on_user', 'interest_calculated_from_date', 'closed_on_date', 'closed_on_user', 'rejected_on_date', 'rejected_on_user', 'rescheduled_on_date', 'withdrawn_on_date', 'withdrawn_on_user', 'written_off_date', 'written_off_user', 'expected_maturity_date', 'matured_on_date', 'loan_transaction_strategy', 'total_charges_due_at_disbursement_derived', 'principal_disbursed_derived', 'principal_repaid_derived', 'principal_writtenoff_derived', 'principal_outstanding_derived', 'interest_charged_derived', 'interest_repaid_derived', 'interest_waived_derived', 'interest_writtenoff_derived', 'interest_outstanding_derived', 'fee_charges_charged_derived', 'fee_charges_repaid_derived', 'fee_charges_waived_derived', 'fee_charges_writtenoff_derived', 'fee_charges_outstanding_derived', 'penalty_charges_charged_derived', 'penalty_charges_repaid_derived', 'penalty_charges_waived_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_outstanding_derived', 'total_expected_repayment_derived', 'total_repayment_derived', 'total_expected_cost_of_loan_derived', 'total_costofloan_derived', 'total_waived_derived', 'total_writtenoff_derived', 'total_outstanding_derived', 'loan_to_value_ratio_derived', 'debt_to_income_ratio_derived', 'credit_score_derived', 'payment_to_income_ratio_derived', 'interest_rate_spread_derived', 'yield_to_maturity_derived', 'effective_annual_rate_derived', 'days_past_due_derived', 'days_to_maturity_derived', 'missed_payments_count_derived', 'on_time_payments_count_derived', 'overpayments_count_derived', 'underpayments_count_derived', 'collateral_exposure_derived', 'unsecured_exposure_derived', 'sectoral_exposure_derived', 'inflation_adjusted_principal_outstanding_derived', 'inflation_adjusted_total_repayment_derived', 'prepayment_amount_derived', 'prepayment_frequency_derived', 'net_present_value_derived', 'internal_rate_of_return_derived', 'profitability_index_derived', 'note']
+    # search_exclude_columns = ['client', 'fund', 'loan_product', 'loan_officer', 'loan_purpose', 'loan_status', 'loan_sub_status', 'currency_code', 'principal_amount', 'arrears_tolerance_amount', 'nominal_interest_rate_per_period', 'interest_period_frequency', 'annual_nominal_interest_rate', 'interest_method', 'interest_calculated_in_period', 'term_frequency', 'loan_cycle_number', 'repay_every', 'number_of_repayments', 'amortization_method', 'submitted_on_date', 'submitted_on_user', 'approved_on_date', 'approved_on_user', 'expected_disbursed_on_date', 'expected_first_repayment_date', 'disbursed_on_date', 'disbursed_on_user', 'interest_calculated_from_date', 'closed_on_date', 'closed_on_user', 'rejected_on_date', 'rejected_on_user', 'rescheduled_on_date', 'withdrawn_on_date', 'withdrawn_on_user', 'written_off_date', 'written_off_user', 'expected_maturity_date', 'matured_on_date', 'loan_transaction_strategy', 'total_charges_due_at_disbursement_derived', 'principal_disbursed_derived', 'principal_repaid_derived', 'principal_writtenoff_derived', 'principal_outstanding_derived', 'interest_charged_derived', 'interest_repaid_derived', 'interest_waived_derived', 'interest_writtenoff_derived', 'interest_outstanding_derived', 'fee_charges_charged_derived', 'fee_charges_repaid_derived', 'fee_charges_waived_derived', 'fee_charges_writtenoff_derived', 'fee_charges_outstanding_derived', 'penalty_charges_charged_derived', 'penalty_charges_repaid_derived', 'penalty_charges_waived_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_outstanding_derived', 'total_expected_repayment_derived', 'total_repayment_derived', 'total_expected_cost_of_loan_derived', 'total_costofloan_derived', 'total_waived_derived', 'total_writtenoff_derived', 'total_outstanding_derived', 'loan_to_value_ratio_derived', 'debt_to_income_ratio_derived', 'credit_score_derived', 'payment_to_income_ratio_derived', 'interest_rate_spread_derived', 'yield_to_maturity_derived', 'effective_annual_rate_derived', 'days_past_due_derived', 'days_to_maturity_derived', 'missed_payments_count_derived', 'on_time_payments_count_derived', 'overpayments_count_derived', 'underpayments_count_derived', 'collateral_exposure_derived', 'unsecured_exposure_derived', 'sectoral_exposure_derived', 'inflation_adjusted_principal_outstanding_derived', 'inflation_adjusted_total_repayment_derived', 'prepayment_amount_derived', 'prepayment_frequency_derived', 'net_present_value_derived', 'internal_rate_of_return_derived', 'profitability_index_derived', 'note']
+    # order_columns = ['client', 'fund', 'loan_product', 'loan_officer', 'loan_purpose', 'loan_status', 'loan_sub_status', 'currency_code', 'principal_amount', 'arrears_tolerance_amount', 'nominal_interest_rate_per_period', 'interest_period_frequency', 'annual_nominal_interest_rate', 'interest_method', 'interest_calculated_in_period', 'term_frequency', 'loan_cycle_number', 'repay_every', 'number_of_repayments', 'amortization_method', 'submitted_on_date', 'submitted_on_user', 'approved_on_date', 'approved_on_user', 'expected_disbursed_on_date', 'expected_first_repayment_date', 'disbursed_on_date', 'disbursed_on_user', 'interest_calculated_from_date', 'closed_on_date', 'closed_on_user', 'rejected_on_date', 'rejected_on_user', 'rescheduled_on_date', 'withdrawn_on_date', 'withdrawn_on_user', 'written_off_date', 'written_off_user', 'expected_maturity_date', 'matured_on_date', 'loan_transaction_strategy', 'total_charges_due_at_disbursement_derived', 'principal_disbursed_derived', 'principal_repaid_derived', 'principal_writtenoff_derived', 'principal_outstanding_derived', 'interest_charged_derived', 'interest_repaid_derived', 'interest_waived_derived', 'interest_writtenoff_derived', 'interest_outstanding_derived', 'fee_charges_charged_derived', 'fee_charges_repaid_derived', 'fee_charges_waived_derived', 'fee_charges_writtenoff_derived', 'fee_charges_outstanding_derived', 'penalty_charges_charged_derived', 'penalty_charges_repaid_derived', 'penalty_charges_waived_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_outstanding_derived', 'total_expected_repayment_derived', 'total_repayment_derived', 'total_expected_cost_of_loan_derived', 'total_costofloan_derived', 'total_waived_derived', 'total_writtenoff_derived', 'total_outstanding_derived', 'loan_to_value_ratio_derived', 'debt_to_income_ratio_derived', 'credit_score_derived', 'payment_to_income_ratio_derived', 'interest_rate_spread_derived', 'yield_to_maturity_derived', 'effective_annual_rate_derived', 'days_past_due_derived', 'days_to_maturity_derived', 'missed_payments_count_derived', 'on_time_payments_count_derived', 'overpayments_count_derived', 'underpayments_count_derived', 'collateral_exposure_derived', 'unsecured_exposure_derived', 'sectoral_exposure_derived', 'inflation_adjusted_principal_outstanding_derived', 'inflation_adjusted_total_repayment_derived', 'prepayment_amount_derived', 'prepayment_frequency_derived', 'net_present_value_derived', 'internal_rate_of_return_derived', 'profitability_index_derived', 'note']
+    # add_columns = ['client', 'fund', 'loan_product', 'loan_officer', 'loan_purpose', 'loan_status', 'loan_sub_status', 'currency_code', 'principal_amount', 'arrears_tolerance_amount', 'nominal_interest_rate_per_period', 'interest_period_frequency', 'annual_nominal_interest_rate', 'interest_method', 'interest_calculated_in_period', 'term_frequency', 'loan_cycle_number', 'repay_every', 'number_of_repayments', 'amortization_method', 'submitted_on_date', 'submitted_on_user', 'approved_on_date', 'approved_on_user', 'expected_disbursed_on_date', 'expected_first_repayment_date', 'disbursed_on_date', 'disbursed_on_user', 'interest_calculated_from_date', 'closed_on_date', 'closed_on_user', 'rejected_on_date', 'rejected_on_user', 'rescheduled_on_date', 'withdrawn_on_date', 'withdrawn_on_user', 'written_off_date', 'written_off_user', 'expected_maturity_date', 'matured_on_date', 'loan_transaction_strategy', 'total_charges_due_at_disbursement_derived', 'principal_disbursed_derived', 'principal_repaid_derived', 'principal_writtenoff_derived', 'principal_outstanding_derived', 'interest_charged_derived', 'interest_repaid_derived', 'interest_waived_derived', 'interest_writtenoff_derived', 'interest_outstanding_derived', 'fee_charges_charged_derived', 'fee_charges_repaid_derived', 'fee_charges_waived_derived', 'fee_charges_writtenoff_derived', 'fee_charges_outstanding_derived', 'penalty_charges_charged_derived', 'penalty_charges_repaid_derived', 'penalty_charges_waived_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_outstanding_derived', 'total_expected_repayment_derived', 'total_repayment_derived', 'total_expected_cost_of_loan_derived', 'total_costofloan_derived', 'total_waived_derived', 'total_writtenoff_derived', 'total_outstanding_derived', 'loan_to_value_ratio_derived', 'debt_to_income_ratio_derived', 'credit_score_derived', 'payment_to_income_ratio_derived', 'interest_rate_spread_derived', 'yield_to_maturity_derived', 'effective_annual_rate_derived', 'days_past_due_derived', 'days_to_maturity_derived', 'missed_payments_count_derived', 'on_time_payments_count_derived', 'overpayments_count_derived', 'underpayments_count_derived', 'collateral_exposure_derived', 'unsecured_exposure_derived', 'sectoral_exposure_derived', 'inflation_adjusted_principal_outstanding_derived', 'inflation_adjusted_total_repayment_derived', 'prepayment_amount_derived', 'prepayment_frequency_derived', 'net_present_value_derived', 'internal_rate_of_return_derived', 'profitability_index_derived', 'note']
+    # add_columns = ['client', 'fund', 'loan_product', 'loan_officer', 'loan_purpose', 'loan_status', 'loan_sub_status', 'currency_code', 'principal_amount', 'arrears_tolerance_amount', 'nominal_interest_rate_per_period', 'interest_period_frequency', 'annual_nominal_interest_rate', 'interest_method', 'interest_calculated_in_period', 'term_frequency', 'loan_cycle_number', 'repay_every', 'number_of_repayments', 'amortization_method', 'submitted_on_date', 'submitted_on_user', 'approved_on_date', 'approved_on_user', 'expected_disbursed_on_date', 'expected_first_repayment_date', 'disbursed_on_date', 'disbursed_on_user', 'interest_calculated_from_date', 'closed_on_date', 'closed_on_user', 'rejected_on_date', 'rejected_on_user', 'rescheduled_on_date', 'withdrawn_on_date', 'withdrawn_on_user', 'written_off_date', 'written_off_user', 'expected_maturity_date', 'matured_on_date', 'loan_transaction_strategy', 'total_charges_due_at_disbursement_derived', 'principal_disbursed_derived', 'principal_repaid_derived', 'principal_writtenoff_derived', 'principal_outstanding_derived', 'interest_charged_derived', 'interest_repaid_derived', 'interest_waived_derived', 'interest_writtenoff_derived', 'interest_outstanding_derived', 'fee_charges_charged_derived', 'fee_charges_repaid_derived', 'fee_charges_waived_derived', 'fee_charges_writtenoff_derived', 'fee_charges_outstanding_derived', 'penalty_charges_charged_derived', 'penalty_charges_repaid_derived', 'penalty_charges_waived_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_outstanding_derived', 'total_expected_repayment_derived', 'total_repayment_derived', 'total_expected_cost_of_loan_derived', 'total_costofloan_derived', 'total_waived_derived', 'total_writtenoff_derived', 'total_outstanding_derived', 'loan_to_value_ratio_derived', 'debt_to_income_ratio_derived', 'credit_score_derived', 'payment_to_income_ratio_derived', 'interest_rate_spread_derived', 'yield_to_maturity_derived', 'effective_annual_rate_derived', 'days_past_due_derived', 'days_to_maturity_derived', 'missed_payments_count_derived', 'on_time_payments_count_derived', 'overpayments_count_derived', 'underpayments_count_derived', 'collateral_exposure_derived', 'unsecured_exposure_derived', 'sectoral_exposure_derived', 'inflation_adjusted_principal_outstanding_derived', 'inflation_adjusted_total_repayment_derived', 'prepayment_amount_derived', 'prepayment_frequency_derived', 'net_present_value_derived', 'internal_rate_of_return_derived', 'profitability_index_derived', 'note']
+    # add_columns = ['client', 'fund', 'loan_product', 'loan_officer', 'loan_purpose', 'loan_status', 'loan_sub_status', 'currency_code', 'principal_amount', 'arrears_tolerance_amount', 'nominal_interest_rate_per_period', 'interest_period_frequency', 'annual_nominal_interest_rate', 'interest_method', 'interest_calculated_in_period', 'term_frequency', 'loan_cycle_number', 'repay_every', 'number_of_repayments', 'amortization_method', 'submitted_on_date', 'submitted_on_user', 'approved_on_date', 'approved_on_user', 'expected_disbursed_on_date', 'expected_first_repayment_date', 'disbursed_on_date', 'disbursed_on_user', 'interest_calculated_from_date', 'closed_on_date', 'closed_on_user', 'rejected_on_date', 'rejected_on_user', 'rescheduled_on_date', 'withdrawn_on_date', 'withdrawn_on_user', 'written_off_date', 'written_off_user', 'expected_maturity_date', 'matured_on_date', 'loan_transaction_strategy', 'total_charges_due_at_disbursement_derived', 'principal_disbursed_derived', 'principal_repaid_derived', 'principal_writtenoff_derived', 'principal_outstanding_derived', 'interest_charged_derived', 'interest_repaid_derived', 'interest_waived_derived', 'interest_writtenoff_derived', 'interest_outstanding_derived', 'fee_charges_charged_derived', 'fee_charges_repaid_derived', 'fee_charges_waived_derived', 'fee_charges_writtenoff_derived', 'fee_charges_outstanding_derived', 'penalty_charges_charged_derived', 'penalty_charges_repaid_derived', 'penalty_charges_waived_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_outstanding_derived', 'total_expected_repayment_derived', 'total_repayment_derived', 'total_expected_cost_of_loan_derived', 'total_costofloan_derived', 'total_waived_derived', 'total_writtenoff_derived', 'total_outstanding_derived', 'loan_to_value_ratio_derived', 'debt_to_income_ratio_derived', 'credit_score_derived', 'payment_to_income_ratio_derived', 'interest_rate_spread_derived', 'yield_to_maturity_derived', 'effective_annual_rate_derived', 'days_past_due_derived', 'days_to_maturity_derived', 'missed_payments_count_derived', 'on_time_payments_count_derived', 'overpayments_count_derived', 'underpayments_count_derived', 'collateral_exposure_derived', 'unsecured_exposure_derived', 'sectoral_exposure_derived', 'inflation_adjusted_principal_outstanding_derived', 'inflation_adjusted_total_repayment_derived', 'prepayment_amount_derived', 'prepayment_frequency_derived', 'net_present_value_derived', 'internal_rate_of_return_derived', 'profitability_index_derived', 'note']
+    
+    label_columns = {'client':'Client', 'fund':'Fund', 'loan_product':'Loan Product', 'loan_officer':'Loan Officer', 'loan_purpose':'Loan Purpose', 'loan_status':'Loan Status', 'loan_sub_status':'Loan Sub Status', 'currency_code':'Currency Code', 'principal_amount':'Principal Amount', 'arrears_tolerance_amount':'Arrears Tolerance Amount', 'nominal_interest_rate_per_period':'Nominal Interest Rate Per Period', 'interest_period_frequency':'Interest Period Frequency', 'annual_nominal_interest_rate':'Annual Nominal Interest Rate', 'interest_method':'Interest Method', 'interest_calculated_in_period':'Interest Calculated In Period', 'term_frequency':'Term Frequency', 'loan_cycle_number':'Loan Cycle Number', 'repay_every':'Repay Every', 'number_of_repayments':'Number Of Repayments', 'amortization_method':'Amortization Method', 'submitted_on_date':'Submitted On Date', 'submitted_on_user':'Submitted On User', 'approved_on_date':'Approved On Date', 'approved_on_user':'Approved On User', 'expected_disbursed_on_date':'Expected Disbursed On Date', 'expected_first_repayment_date':'Expected First Repayment Date', 'disbursed_on_date':'Disbursed On Date', 'disbursed_on_user':'Disbursed On User', 'interest_calculated_from_date':'Interest Calculated From Date', 'closed_on_date':'Closed On Date', 'closed_on_user':'Closed On User', 'rejected_on_date':'Rejected On Date', 'rejected_on_user':'Rejected On User', 'rescheduled_on_date':'Rescheduled On Date', 'withdrawn_on_date':'Withdrawn On Date', 'withdrawn_on_user':'Withdrawn On User', 'written_off_date':'Written Off Date', 'written_off_user':'Written Off User', 'expected_maturity_date':'Expected Maturity Date', 'matured_on_date':'Matured On Date', 'loan_transaction_strategy':'Loan Transaction Strategy', 'total_charges_due_at_disbursement_derived':'Total Charges Due At Disbursement Derived', 'principal_disbursed_derived':'Principal Disbursed Derived', 'principal_repaid_derived':'Principal Repaid Derived', 'principal_writtenoff_derived':'Principal Writtenoff Derived', 'principal_outstanding_derived':'Principal Outstanding Derived', 'interest_charged_derived':'Interest Charged Derived', 'interest_repaid_derived':'Interest Repaid Derived', 'interest_waived_derived':'Interest Waived Derived', 'interest_writtenoff_derived':'Interest Writtenoff Derived', 'interest_outstanding_derived':'Interest Outstanding Derived', 'fee_charges_charged_derived':'Fee Charges Charged Derived', 'fee_charges_repaid_derived':'Fee Charges Repaid Derived', 'fee_charges_waived_derived':'Fee Charges Waived Derived', 'fee_charges_writtenoff_derived':'Fee Charges Writtenoff Derived', 'fee_charges_outstanding_derived':'Fee Charges Outstanding Derived', 'penalty_charges_charged_derived':'Penalty Charges Charged Derived', 'penalty_charges_repaid_derived':'Penalty Charges Repaid Derived', 'penalty_charges_waived_derived':'Penalty Charges Waived Derived', 'penalty_charges_writtenoff_derived':'Penalty Charges Writtenoff Derived', 'penalty_charges_outstanding_derived':'Penalty Charges Outstanding Derived', 'total_expected_repayment_derived':'Total Expected Repayment Derived', 'total_repayment_derived':'Total Repayment Derived', 'total_expected_cost_of_loan_derived':'Total Expected Cost Of Loan Derived', 'total_costofloan_derived':'Total Costofloan Derived', 'total_waived_derived':'Total Waived Derived', 'total_writtenoff_derived':'Total Writtenoff Derived', 'total_outstanding_derived':'Total Outstanding Derived', 'loan_to_value_ratio_derived':'Loan To Value Ratio Derived', 'debt_to_income_ratio_derived':'Debt To Income Ratio Derived', 'credit_score_derived':'Credit Score Derived', 'payment_to_income_ratio_derived':'Payment To Income Ratio Derived', 'interest_rate_spread_derived':'Interest Rate Spread Derived', 'yield_to_maturity_derived':'Yield To Maturity Derived', 'effective_annual_rate_derived':'Effective Annual Rate Derived', 'days_past_due_derived':'Days Past Due Derived', 'days_to_maturity_derived':'Days To Maturity Derived', 'missed_payments_count_derived':'Missed Payments Count Derived', 'on_time_payments_count_derived':'On Time Payments Count Derived', 'overpayments_count_derived':'Overpayments Count Derived', 'underpayments_count_derived':'Underpayments Count Derived', 'collateral_exposure_derived':'Collateral Exposure Derived', 'unsecured_exposure_derived':'Unsecured Exposure Derived', 'sectoral_exposure_derived':'Sectoral Exposure Derived', 'inflation_adjusted_principal_outstanding_derived':'Inflation Adjusted Principal Outstanding Derived', 'inflation_adjusted_total_repayment_derived':'Inflation Adjusted Total Repayment Derived', 'prepayment_amount_derived':'Prepayment Amount Derived', 'prepayment_frequency_derived':'Prepayment Frequency Derived', 'net_present_value_derived':'Net Present Value Derived', 'internal_rate_of_return_derived':'Internal Rate Of Return Derived', 'profitability_index_derived':'Profitability Index Derived', 'note':'Note'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['client', 'fund', 'loan_product', 'loan_officer', 'loan_purpose', 'loan_status', 'loan_sub_status', 'currency_code', 'principal_amount', 'arrears_tolerance_amount', 'nominal_interest_rate_per_period', 'interest_period_frequency', 'annual_nominal_interest_rate', 'interest_method', 'interest_calculated_in_period', 'term_frequency', 'loan_cycle_number', 'repay_every', 'number_of_repayments', 'amortization_method', 'submitted_on_date', 'submitted_on_user', 'approved_on_date', 'approved_on_user', 'expected_disbursed_on_date', 'expected_first_repayment_date', 'disbursed_on_date', 'disbursed_on_user', 'interest_calculated_from_date', 'closed_on_date', 'closed_on_user', 'rejected_on_date', 'rejected_on_user', 'rescheduled_on_date', 'withdrawn_on_date', 'withdrawn_on_user', 'written_off_date', 'written_off_user', 'expected_maturity_date', 'matured_on_date', 'loan_transaction_strategy', 'total_charges_due_at_disbursement_derived', 'principal_disbursed_derived', 'principal_repaid_derived', 'principal_writtenoff_derived', 'principal_outstanding_derived', 'interest_charged_derived', 'interest_repaid_derived', 'interest_waived_derived', 'interest_writtenoff_derived', 'interest_outstanding_derived', 'fee_charges_charged_derived', 'fee_charges_repaid_derived', 'fee_charges_waived_derived', 'fee_charges_writtenoff_derived', 'fee_charges_outstanding_derived', 'penalty_charges_charged_derived', 'penalty_charges_repaid_derived', 'penalty_charges_waived_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_outstanding_derived', 'total_expected_repayment_derived', 'total_repayment_derived', 'total_expected_cost_of_loan_derived', 'total_costofloan_derived', 'total_waived_derived', 'total_writtenoff_derived', 'total_outstanding_derived', 'loan_to_value_ratio_derived', 'debt_to_income_ratio_derived', 'credit_score_derived', 'payment_to_income_ratio_derived', 'interest_rate_spread_derived', 'yield_to_maturity_derived', 'effective_annual_rate_derived', 'days_past_due_derived', 'days_to_maturity_derived', 'missed_payments_count_derived', 'on_time_payments_count_derived', 'overpayments_count_derived', 'underpayments_count_derived', 'collateral_exposure_derived', 'unsecured_exposure_derived', 'sectoral_exposure_derived', 'inflation_adjusted_principal_outstanding_derived', 'inflation_adjusted_total_repayment_derived', 'prepayment_amount_derived', 'prepayment_frequency_derived', 'net_present_value_derived', 'internal_rate_of_return_derived', 'profitability_index_derived', 'note']
+class LoanProductStrategyOverrideModelView(ModelView):
+    datamodel = SQLAInterface(LoanProductStrategyOverride)
+    list_title = 'List Loan Product Strategy Override'
+    show_title = 'Show Loan Product Strategy Override'
+    edit_title = 'Edit Loan Product Strategy Override'
+    add_title  = 'Add Loan Product Strategy Override'
+ 
+    list_columns = ['loan_product', 'strategy', 'start_date', 'end_date', 'note']
+    # show_columns = ['loan_product', 'strategy', 'start_date', 'end_date', 'note']
+    # edit_columns = ['loan_product', 'strategy', 'start_date', 'end_date', 'note']
+    add_columns = ['loan_product', 'strategy', 'start_date', 'end_date', 'note']
+    # search_columns = ['loan_product', 'strategy', 'start_date', 'end_date', 'note']
+    description_columns = {
+        'id' : 'Primary key, auto-incremented',
+        'loan_product_id_fk' : 'Foreign key to the loan product for which this strategy is being overridden',
+        'strategy_id_fk' : 'Foreign key to the strategy to be used as override',
+        'start_date' : 'Effective start date for this strategy override',
+        'end_date' : 'Effective end date for this strategy override',
+        'note' : 'None',
+    }
+    # list_exclude_columns = ['loan_product', 'strategy', 'start_date', 'end_date', 'note']
+    # show_exclude_columns = ['loan_product', 'strategy', 'start_date', 'end_date', 'note']
+    # edit_exclude_columns = ['loan_product', 'strategy', 'start_date', 'end_date', 'note']
+    # add_exclude_columns = ['loan_product', 'strategy', 'start_date', 'end_date', 'note']
+    # search_exclude_columns = ['loan_product', 'strategy', 'start_date', 'end_date', 'note']
+    # order_columns = ['loan_product', 'strategy', 'start_date', 'end_date', 'note']
+    # add_columns = ['loan_product', 'strategy', 'start_date', 'end_date', 'note']
+    # add_columns = ['loan_product', 'strategy', 'start_date', 'end_date', 'note']
+    # add_columns = ['loan_product', 'strategy', 'start_date', 'end_date', 'note']
+    
+    label_columns = {'loan_product':'Loan Product', 'strategy':'Strategy', 'start_date':'Start Date', 'end_date':'End Date', 'note':'Note'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['loan_product', 'strategy', 'start_date', 'end_date', 'note']
+class OpportunityPipelineStageLinkModelView(ModelView):
+    datamodel = SQLAInterface(OpportunityPipelineStageLink)
+    list_title = 'List Opportunity Pipeline Stage Link'
+    show_title = 'Show Opportunity Pipeline Stage Link'
+    edit_title = 'Edit Opportunity Pipeline Stage Link'
+    add_title  = 'Add Opportunity Pipeline Stage Link'
+ 
+    list_columns = ['pipeline_stage', 'opportunity', 'pipeline_stage', 'time_in_stage', 'entered_date', 'expected_exit_date', 'actual_exit_date', 'contact_notes', 'next_steps', 'progressed_by', 'execute_by', 'approve_by', 'approve_latest_on', 'escalate_to', 'escalate_latest_on', 'status']
+    # show_columns = ['pipeline_stage', 'opportunity', 'pipeline_stage', 'time_in_stage', 'entered_date', 'expected_exit_date', 'actual_exit_date', 'contact_notes', 'next_steps', 'progressed_by', 'execute_by', 'approve_by', 'approve_latest_on', 'escalate_to', 'escalate_latest_on', 'status']
+    # edit_columns = ['pipeline_stage', 'opportunity', 'pipeline_stage', 'time_in_stage', 'entered_date', 'expected_exit_date', 'actual_exit_date', 'contact_notes', 'next_steps', 'progressed_by', 'execute_by', 'approve_by', 'approve_latest_on', 'escalate_to', 'escalate_latest_on', 'status']
+    add_columns = ['pipeline_stage', 'opportunity', 'pipeline_stage', 'time_in_stage', 'entered_date', 'expected_exit_date', 'actual_exit_date', 'contact_notes', 'next_steps', 'progressed_by', 'execute_by', 'approve_by', 'approve_latest_on', 'escalate_to', 'escalate_latest_on', 'status']
+    # search_columns = ['pipeline_stage', 'opportunity', 'pipeline_stage', 'time_in_stage', 'entered_date', 'expected_exit_date', 'actual_exit_date', 'contact_notes', 'next_steps', 'progressed_by', 'execute_by', 'approve_by', 'approve_latest_on', 'escalate_to', 'escalate_latest_on', 'status']
+    description_columns = {
+        'id' : 'None',
+        'pipeline_stage_id_fk' : 'Link to the stage of the pipeline the opportunity is currently at.',
+        'opportunity_id_fk' : 'Link to the opportunity being progressed through the pipeline.',
+        'pipeline_stage' : 'Defines the order in which stages progress in the pipeline.',
+        'time_in_stage' : 'The duration of the opportunity at this stage in the pipeline',
+        'entered_date' : 'Timestamp when the opportunity entered this stage.',
+        'expected_exit_date' : 'Projected date when the opportunity might move to the next stage or exit this stage.',
+        'actual_exit_date' : 'None',
+        'contact_notes' : 'Any additional notes or comments about the opportunity at this stage.',
+        'next_steps' : 'Text outlining the immediate next actions to progress the opportunity.',
+        'progressed_by_id_fk' : 'Who moved this opportunity to this stage',
+        'execute_by_id_fk' : 'who is supposed to develop this opportunity',
+        'approve_by_id_fk' : 'Who verified that the necessary actions have been undertaken',
+        'approve_latest_on' : 'When should the verfification be complete',
+        'escalate_to_id_fk' : 'if note executed and approved on time, exscalate to whoi',
+        'escalate_latest_on' : 'Escalate if not done or approved by this date',
+        'status' : 'Status within this stage, e.g., In Progress, Completed.',
+    }
+    # list_exclude_columns = ['pipeline_stage', 'opportunity', 'pipeline_stage', 'time_in_stage', 'entered_date', 'expected_exit_date', 'actual_exit_date', 'contact_notes', 'next_steps', 'progressed_by', 'execute_by', 'approve_by', 'approve_latest_on', 'escalate_to', 'escalate_latest_on', 'status']
+    # show_exclude_columns = ['pipeline_stage', 'opportunity', 'pipeline_stage', 'time_in_stage', 'entered_date', 'expected_exit_date', 'actual_exit_date', 'contact_notes', 'next_steps', 'progressed_by', 'execute_by', 'approve_by', 'approve_latest_on', 'escalate_to', 'escalate_latest_on', 'status']
+    # edit_exclude_columns = ['pipeline_stage', 'opportunity', 'pipeline_stage', 'time_in_stage', 'entered_date', 'expected_exit_date', 'actual_exit_date', 'contact_notes', 'next_steps', 'progressed_by', 'execute_by', 'approve_by', 'approve_latest_on', 'escalate_to', 'escalate_latest_on', 'status']
+    # add_exclude_columns = ['pipeline_stage', 'opportunity', 'pipeline_stage', 'time_in_stage', 'entered_date', 'expected_exit_date', 'actual_exit_date', 'contact_notes', 'next_steps', 'progressed_by', 'execute_by', 'approve_by', 'approve_latest_on', 'escalate_to', 'escalate_latest_on', 'status']
+    # search_exclude_columns = ['pipeline_stage', 'opportunity', 'pipeline_stage', 'time_in_stage', 'entered_date', 'expected_exit_date', 'actual_exit_date', 'contact_notes', 'next_steps', 'progressed_by', 'execute_by', 'approve_by', 'approve_latest_on', 'escalate_to', 'escalate_latest_on', 'status']
+    # order_columns = ['pipeline_stage', 'opportunity', 'pipeline_stage', 'time_in_stage', 'entered_date', 'expected_exit_date', 'actual_exit_date', 'contact_notes', 'next_steps', 'progressed_by', 'execute_by', 'approve_by', 'approve_latest_on', 'escalate_to', 'escalate_latest_on', 'status']
+    # add_columns = ['pipeline_stage', 'opportunity', 'pipeline_stage', 'time_in_stage', 'entered_date', 'expected_exit_date', 'actual_exit_date', 'contact_notes', 'next_steps', 'progressed_by', 'execute_by', 'approve_by', 'approve_latest_on', 'escalate_to', 'escalate_latest_on', 'status']
+    # add_columns = ['pipeline_stage', 'opportunity', 'pipeline_stage', 'time_in_stage', 'entered_date', 'expected_exit_date', 'actual_exit_date', 'contact_notes', 'next_steps', 'progressed_by', 'execute_by', 'approve_by', 'approve_latest_on', 'escalate_to', 'escalate_latest_on', 'status']
+    # add_columns = ['pipeline_stage', 'opportunity', 'pipeline_stage', 'time_in_stage', 'entered_date', 'expected_exit_date', 'actual_exit_date', 'contact_notes', 'next_steps', 'progressed_by', 'execute_by', 'approve_by', 'approve_latest_on', 'escalate_to', 'escalate_latest_on', 'status']
+    
+    label_columns = {'pipeline_stage':'Pipeline Stage', 'opportunity':'Opportunity', 'pipeline_stage':'Pipeline Stage', 'time_in_stage':'Time In Stage', 'entered_date':'Entered Date', 'expected_exit_date':'Expected Exit Date', 'actual_exit_date':'Actual Exit Date', 'contact_notes':'Contact Notes', 'next_steps':'Next Steps', 'progressed_by':'Progressed By', 'execute_by':'Execute By', 'approve_by':'Approve By', 'approve_latest_on':'Approve Latest On', 'escalate_to':'Escalate To', 'escalate_latest_on':'Escalate Latest On', 'status':'Status'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['pipeline_stage', 'opportunity', 'pipeline_stage', 'time_in_stage', 'entered_date', 'expected_exit_date', 'actual_exit_date', 'contact_notes', 'next_steps', 'progressed_by', 'execute_by', 'approve_by', 'approve_latest_on', 'escalate_to', 'escalate_latest_on', 'status']
+class RackModelView(ModelView):
+    datamodel = SQLAInterface(Rack)
+    list_title = 'List Rack'
+    show_title = 'Show Rack'
+    edit_title = 'Edit Rack'
+    add_title  = 'Add Rack'
+ 
+    list_columns = ['aisle', 'rack_code', 'is_active']
+    # show_columns = ['aisle', 'rack_code', 'is_active']
+    # edit_columns = ['aisle', 'rack_code', 'is_active']
+    add_columns = ['aisle', 'rack_code', 'is_active']
+    # search_columns = ['aisle', 'rack_code', 'is_active']
+    description_columns = {
+        'id' : 'None',
+        'aisle_id_fk' : 'Link to the parent aisle',
+        'rack_code' : 'Unique identifier for the rack',
+        'is_active' : 'Is the rack in active use?',
+    }
+    # list_exclude_columns = ['aisle', 'rack_code', 'is_active']
+    # show_exclude_columns = ['aisle', 'rack_code', 'is_active']
+    # edit_exclude_columns = ['aisle', 'rack_code', 'is_active']
+    # add_exclude_columns = ['aisle', 'rack_code', 'is_active']
+    # search_exclude_columns = ['aisle', 'rack_code', 'is_active']
+    # order_columns = ['aisle', 'rack_code', 'is_active']
+    # add_columns = ['aisle', 'rack_code', 'is_active']
+    # add_columns = ['aisle', 'rack_code', 'is_active']
+    # add_columns = ['aisle', 'rack_code', 'is_active']
+    
+    label_columns = {'aisle':'Aisle', 'rack_code':'Rack Code', 'is_active':'Is Active'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['aisle', 'rack_code', 'is_active']
+class SoilTestsModelView(ModelView):
+    datamodel = SQLAInterface(SoilTests)
+    list_title = 'List Soil Tests'
+    show_title = 'Show Soil Tests'
+    edit_title = 'Edit Soil Tests'
+    add_title  = 'Add Soil Tests'
+ 
+    list_columns = ['land_parcel', 'sample_depth', 'test_date', 'tested_by', 'ph_level', 'organic_matter_percentage', 'texture', 'nitrogen_level', 'phosphorus_level', 'potassium_level', 'calcium_level', 'magnesium_level', 'sulfur_level', 'iron_level', 'manganese_level', 'copper_level', 'zinc_level', 'boron_level', 'recommendations', 'created_at', 'updated_at']
+    # show_columns = ['land_parcel', 'sample_depth', 'test_date', 'tested_by', 'ph_level', 'organic_matter_percentage', 'texture', 'nitrogen_level', 'phosphorus_level', 'potassium_level', 'calcium_level', 'magnesium_level', 'sulfur_level', 'iron_level', 'manganese_level', 'copper_level', 'zinc_level', 'boron_level', 'recommendations', 'created_at', 'updated_at']
+    # edit_columns = ['land_parcel', 'sample_depth', 'test_date', 'tested_by', 'ph_level', 'organic_matter_percentage', 'texture', 'nitrogen_level', 'phosphorus_level', 'potassium_level', 'calcium_level', 'magnesium_level', 'sulfur_level', 'iron_level', 'manganese_level', 'copper_level', 'zinc_level', 'boron_level', 'recommendations', 'created_at', 'updated_at']
+    add_columns = ['land_parcel', 'sample_depth', 'test_date', 'tested_by', 'ph_level', 'organic_matter_percentage', 'texture', 'nitrogen_level', 'phosphorus_level', 'potassium_level', 'calcium_level', 'magnesium_level', 'sulfur_level', 'iron_level', 'manganese_level', 'copper_level', 'zinc_level', 'boron_level', 'recommendations', 'created_at', 'updated_at']
+    # search_columns = ['land_parcel', 'sample_depth', 'test_date', 'tested_by', 'ph_level', 'organic_matter_percentage', 'texture', 'nitrogen_level', 'phosphorus_level', 'potassium_level', 'calcium_level', 'magnesium_level', 'sulfur_level', 'iron_level', 'manganese_level', 'copper_level', 'zinc_level', 'boron_level', 'recommendations', 'created_at', 'updated_at']
+    description_columns = {
+        'id' : 'None',
+        'land_parcel_id_fk' : 'None',
+        'sample_depth' : 'Depth at which the soil sample was taken, in meters',
+        'test_date' : 'Date of the soil test',
+        'tested_by_id_fk' : 'ID of the lab that conducted the test',
+        'ph_level' : 'Soil pH level',
+        'organic_matter_percentage' : 'Percentage of organic matter in the soil',
+        'texture' : 'Type of soil (sandy, loamy, clayey, etc.)',
+        'nitrogen_level' : 'Level of Nitrogen in the soil',
+        'phosphorus_level' : 'Level of Phosphorus in the soil',
+        'potassium_level' : 'Level of Potassium in the soil',
+        'calcium_level' : 'Level of Calcium in the soil',
+        'magnesium_level' : 'Level of Magnesium in the soil',
+        'sulfur_level' : 'Level of Sulfur in the soil',
+        'iron_level' : 'Level of Iron in the soil',
+        'manganese_level' : 'Level of Manganese in the soil',
+        'copper_level' : 'Level of Copper in the soil',
+        'zinc_level' : 'Level of Zinc in the soil',
+        'boron_level' : 'Level of Boron in the soil',
+        'recommendations' : 'Recommended actions based on soil test',
+        'created_at' : 'Timestamp of when the record was created',
+        'updated_at' : 'Timestamp of the most recent update',
+    }
+    # list_exclude_columns = ['land_parcel', 'sample_depth', 'test_date', 'tested_by', 'ph_level', 'organic_matter_percentage', 'texture', 'nitrogen_level', 'phosphorus_level', 'potassium_level', 'calcium_level', 'magnesium_level', 'sulfur_level', 'iron_level', 'manganese_level', 'copper_level', 'zinc_level', 'boron_level', 'recommendations', 'created_at', 'updated_at']
+    # show_exclude_columns = ['land_parcel', 'sample_depth', 'test_date', 'tested_by', 'ph_level', 'organic_matter_percentage', 'texture', 'nitrogen_level', 'phosphorus_level', 'potassium_level', 'calcium_level', 'magnesium_level', 'sulfur_level', 'iron_level', 'manganese_level', 'copper_level', 'zinc_level', 'boron_level', 'recommendations', 'created_at', 'updated_at']
+    # edit_exclude_columns = ['land_parcel', 'sample_depth', 'test_date', 'tested_by', 'ph_level', 'organic_matter_percentage', 'texture', 'nitrogen_level', 'phosphorus_level', 'potassium_level', 'calcium_level', 'magnesium_level', 'sulfur_level', 'iron_level', 'manganese_level', 'copper_level', 'zinc_level', 'boron_level', 'recommendations', 'created_at', 'updated_at']
+    # add_exclude_columns = ['land_parcel', 'sample_depth', 'test_date', 'tested_by', 'ph_level', 'organic_matter_percentage', 'texture', 'nitrogen_level', 'phosphorus_level', 'potassium_level', 'calcium_level', 'magnesium_level', 'sulfur_level', 'iron_level', 'manganese_level', 'copper_level', 'zinc_level', 'boron_level', 'recommendations', 'created_at', 'updated_at']
+    # search_exclude_columns = ['land_parcel', 'sample_depth', 'test_date', 'tested_by', 'ph_level', 'organic_matter_percentage', 'texture', 'nitrogen_level', 'phosphorus_level', 'potassium_level', 'calcium_level', 'magnesium_level', 'sulfur_level', 'iron_level', 'manganese_level', 'copper_level', 'zinc_level', 'boron_level', 'recommendations', 'created_at', 'updated_at']
+    # order_columns = ['land_parcel', 'sample_depth', 'test_date', 'tested_by', 'ph_level', 'organic_matter_percentage', 'texture', 'nitrogen_level', 'phosphorus_level', 'potassium_level', 'calcium_level', 'magnesium_level', 'sulfur_level', 'iron_level', 'manganese_level', 'copper_level', 'zinc_level', 'boron_level', 'recommendations', 'created_at', 'updated_at']
+    # add_columns = ['land_parcel', 'sample_depth', 'test_date', 'tested_by', 'ph_level', 'organic_matter_percentage', 'texture', 'nitrogen_level', 'phosphorus_level', 'potassium_level', 'calcium_level', 'magnesium_level', 'sulfur_level', 'iron_level', 'manganese_level', 'copper_level', 'zinc_level', 'boron_level', 'recommendations', 'created_at', 'updated_at']
+    # add_columns = ['land_parcel', 'sample_depth', 'test_date', 'tested_by', 'ph_level', 'organic_matter_percentage', 'texture', 'nitrogen_level', 'phosphorus_level', 'potassium_level', 'calcium_level', 'magnesium_level', 'sulfur_level', 'iron_level', 'manganese_level', 'copper_level', 'zinc_level', 'boron_level', 'recommendations', 'created_at', 'updated_at']
+    # add_columns = ['land_parcel', 'sample_depth', 'test_date', 'tested_by', 'ph_level', 'organic_matter_percentage', 'texture', 'nitrogen_level', 'phosphorus_level', 'potassium_level', 'calcium_level', 'magnesium_level', 'sulfur_level', 'iron_level', 'manganese_level', 'copper_level', 'zinc_level', 'boron_level', 'recommendations', 'created_at', 'updated_at']
+    
+    label_columns = {'land_parcel':'Land Parcel', 'sample_depth':'Sample Depth', 'test_date':'Test Date', 'tested_by':'Tested By', 'ph_level':'Ph Level', 'organic_matter_percentage':'Organic Matter Percentage', 'texture':'Texture', 'nitrogen_level':'Nitrogen Level', 'phosphorus_level':'Phosphorus Level', 'potassium_level':'Potassium Level', 'calcium_level':'Calcium Level', 'magnesium_level':'Magnesium Level', 'sulfur_level':'Sulfur Level', 'iron_level':'Iron Level', 'manganese_level':'Manganese Level', 'copper_level':'Copper Level', 'zinc_level':'Zinc Level', 'boron_level':'Boron Level', 'recommendations':'Recommendations', 'created_at':'Created At', 'updated_at':'Updated At'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['land_parcel', 'sample_depth', 'test_date', 'tested_by', 'ph_level', 'organic_matter_percentage', 'texture', 'nitrogen_level', 'phosphorus_level', 'potassium_level', 'calcium_level', 'magnesium_level', 'sulfur_level', 'iron_level', 'manganese_level', 'copper_level', 'zinc_level', 'boron_level', 'recommendations', 'created_at', 'updated_at']
+class WaypointModelView(ModelView):
+    datamodel = SQLAInterface(Waypoint)
+    list_title = 'List Waypoint'
+    show_title = 'Show Waypoint'
+    edit_title = 'Edit Waypoint'
+    add_title  = 'Add Waypoint'
+ 
+    list_columns = ['land_parcel', 'waypoint_data', 'waypoint_reg_date', 'waypoint_reg_by', 'meter_interval']
+    # show_columns = ['land_parcel', 'waypoint_data', 'waypoint_reg_date', 'waypoint_reg_by', 'meter_interval']
+    # edit_columns = ['land_parcel', 'waypoint_data', 'waypoint_reg_date', 'waypoint_reg_by', 'meter_interval']
+    add_columns = ['land_parcel', 'waypoint_data', 'waypoint_reg_date', 'waypoint_reg_by', 'meter_interval']
+    # search_columns = ['land_parcel', 'waypoint_data', 'waypoint_reg_date', 'waypoint_reg_by', 'meter_interval']
+    description_columns = {
+        'id' : 'None',
+        'land_parcel_id_fk' : 'None',
+        'waypoint_data' : 'None',
+        'waypoint_reg_date' : 'None',
+        'waypoint_reg_by_id_fk' : 'None',
+        'meter_interval' : 'None',
+    }
+    # list_exclude_columns = ['land_parcel', 'waypoint_data', 'waypoint_reg_date', 'waypoint_reg_by', 'meter_interval']
+    # show_exclude_columns = ['land_parcel', 'waypoint_data', 'waypoint_reg_date', 'waypoint_reg_by', 'meter_interval']
+    # edit_exclude_columns = ['land_parcel', 'waypoint_data', 'waypoint_reg_date', 'waypoint_reg_by', 'meter_interval']
+    # add_exclude_columns = ['land_parcel', 'waypoint_data', 'waypoint_reg_date', 'waypoint_reg_by', 'meter_interval']
+    # search_exclude_columns = ['land_parcel', 'waypoint_data', 'waypoint_reg_date', 'waypoint_reg_by', 'meter_interval']
+    # order_columns = ['land_parcel', 'waypoint_data', 'waypoint_reg_date', 'waypoint_reg_by', 'meter_interval']
+    # add_columns = ['land_parcel', 'waypoint_data', 'waypoint_reg_date', 'waypoint_reg_by', 'meter_interval']
+    # add_columns = ['land_parcel', 'waypoint_data', 'waypoint_reg_date', 'waypoint_reg_by', 'meter_interval']
+    # add_columns = ['land_parcel', 'waypoint_data', 'waypoint_reg_date', 'waypoint_reg_by', 'meter_interval']
+    
+    label_columns = {'land_parcel':'Land Parcel', 'waypoint_data':'Waypoint Data', 'waypoint_reg_date':'Waypoint Reg Date', 'waypoint_reg_by':'Waypoint Reg By', 'meter_interval':'Meter Interval'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['land_parcel', 'waypoint_data', 'waypoint_reg_date', 'waypoint_reg_by', 'meter_interval']
+class LoanArrearsAgingModelView(ModelView):
+    datamodel = SQLAInterface(LoanArrearsAging)
+    list_title = 'List Loan Arrears Aging'
+    show_title = 'Show Loan Arrears Aging'
+    edit_title = 'Edit Loan Arrears Aging'
+    add_title  = 'Add Loan Arrears Aging'
+ 
+    list_columns = ['loan', 'overdue_since_date_derived', 'notification_status', 'principal_overdue_derived', 'interest_overdue_derived', 'fee_charges_overdue_derived', 'penalty_charges_overdue_derived', 'total_overdue_derived']
+    # show_columns = ['loan', 'overdue_since_date_derived', 'notification_status', 'principal_overdue_derived', 'interest_overdue_derived', 'fee_charges_overdue_derived', 'penalty_charges_overdue_derived', 'total_overdue_derived']
+    # edit_columns = ['loan', 'overdue_since_date_derived', 'notification_status', 'principal_overdue_derived', 'interest_overdue_derived', 'fee_charges_overdue_derived', 'penalty_charges_overdue_derived', 'total_overdue_derived']
+    add_columns = ['loan', 'overdue_since_date_derived', 'notification_status', 'principal_overdue_derived', 'interest_overdue_derived', 'fee_charges_overdue_derived', 'penalty_charges_overdue_derived', 'total_overdue_derived']
+    # search_columns = ['loan', 'overdue_since_date_derived', 'notification_status', 'principal_overdue_derived', 'interest_overdue_derived', 'fee_charges_overdue_derived', 'penalty_charges_overdue_derived', 'total_overdue_derived']
+    description_columns = {
+        'id' : 'None',
+        'loan_id_fk' : 'None',
+        'overdue_since_date_derived' : 'None',
+        'notification_status' : 'None',
+        'principal_overdue_derived' : 'None',
+        'interest_overdue_derived' : 'None',
+        'fee_charges_overdue_derived' : 'None',
+        'penalty_charges_overdue_derived' : 'None',
+        'total_overdue_derived' : 'None',
+    }
+    # list_exclude_columns = ['loan', 'overdue_since_date_derived', 'notification_status', 'principal_overdue_derived', 'interest_overdue_derived', 'fee_charges_overdue_derived', 'penalty_charges_overdue_derived', 'total_overdue_derived']
+    # show_exclude_columns = ['loan', 'overdue_since_date_derived', 'notification_status', 'principal_overdue_derived', 'interest_overdue_derived', 'fee_charges_overdue_derived', 'penalty_charges_overdue_derived', 'total_overdue_derived']
+    # edit_exclude_columns = ['loan', 'overdue_since_date_derived', 'notification_status', 'principal_overdue_derived', 'interest_overdue_derived', 'fee_charges_overdue_derived', 'penalty_charges_overdue_derived', 'total_overdue_derived']
+    # add_exclude_columns = ['loan', 'overdue_since_date_derived', 'notification_status', 'principal_overdue_derived', 'interest_overdue_derived', 'fee_charges_overdue_derived', 'penalty_charges_overdue_derived', 'total_overdue_derived']
+    # search_exclude_columns = ['loan', 'overdue_since_date_derived', 'notification_status', 'principal_overdue_derived', 'interest_overdue_derived', 'fee_charges_overdue_derived', 'penalty_charges_overdue_derived', 'total_overdue_derived']
+    # order_columns = ['loan', 'overdue_since_date_derived', 'notification_status', 'principal_overdue_derived', 'interest_overdue_derived', 'fee_charges_overdue_derived', 'penalty_charges_overdue_derived', 'total_overdue_derived']
+    # add_columns = ['loan', 'overdue_since_date_derived', 'notification_status', 'principal_overdue_derived', 'interest_overdue_derived', 'fee_charges_overdue_derived', 'penalty_charges_overdue_derived', 'total_overdue_derived']
+    # add_columns = ['loan', 'overdue_since_date_derived', 'notification_status', 'principal_overdue_derived', 'interest_overdue_derived', 'fee_charges_overdue_derived', 'penalty_charges_overdue_derived', 'total_overdue_derived']
+    # add_columns = ['loan', 'overdue_since_date_derived', 'notification_status', 'principal_overdue_derived', 'interest_overdue_derived', 'fee_charges_overdue_derived', 'penalty_charges_overdue_derived', 'total_overdue_derived']
+    
+    label_columns = {'loan':'Loan', 'overdue_since_date_derived':'Overdue Since Date Derived', 'notification_status':'Notification Status', 'principal_overdue_derived':'Principal Overdue Derived', 'interest_overdue_derived':'Interest Overdue Derived', 'fee_charges_overdue_derived':'Fee Charges Overdue Derived', 'penalty_charges_overdue_derived':'Penalty Charges Overdue Derived', 'total_overdue_derived':'Total Overdue Derived'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['loan', 'overdue_since_date_derived', 'notification_status', 'principal_overdue_derived', 'interest_overdue_derived', 'fee_charges_overdue_derived', 'penalty_charges_overdue_derived', 'total_overdue_derived']
+class LoanChargeModelView(ModelView):
+    datamodel = SQLAInterface(LoanCharge)
+    list_title = 'List Loan Charge'
+    show_title = 'Show Loan Charge'
+    edit_title = 'Edit Loan Charge'
+    add_title  = 'Add Loan Charge'
+ 
+    list_columns = ['loan', 'charge_id', 'charge_time', 'calc_date', 'due_for_collection_as_of_date', 'charge_calculation', 'calculation_percentage', 'calculation_on_amount', 'amount', 'amount_paid_derived', 'amount_waived_derived', 'amount_writtenoff_derived', 'amount_outstanding_derived', 'is_penalty', 'is_active', 'is_deleted', 'is_paid', 'is_waived']
+    # show_columns = ['loan', 'charge_id', 'charge_time', 'calc_date', 'due_for_collection_as_of_date', 'charge_calculation', 'calculation_percentage', 'calculation_on_amount', 'amount', 'amount_paid_derived', 'amount_waived_derived', 'amount_writtenoff_derived', 'amount_outstanding_derived', 'is_penalty', 'is_active', 'is_deleted', 'is_paid', 'is_waived']
+    # edit_columns = ['loan', 'charge_id', 'charge_time', 'calc_date', 'due_for_collection_as_of_date', 'charge_calculation', 'calculation_percentage', 'calculation_on_amount', 'amount', 'amount_paid_derived', 'amount_waived_derived', 'amount_writtenoff_derived', 'amount_outstanding_derived', 'is_penalty', 'is_active', 'is_deleted', 'is_paid', 'is_waived']
+    add_columns = ['loan', 'charge_id', 'charge_time', 'calc_date', 'due_for_collection_as_of_date', 'charge_calculation', 'calculation_percentage', 'calculation_on_amount', 'amount', 'amount_paid_derived', 'amount_waived_derived', 'amount_writtenoff_derived', 'amount_outstanding_derived', 'is_penalty', 'is_active', 'is_deleted', 'is_paid', 'is_waived']
+    # search_columns = ['loan', 'charge_id', 'charge_time', 'calc_date', 'due_for_collection_as_of_date', 'charge_calculation', 'calculation_percentage', 'calculation_on_amount', 'amount', 'amount_paid_derived', 'amount_waived_derived', 'amount_writtenoff_derived', 'amount_outstanding_derived', 'is_penalty', 'is_active', 'is_deleted', 'is_paid', 'is_waived']
+    description_columns = {
+        'id' : 'None',
+        'loan_id_fk' : 'None',
+        'charge_id' : 'None',
+        'charge_time' : 'None',
+        'calc_date' : 'None',
+        'due_for_collection_as_of_date' : 'None',
+        'charge_calculation' : 'None',
+        'calculation_percentage' : 'None',
+        'calculation_on_amount' : 'None',
+        'amount' : 'None',
+        'amount_paid_derived' : 'None',
+        'amount_waived_derived' : 'None',
+        'amount_writtenoff_derived' : 'None',
+        'amount_outstanding_derived' : 'None',
+        'is_penalty' : 'None',
+        'is_active' : 'None',
+        'is_deleted' : 'None',
+        'is_paid' : 'None',
+        'is_waived' : 'None',
+    }
+    # list_exclude_columns = ['loan', 'charge_id', 'charge_time', 'calc_date', 'due_for_collection_as_of_date', 'charge_calculation', 'calculation_percentage', 'calculation_on_amount', 'amount', 'amount_paid_derived', 'amount_waived_derived', 'amount_writtenoff_derived', 'amount_outstanding_derived', 'is_penalty', 'is_active', 'is_deleted', 'is_paid', 'is_waived']
+    # show_exclude_columns = ['loan', 'charge_id', 'charge_time', 'calc_date', 'due_for_collection_as_of_date', 'charge_calculation', 'calculation_percentage', 'calculation_on_amount', 'amount', 'amount_paid_derived', 'amount_waived_derived', 'amount_writtenoff_derived', 'amount_outstanding_derived', 'is_penalty', 'is_active', 'is_deleted', 'is_paid', 'is_waived']
+    # edit_exclude_columns = ['loan', 'charge_id', 'charge_time', 'calc_date', 'due_for_collection_as_of_date', 'charge_calculation', 'calculation_percentage', 'calculation_on_amount', 'amount', 'amount_paid_derived', 'amount_waived_derived', 'amount_writtenoff_derived', 'amount_outstanding_derived', 'is_penalty', 'is_active', 'is_deleted', 'is_paid', 'is_waived']
+    # add_exclude_columns = ['loan', 'charge_id', 'charge_time', 'calc_date', 'due_for_collection_as_of_date', 'charge_calculation', 'calculation_percentage', 'calculation_on_amount', 'amount', 'amount_paid_derived', 'amount_waived_derived', 'amount_writtenoff_derived', 'amount_outstanding_derived', 'is_penalty', 'is_active', 'is_deleted', 'is_paid', 'is_waived']
+    # search_exclude_columns = ['loan', 'charge_id', 'charge_time', 'calc_date', 'due_for_collection_as_of_date', 'charge_calculation', 'calculation_percentage', 'calculation_on_amount', 'amount', 'amount_paid_derived', 'amount_waived_derived', 'amount_writtenoff_derived', 'amount_outstanding_derived', 'is_penalty', 'is_active', 'is_deleted', 'is_paid', 'is_waived']
+    # order_columns = ['loan', 'charge_id', 'charge_time', 'calc_date', 'due_for_collection_as_of_date', 'charge_calculation', 'calculation_percentage', 'calculation_on_amount', 'amount', 'amount_paid_derived', 'amount_waived_derived', 'amount_writtenoff_derived', 'amount_outstanding_derived', 'is_penalty', 'is_active', 'is_deleted', 'is_paid', 'is_waived']
+    # add_columns = ['loan', 'charge_id', 'charge_time', 'calc_date', 'due_for_collection_as_of_date', 'charge_calculation', 'calculation_percentage', 'calculation_on_amount', 'amount', 'amount_paid_derived', 'amount_waived_derived', 'amount_writtenoff_derived', 'amount_outstanding_derived', 'is_penalty', 'is_active', 'is_deleted', 'is_paid', 'is_waived']
+    # add_columns = ['loan', 'charge_id', 'charge_time', 'calc_date', 'due_for_collection_as_of_date', 'charge_calculation', 'calculation_percentage', 'calculation_on_amount', 'amount', 'amount_paid_derived', 'amount_waived_derived', 'amount_writtenoff_derived', 'amount_outstanding_derived', 'is_penalty', 'is_active', 'is_deleted', 'is_paid', 'is_waived']
+    # add_columns = ['loan', 'charge_id', 'charge_time', 'calc_date', 'due_for_collection_as_of_date', 'charge_calculation', 'calculation_percentage', 'calculation_on_amount', 'amount', 'amount_paid_derived', 'amount_waived_derived', 'amount_writtenoff_derived', 'amount_outstanding_derived', 'is_penalty', 'is_active', 'is_deleted', 'is_paid', 'is_waived']
+    
+    label_columns = {'loan':'Loan', 'charge_id':'Charge Id', 'charge_time':'Charge Time', 'calc_date':'Calc Date', 'due_for_collection_as_of_date':'Due For Collection As Of Date', 'charge_calculation':'Charge Calculation', 'calculation_percentage':'Calculation Percentage', 'calculation_on_amount':'Calculation On Amount', 'amount':'Amount', 'amount_paid_derived':'Amount Paid Derived', 'amount_waived_derived':'Amount Waived Derived', 'amount_writtenoff_derived':'Amount Writtenoff Derived', 'amount_outstanding_derived':'Amount Outstanding Derived', 'is_penalty':'Is Penalty', 'is_active':'Is Active', 'is_deleted':'Is Deleted', 'is_paid':'Is Paid', 'is_waived':'Is Waived'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['loan', 'charge_id', 'charge_time', 'calc_date', 'due_for_collection_as_of_date', 'charge_calculation', 'calculation_percentage', 'calculation_on_amount', 'amount', 'amount_paid_derived', 'amount_waived_derived', 'amount_writtenoff_derived', 'amount_outstanding_derived', 'is_penalty', 'is_active', 'is_deleted', 'is_paid', 'is_waived']
+class LoanCollateralModelView(ModelView):
+    datamodel = SQLAInterface(LoanCollateral)
+    list_title = 'List Loan Collateral'
+    show_title = 'Show Loan Collateral'
+    edit_title = 'Edit Loan Collateral'
+    add_title  = 'Add Loan Collateral'
+ 
+    list_columns = ['loan', 'collateral', 'value', 'description']
+    # show_columns = ['loan', 'collateral', 'value', 'description']
+    # edit_columns = ['loan', 'collateral', 'value', 'description']
+    add_columns = ['loan', 'collateral', 'value', 'description']
+    # search_columns = ['loan', 'collateral', 'value', 'description']
+    description_columns = {
+        'id' : 'None',
+        'loan_id_fk' : 'None',
+        'collateral_id_fk' : 'None',
+        'value' : 'None',
+        'description' : 'None',
+    }
+    # list_exclude_columns = ['loan', 'collateral', 'value', 'description']
+    # show_exclude_columns = ['loan', 'collateral', 'value', 'description']
+    # edit_exclude_columns = ['loan', 'collateral', 'value', 'description']
+    # add_exclude_columns = ['loan', 'collateral', 'value', 'description']
+    # search_exclude_columns = ['loan', 'collateral', 'value', 'description']
+    # order_columns = ['loan', 'collateral', 'value', 'description']
+    # add_columns = ['loan', 'collateral', 'value', 'description']
+    # add_columns = ['loan', 'collateral', 'value', 'description']
+    # add_columns = ['loan', 'collateral', 'value', 'description']
+    
+    label_columns = {'loan':'Loan', 'collateral':'Collateral', 'value':'Value', 'description':'Description'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['loan', 'collateral', 'value', 'description']
+class LoanGuarantorModelView(ModelView):
+    datamodel = SQLAInterface(LoanGuarantor)
+    list_title = 'List Loan Guarantor'
+    show_title = 'Show Loan Guarantor'
+    edit_title = 'Edit Loan Guarantor'
+    add_title  = 'Add Loan Guarantor'
+ 
+    list_columns = ['loan', 'guarantor', 'guarantor_type', 'org', 'comment']
+    # show_columns = ['loan', 'guarantor', 'guarantor_type', 'org', 'comment']
+    # edit_columns = ['loan', 'guarantor', 'guarantor_type', 'org', 'comment']
+    add_columns = ['loan', 'guarantor', 'guarantor_type', 'org', 'comment']
+    # search_columns = ['loan', 'guarantor', 'guarantor_type', 'org', 'comment']
+    description_columns = {
+        'id' : 'None',
+        'loan_id_fk' : 'None',
+        'guarantor_id_fk' : 'None',
+        'guarantor_type' : 'None',
+        'org_id_fk' : 'None',
+        'comment' : 'None',
+    }
+    # list_exclude_columns = ['loan', 'guarantor', 'guarantor_type', 'org', 'comment']
+    # show_exclude_columns = ['loan', 'guarantor', 'guarantor_type', 'org', 'comment']
+    # edit_exclude_columns = ['loan', 'guarantor', 'guarantor_type', 'org', 'comment']
+    # add_exclude_columns = ['loan', 'guarantor', 'guarantor_type', 'org', 'comment']
+    # search_exclude_columns = ['loan', 'guarantor', 'guarantor_type', 'org', 'comment']
+    # order_columns = ['loan', 'guarantor', 'guarantor_type', 'org', 'comment']
+    # add_columns = ['loan', 'guarantor', 'guarantor_type', 'org', 'comment']
+    # add_columns = ['loan', 'guarantor', 'guarantor_type', 'org', 'comment']
+    # add_columns = ['loan', 'guarantor', 'guarantor_type', 'org', 'comment']
+    
+    label_columns = {'loan':'Loan', 'guarantor':'Guarantor', 'guarantor_type':'Guarantor Type', 'org':'Org', 'comment':'Comment'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['loan', 'guarantor', 'guarantor_type', 'org', 'comment']
+class LoanOfficerAssignmentHistoryModelView(ModelView):
+    datamodel = SQLAInterface(LoanOfficerAssignmentHistory)
+    list_title = 'List Loan Officer Assignment History'
+    show_title = 'Show Loan Officer Assignment History'
+    edit_title = 'Edit Loan Officer Assignment History'
+    add_title  = 'Add Loan Officer Assignment History'
+ 
+    list_columns = ['loan', 'loan_officer', 'start_date', 'end_date']
+    # show_columns = ['loan', 'loan_officer', 'start_date', 'end_date']
+    # edit_columns = ['loan', 'loan_officer', 'start_date', 'end_date']
+    add_columns = ['loan', 'loan_officer', 'start_date', 'end_date']
+    # search_columns = ['loan', 'loan_officer', 'start_date', 'end_date']
+    description_columns = {
+        'id' : 'None',
+        'loan_id_fk' : 'None',
+        'loan_officer_id_fk' : 'None',
+        'start_date' : 'None',
+        'end_date' : 'None',
+    }
+    # list_exclude_columns = ['loan', 'loan_officer', 'start_date', 'end_date']
+    # show_exclude_columns = ['loan', 'loan_officer', 'start_date', 'end_date']
+    # edit_exclude_columns = ['loan', 'loan_officer', 'start_date', 'end_date']
+    # add_exclude_columns = ['loan', 'loan_officer', 'start_date', 'end_date']
+    # search_exclude_columns = ['loan', 'loan_officer', 'start_date', 'end_date']
+    # order_columns = ['loan', 'loan_officer', 'start_date', 'end_date']
+    # add_columns = ['loan', 'loan_officer', 'start_date', 'end_date']
+    # add_columns = ['loan', 'loan_officer', 'start_date', 'end_date']
+    # add_columns = ['loan', 'loan_officer', 'start_date', 'end_date']
+    
+    label_columns = {'loan':'Loan', 'loan_officer':'Loan Officer', 'start_date':'Start Date', 'end_date':'End Date'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['loan', 'loan_officer', 'start_date', 'end_date']
+class LoanRepaymentScheduleModelView(ModelView):
+    datamodel = SQLAInterface(LoanRepaymentSchedule)
+    list_title = 'List Loan Repayment Schedule'
+    show_title = 'Show Loan Repayment Schedule'
+    edit_title = 'Edit Loan Repayment Schedule'
+    add_title  = 'Add Loan Repayment Schedule'
+ 
+    list_columns = ['loan', 'from_date', 'repayment_interval', 'repayment_number', 'due_date', 'installment', 'principal_amount', 'principal_completed_derived', 'principal_writtenoff_derived', 'interest_amount', 'interest_completed_derived', 'interest_writtenoff_derived', 'fee_charges_amount', 'fee_charges_completed_derived', 'fee_charges_writtenoff_derived', 'fee_charges_waived_derived', 'penalty_charges_amount', 'penalty_charges_completed_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_waived_derived', 'completed_derived', 'interest_waived_derived']
+    # show_columns = ['loan', 'from_date', 'repayment_interval', 'repayment_number', 'due_date', 'installment', 'principal_amount', 'principal_completed_derived', 'principal_writtenoff_derived', 'interest_amount', 'interest_completed_derived', 'interest_writtenoff_derived', 'fee_charges_amount', 'fee_charges_completed_derived', 'fee_charges_writtenoff_derived', 'fee_charges_waived_derived', 'penalty_charges_amount', 'penalty_charges_completed_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_waived_derived', 'completed_derived', 'interest_waived_derived']
+    # edit_columns = ['loan', 'from_date', 'repayment_interval', 'repayment_number', 'due_date', 'installment', 'principal_amount', 'principal_completed_derived', 'principal_writtenoff_derived', 'interest_amount', 'interest_completed_derived', 'interest_writtenoff_derived', 'fee_charges_amount', 'fee_charges_completed_derived', 'fee_charges_writtenoff_derived', 'fee_charges_waived_derived', 'penalty_charges_amount', 'penalty_charges_completed_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_waived_derived', 'completed_derived', 'interest_waived_derived']
+    add_columns = ['loan', 'from_date', 'repayment_interval', 'repayment_number', 'due_date', 'installment', 'principal_amount', 'principal_completed_derived', 'principal_writtenoff_derived', 'interest_amount', 'interest_completed_derived', 'interest_writtenoff_derived', 'fee_charges_amount', 'fee_charges_completed_derived', 'fee_charges_writtenoff_derived', 'fee_charges_waived_derived', 'penalty_charges_amount', 'penalty_charges_completed_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_waived_derived', 'completed_derived', 'interest_waived_derived']
+    # search_columns = ['loan', 'from_date', 'repayment_interval', 'repayment_number', 'due_date', 'installment', 'principal_amount', 'principal_completed_derived', 'principal_writtenoff_derived', 'interest_amount', 'interest_completed_derived', 'interest_writtenoff_derived', 'fee_charges_amount', 'fee_charges_completed_derived', 'fee_charges_writtenoff_derived', 'fee_charges_waived_derived', 'penalty_charges_amount', 'penalty_charges_completed_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_waived_derived', 'completed_derived', 'interest_waived_derived']
+    description_columns = {
+        'id' : 'None',
+        'loan_id_fk' : 'None',
+        'from_date' : 'None',
+        'repayment_interval' : 'None',
+        'repayment_number' : 'None',
+        'due_date' : 'None',
+        'installment' : 'None',
+        'principal_amount' : 'None',
+        'principal_completed_derived' : 'None',
+        'principal_writtenoff_derived' : 'None',
+        'interest_amount' : 'None',
+        'interest_completed_derived' : 'None',
+        'interest_writtenoff_derived' : 'None',
+        'fee_charges_amount' : 'None',
+        'fee_charges_completed_derived' : 'None',
+        'fee_charges_writtenoff_derived' : 'None',
+        'fee_charges_waived_derived' : 'None',
+        'penalty_charges_amount' : 'None',
+        'penalty_charges_completed_derived' : 'None',
+        'penalty_charges_writtenoff_derived' : 'None',
+        'penalty_charges_waived_derived' : 'None',
+        'completed_derived' : 'None',
+        'interest_waived_derived' : 'None',
+    }
+    # list_exclude_columns = ['loan', 'from_date', 'repayment_interval', 'repayment_number', 'due_date', 'installment', 'principal_amount', 'principal_completed_derived', 'principal_writtenoff_derived', 'interest_amount', 'interest_completed_derived', 'interest_writtenoff_derived', 'fee_charges_amount', 'fee_charges_completed_derived', 'fee_charges_writtenoff_derived', 'fee_charges_waived_derived', 'penalty_charges_amount', 'penalty_charges_completed_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_waived_derived', 'completed_derived', 'interest_waived_derived']
+    # show_exclude_columns = ['loan', 'from_date', 'repayment_interval', 'repayment_number', 'due_date', 'installment', 'principal_amount', 'principal_completed_derived', 'principal_writtenoff_derived', 'interest_amount', 'interest_completed_derived', 'interest_writtenoff_derived', 'fee_charges_amount', 'fee_charges_completed_derived', 'fee_charges_writtenoff_derived', 'fee_charges_waived_derived', 'penalty_charges_amount', 'penalty_charges_completed_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_waived_derived', 'completed_derived', 'interest_waived_derived']
+    # edit_exclude_columns = ['loan', 'from_date', 'repayment_interval', 'repayment_number', 'due_date', 'installment', 'principal_amount', 'principal_completed_derived', 'principal_writtenoff_derived', 'interest_amount', 'interest_completed_derived', 'interest_writtenoff_derived', 'fee_charges_amount', 'fee_charges_completed_derived', 'fee_charges_writtenoff_derived', 'fee_charges_waived_derived', 'penalty_charges_amount', 'penalty_charges_completed_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_waived_derived', 'completed_derived', 'interest_waived_derived']
+    # add_exclude_columns = ['loan', 'from_date', 'repayment_interval', 'repayment_number', 'due_date', 'installment', 'principal_amount', 'principal_completed_derived', 'principal_writtenoff_derived', 'interest_amount', 'interest_completed_derived', 'interest_writtenoff_derived', 'fee_charges_amount', 'fee_charges_completed_derived', 'fee_charges_writtenoff_derived', 'fee_charges_waived_derived', 'penalty_charges_amount', 'penalty_charges_completed_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_waived_derived', 'completed_derived', 'interest_waived_derived']
+    # search_exclude_columns = ['loan', 'from_date', 'repayment_interval', 'repayment_number', 'due_date', 'installment', 'principal_amount', 'principal_completed_derived', 'principal_writtenoff_derived', 'interest_amount', 'interest_completed_derived', 'interest_writtenoff_derived', 'fee_charges_amount', 'fee_charges_completed_derived', 'fee_charges_writtenoff_derived', 'fee_charges_waived_derived', 'penalty_charges_amount', 'penalty_charges_completed_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_waived_derived', 'completed_derived', 'interest_waived_derived']
+    # order_columns = ['loan', 'from_date', 'repayment_interval', 'repayment_number', 'due_date', 'installment', 'principal_amount', 'principal_completed_derived', 'principal_writtenoff_derived', 'interest_amount', 'interest_completed_derived', 'interest_writtenoff_derived', 'fee_charges_amount', 'fee_charges_completed_derived', 'fee_charges_writtenoff_derived', 'fee_charges_waived_derived', 'penalty_charges_amount', 'penalty_charges_completed_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_waived_derived', 'completed_derived', 'interest_waived_derived']
+    # add_columns = ['loan', 'from_date', 'repayment_interval', 'repayment_number', 'due_date', 'installment', 'principal_amount', 'principal_completed_derived', 'principal_writtenoff_derived', 'interest_amount', 'interest_completed_derived', 'interest_writtenoff_derived', 'fee_charges_amount', 'fee_charges_completed_derived', 'fee_charges_writtenoff_derived', 'fee_charges_waived_derived', 'penalty_charges_amount', 'penalty_charges_completed_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_waived_derived', 'completed_derived', 'interest_waived_derived']
+    # add_columns = ['loan', 'from_date', 'repayment_interval', 'repayment_number', 'due_date', 'installment', 'principal_amount', 'principal_completed_derived', 'principal_writtenoff_derived', 'interest_amount', 'interest_completed_derived', 'interest_writtenoff_derived', 'fee_charges_amount', 'fee_charges_completed_derived', 'fee_charges_writtenoff_derived', 'fee_charges_waived_derived', 'penalty_charges_amount', 'penalty_charges_completed_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_waived_derived', 'completed_derived', 'interest_waived_derived']
+    # add_columns = ['loan', 'from_date', 'repayment_interval', 'repayment_number', 'due_date', 'installment', 'principal_amount', 'principal_completed_derived', 'principal_writtenoff_derived', 'interest_amount', 'interest_completed_derived', 'interest_writtenoff_derived', 'fee_charges_amount', 'fee_charges_completed_derived', 'fee_charges_writtenoff_derived', 'fee_charges_waived_derived', 'penalty_charges_amount', 'penalty_charges_completed_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_waived_derived', 'completed_derived', 'interest_waived_derived']
+    
+    label_columns = {'loan':'Loan', 'from_date':'From Date', 'repayment_interval':'Repayment Interval', 'repayment_number':'Repayment Number', 'due_date':'Due Date', 'installment':'Installment', 'principal_amount':'Principal Amount', 'principal_completed_derived':'Principal Completed Derived', 'principal_writtenoff_derived':'Principal Writtenoff Derived', 'interest_amount':'Interest Amount', 'interest_completed_derived':'Interest Completed Derived', 'interest_writtenoff_derived':'Interest Writtenoff Derived', 'fee_charges_amount':'Fee Charges Amount', 'fee_charges_completed_derived':'Fee Charges Completed Derived', 'fee_charges_writtenoff_derived':'Fee Charges Writtenoff Derived', 'fee_charges_waived_derived':'Fee Charges Waived Derived', 'penalty_charges_amount':'Penalty Charges Amount', 'penalty_charges_completed_derived':'Penalty Charges Completed Derived', 'penalty_charges_writtenoff_derived':'Penalty Charges Writtenoff Derived', 'penalty_charges_waived_derived':'Penalty Charges Waived Derived', 'completed_derived':'Completed Derived', 'interest_waived_derived':'Interest Waived Derived'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['loan', 'from_date', 'repayment_interval', 'repayment_number', 'due_date', 'installment', 'principal_amount', 'principal_completed_derived', 'principal_writtenoff_derived', 'interest_amount', 'interest_completed_derived', 'interest_writtenoff_derived', 'fee_charges_amount', 'fee_charges_completed_derived', 'fee_charges_writtenoff_derived', 'fee_charges_waived_derived', 'penalty_charges_amount', 'penalty_charges_completed_derived', 'penalty_charges_writtenoff_derived', 'penalty_charges_waived_derived', 'completed_derived', 'interest_waived_derived']
+class ShelfModelView(ModelView):
+    datamodel = SQLAInterface(Shelf)
+    list_title = 'List Shelf'
+    show_title = 'Show Shelf'
+    edit_title = 'Edit Shelf'
+    add_title  = 'Add Shelf'
+ 
+    list_columns = ['rack', 'shelf_code', 'is_active']
+    # show_columns = ['rack', 'shelf_code', 'is_active']
+    # edit_columns = ['rack', 'shelf_code', 'is_active']
+    add_columns = ['rack', 'shelf_code', 'is_active']
+    # search_columns = ['rack', 'shelf_code', 'is_active']
+    description_columns = {
+        'id' : 'None',
+        'rack_id_fk' : 'Link to the parent rack',
+        'shelf_code' : 'Unique identifier for the shelf',
+        'is_active' : 'Is the shelf in active use?',
+    }
+    # list_exclude_columns = ['rack', 'shelf_code', 'is_active']
+    # show_exclude_columns = ['rack', 'shelf_code', 'is_active']
+    # edit_exclude_columns = ['rack', 'shelf_code', 'is_active']
+    # add_exclude_columns = ['rack', 'shelf_code', 'is_active']
+    # search_exclude_columns = ['rack', 'shelf_code', 'is_active']
+    # order_columns = ['rack', 'shelf_code', 'is_active']
+    # add_columns = ['rack', 'shelf_code', 'is_active']
+    # add_columns = ['rack', 'shelf_code', 'is_active']
+    # add_columns = ['rack', 'shelf_code', 'is_active']
+    
+    label_columns = {'rack':'Rack', 'shelf_code':'Shelf Code', 'is_active':'Is Active'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['rack', 'shelf_code', 'is_active']
+class WaypointAuditModelView(ModelView):
+    datamodel = SQLAInterface(WaypointAudit)
+    list_title = 'List Waypoint Audit'
+    show_title = 'Show Waypoint Audit'
+    edit_title = 'Edit Waypoint Audit'
+    add_title  = 'Add Waypoint Audit'
+ 
+    list_columns = ['waypoint', 'action', 'action_by', 'action_at']
+    # show_columns = ['waypoint', 'action', 'action_by', 'action_at']
+    # edit_columns = ['waypoint', 'action', 'action_by', 'action_at']
+    add_columns = ['waypoint', 'action', 'action_by', 'action_at']
+    # search_columns = ['waypoint', 'action', 'action_by', 'action_at']
+    description_columns = {
+        'id' : 'None',
+        'waypoint_id_fk' : 'None',
+        'action' : 'None',
+        'action_by_id_fk' : 'None',
+        'action_at' : 'None',
+    }
+    # list_exclude_columns = ['waypoint', 'action', 'action_by', 'action_at']
+    # show_exclude_columns = ['waypoint', 'action', 'action_by', 'action_at']
+    # edit_exclude_columns = ['waypoint', 'action', 'action_by', 'action_at']
+    # add_exclude_columns = ['waypoint', 'action', 'action_by', 'action_at']
+    # search_exclude_columns = ['waypoint', 'action', 'action_by', 'action_at']
+    # order_columns = ['waypoint', 'action', 'action_by', 'action_at']
+    # add_columns = ['waypoint', 'action', 'action_by', 'action_at']
+    # add_columns = ['waypoint', 'action', 'action_by', 'action_at']
+    # add_columns = ['waypoint', 'action', 'action_by', 'action_at']
+    
+    label_columns = {'waypoint':'Waypoint', 'action':'Action', 'action_by':'Action By', 'action_at':'Action At'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['waypoint', 'action', 'action_by', 'action_at']
+class BinModelView(ModelView):
+    datamodel = SQLAInterface(Bin)
+    list_title = 'List Bin'
+    show_title = 'Show Bin'
+    edit_title = 'Edit Bin'
+    add_title  = 'Add Bin'
+ 
+    list_columns = ['shelf', 'bin_code', 'is_active']
+    # show_columns = ['shelf', 'bin_code', 'is_active']
+    # edit_columns = ['shelf', 'bin_code', 'is_active']
+    add_columns = ['shelf', 'bin_code', 'is_active']
+    # search_columns = ['shelf', 'bin_code', 'is_active']
+    description_columns = {
+        'id' : 'None',
+        'shelf_id_fk' : 'Link to the parent shelf',
+        'bin_code' : 'Unique identifier for the bin',
+        'is_active' : 'Is the bin in active use?',
+    }
+    # list_exclude_columns = ['shelf', 'bin_code', 'is_active']
+    # show_exclude_columns = ['shelf', 'bin_code', 'is_active']
+    # edit_exclude_columns = ['shelf', 'bin_code', 'is_active']
+    # add_exclude_columns = ['shelf', 'bin_code', 'is_active']
+    # search_exclude_columns = ['shelf', 'bin_code', 'is_active']
+    # order_columns = ['shelf', 'bin_code', 'is_active']
+    # add_columns = ['shelf', 'bin_code', 'is_active']
+    # add_columns = ['shelf', 'bin_code', 'is_active']
+    # add_columns = ['shelf', 'bin_code', 'is_active']
+    
+    label_columns = {'shelf':'Shelf', 'bin_code':'Bin Code', 'is_active':'Is Active'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['shelf', 'bin_code', 'is_active']
+class InventoryModelView(ModelView):
+    datamodel = SQLAInterface(Inventory)
+    list_title = 'List Inventory'
+    show_title = 'Show Inventory'
+    edit_title = 'Edit Inventory'
+    add_title  = 'Add Inventory'
+ 
+    list_columns = ['product', 'org', 'bin', 'batch_number', 'quantity', 'reorder_level', 'is_serialized', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # show_columns = ['product', 'org', 'bin', 'batch_number', 'quantity', 'reorder_level', 'is_serialized', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # edit_columns = ['product', 'org', 'bin', 'batch_number', 'quantity', 'reorder_level', 'is_serialized', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    add_columns = ['product', 'org', 'bin', 'batch_number', 'quantity', 'reorder_level', 'is_serialized', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # search_columns = ['product', 'org', 'bin', 'batch_number', 'quantity', 'reorder_level', 'is_serialized', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    description_columns = {
+        'id' : 'None',
+        'product_id_fk' : 'None',
+        'org_id_fk' : 'None',
+        'bin_id_fk' : 'Link to the bin where the inventory is stored',
+        'batch_number' : 'Batch or lot number especially for perishables or medical items',
+        'quantity' : 'Total number of items in this inventory record',
+        'reorder_level' : 'Minimum number before a reorder is needed',
+        'is_serialized' : 'If items have unique serial numbers',
+        'is_perishable' : 'If items expire or are perishable',
+        'production_date' : 'When the product was made',
+        'expiration_date' : 'When the product expires',
+        'best_by_date' : 'Suggested best use by date',
+    }
+    # list_exclude_columns = ['product', 'org', 'bin', 'batch_number', 'quantity', 'reorder_level', 'is_serialized', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # show_exclude_columns = ['product', 'org', 'bin', 'batch_number', 'quantity', 'reorder_level', 'is_serialized', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # edit_exclude_columns = ['product', 'org', 'bin', 'batch_number', 'quantity', 'reorder_level', 'is_serialized', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # add_exclude_columns = ['product', 'org', 'bin', 'batch_number', 'quantity', 'reorder_level', 'is_serialized', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # search_exclude_columns = ['product', 'org', 'bin', 'batch_number', 'quantity', 'reorder_level', 'is_serialized', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # order_columns = ['product', 'org', 'bin', 'batch_number', 'quantity', 'reorder_level', 'is_serialized', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # add_columns = ['product', 'org', 'bin', 'batch_number', 'quantity', 'reorder_level', 'is_serialized', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # add_columns = ['product', 'org', 'bin', 'batch_number', 'quantity', 'reorder_level', 'is_serialized', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # add_columns = ['product', 'org', 'bin', 'batch_number', 'quantity', 'reorder_level', 'is_serialized', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    
+    label_columns = {'product':'Product', 'org':'Org', 'bin':'Bin', 'batch_number':'Batch Number', 'quantity':'Quantity', 'reorder_level':'Reorder Level', 'is_serialized':'Is Serialized', 'is_perishable':'Is Perishable', 'production_date':'Production Date', 'expiration_date':'Expiration Date', 'best_by_date':'Best By Date'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['product', 'org', 'bin', 'batch_number', 'quantity', 'reorder_level', 'is_serialized', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+class InventoryLogModelView(ModelView):
+    datamodel = SQLAInterface(InventoryLog)
+    list_title = 'List Inventory Log'
+    show_title = 'Show Inventory Log'
+    edit_title = 'Edit Inventory Log'
+    add_title  = 'Add Inventory Log'
+ 
+    list_columns = ['inventory', 'product', 'bin', 'changed_by', 'change_date', 'quantity', 'reason', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # show_columns = ['inventory', 'product', 'bin', 'changed_by', 'change_date', 'quantity', 'reason', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # edit_columns = ['inventory', 'product', 'bin', 'changed_by', 'change_date', 'quantity', 'reason', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    add_columns = ['inventory', 'product', 'bin', 'changed_by', 'change_date', 'quantity', 'reason', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # search_columns = ['inventory', 'product', 'bin', 'changed_by', 'change_date', 'quantity', 'reason', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    description_columns = {
+        'id' : 'None',
+        'inventory_id_fk' : 'None',
+        'product_id_fk' : 'None',
+        'bin_id_fk' : 'Link to the bin where the inventory is stored',
+        'changed_by_id_fk' : 'None',
+        'change_date' : 'Date of change',
+        'quantity' : 'Amount of stock added or removed',
+        'reason' : 'The rationale for the change e.g., Sold, Received, Damaged',
+        'is_perishable' : 'Is the item perishable?',
+        'production_date' : 'When was the product made',
+        'expiration_date' : 'When does the product expire',
+        'best_by_date' : 'Suggested best consumption by date',
+    }
+    # list_exclude_columns = ['inventory', 'product', 'bin', 'changed_by', 'change_date', 'quantity', 'reason', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # show_exclude_columns = ['inventory', 'product', 'bin', 'changed_by', 'change_date', 'quantity', 'reason', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # edit_exclude_columns = ['inventory', 'product', 'bin', 'changed_by', 'change_date', 'quantity', 'reason', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # add_exclude_columns = ['inventory', 'product', 'bin', 'changed_by', 'change_date', 'quantity', 'reason', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # search_exclude_columns = ['inventory', 'product', 'bin', 'changed_by', 'change_date', 'quantity', 'reason', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # order_columns = ['inventory', 'product', 'bin', 'changed_by', 'change_date', 'quantity', 'reason', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # add_columns = ['inventory', 'product', 'bin', 'changed_by', 'change_date', 'quantity', 'reason', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # add_columns = ['inventory', 'product', 'bin', 'changed_by', 'change_date', 'quantity', 'reason', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    # add_columns = ['inventory', 'product', 'bin', 'changed_by', 'change_date', 'quantity', 'reason', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+    
+    label_columns = {'inventory':'Inventory', 'product':'Product', 'bin':'Bin', 'changed_by':'Changed By', 'change_date':'Change Date', 'quantity':'Quantity', 'reason':'Reason', 'is_perishable':'Is Perishable', 'production_date':'Production Date', 'expiration_date':'Expiration Date', 'best_by_date':'Best By Date'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['inventory', 'product', 'bin', 'changed_by', 'change_date', 'quantity', 'reason', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date']
+class PerishableItemAlertsModelView(ModelView):
+    datamodel = SQLAInterface(PerishableItemAlerts)
+    list_title = 'List Perishable Item Alerts'
+    show_title = 'Show Perishable Item Alerts'
+    edit_title = 'Edit Perishable Item Alerts'
+    add_title  = 'Add Perishable Item Alerts'
+ 
+    list_columns = ['inventory', 'alert_level', 'alert_date', 'note', 'sent', 'sent_date', 'received', 'received_date']
+    # show_columns = ['inventory', 'alert_level', 'alert_date', 'note', 'sent', 'sent_date', 'received', 'received_date']
+    # edit_columns = ['inventory', 'alert_level', 'alert_date', 'note', 'sent', 'sent_date', 'received', 'received_date']
+    add_columns = ['inventory', 'alert_level', 'alert_date', 'note', 'sent', 'sent_date', 'received', 'received_date']
+    # search_columns = ['inventory', 'alert_level', 'alert_date', 'note', 'sent', 'sent_date', 'received', 'received_date']
+    description_columns = {
+        'id' : 'None',
+        'inventory_id_fk' : 'None',
+        'alert_level' : 'None',
+        'alert_date' : 'None',
+        'note' : 'None',
+        'sent' : 'None',
+        'sent_date' : 'None',
+        'received' : 'None',
+        'received_date' : 'None',
+    }
+    # list_exclude_columns = ['inventory', 'alert_level', 'alert_date', 'note', 'sent', 'sent_date', 'received', 'received_date']
+    # show_exclude_columns = ['inventory', 'alert_level', 'alert_date', 'note', 'sent', 'sent_date', 'received', 'received_date']
+    # edit_exclude_columns = ['inventory', 'alert_level', 'alert_date', 'note', 'sent', 'sent_date', 'received', 'received_date']
+    # add_exclude_columns = ['inventory', 'alert_level', 'alert_date', 'note', 'sent', 'sent_date', 'received', 'received_date']
+    # search_exclude_columns = ['inventory', 'alert_level', 'alert_date', 'note', 'sent', 'sent_date', 'received', 'received_date']
+    # order_columns = ['inventory', 'alert_level', 'alert_date', 'note', 'sent', 'sent_date', 'received', 'received_date']
+    # add_columns = ['inventory', 'alert_level', 'alert_date', 'note', 'sent', 'sent_date', 'received', 'received_date']
+    # add_columns = ['inventory', 'alert_level', 'alert_date', 'note', 'sent', 'sent_date', 'received', 'received_date']
+    # add_columns = ['inventory', 'alert_level', 'alert_date', 'note', 'sent', 'sent_date', 'received', 'received_date']
+    
+    label_columns = {'inventory':'Inventory', 'alert_level':'Alert Level', 'alert_date':'Alert Date', 'note':'Note', 'sent':'Sent', 'sent_date':'Sent Date', 'received':'Received', 'received_date':'Received Date'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['inventory', 'alert_level', 'alert_date', 'note', 'sent', 'sent_date', 'received', 'received_date']
+class SerializedItemsModelView(ModelView):
+    datamodel = SQLAInterface(SerializedItems)
+    list_title = 'List Serialized Items'
+    show_title = 'Show Serialized Items'
+    edit_title = 'Edit Serialized Items'
+    add_title  = 'Add Serialized Items'
+ 
+    list_columns = ['serial_number', 'product', 'inventory', 'status', 'received_date', 'sold_date', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date', 'is_expired', 'shelf_life_days']
+    # show_columns = ['serial_number', 'product', 'inventory', 'status', 'received_date', 'sold_date', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date', 'is_expired', 'shelf_life_days']
+    # edit_columns = ['serial_number', 'product', 'inventory', 'status', 'received_date', 'sold_date', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date', 'is_expired', 'shelf_life_days']
+    add_columns = ['serial_number', 'product', 'inventory', 'status', 'received_date', 'sold_date', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date', 'is_expired', 'shelf_life_days']
+    # search_columns = ['serial_number', 'product', 'inventory', 'status', 'received_date', 'sold_date', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date', 'is_expired', 'shelf_life_days']
+    description_columns = {
+        'id' : 'None',
+        'serial_number' : 'Should not be null if is_serialized',
+        'product_id_fk' : 'None',
+        'inventory_id_fk' : 'None',
+        'status' : 'Condition of the product',
+        'received_date' : 'When the product was received',
+        'sold_date' : 'When the product was sold',
+        'is_perishable' : 'None',
+        'production_date' : 'None',
+        'expiration_date' : 'None',
+        'best_by_date' : 'None',
+        'is_expired' : 'Is the product expired?',
+        'shelf_life_days' : 'Days before expiry',
+    }
+    # list_exclude_columns = ['serial_number', 'product', 'inventory', 'status', 'received_date', 'sold_date', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date', 'is_expired', 'shelf_life_days']
+    # show_exclude_columns = ['serial_number', 'product', 'inventory', 'status', 'received_date', 'sold_date', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date', 'is_expired', 'shelf_life_days']
+    # edit_exclude_columns = ['serial_number', 'product', 'inventory', 'status', 'received_date', 'sold_date', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date', 'is_expired', 'shelf_life_days']
+    # add_exclude_columns = ['serial_number', 'product', 'inventory', 'status', 'received_date', 'sold_date', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date', 'is_expired', 'shelf_life_days']
+    # search_exclude_columns = ['serial_number', 'product', 'inventory', 'status', 'received_date', 'sold_date', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date', 'is_expired', 'shelf_life_days']
+    # order_columns = ['serial_number', 'product', 'inventory', 'status', 'received_date', 'sold_date', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date', 'is_expired', 'shelf_life_days']
+    # add_columns = ['serial_number', 'product', 'inventory', 'status', 'received_date', 'sold_date', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date', 'is_expired', 'shelf_life_days']
+    # add_columns = ['serial_number', 'product', 'inventory', 'status', 'received_date', 'sold_date', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date', 'is_expired', 'shelf_life_days']
+    # add_columns = ['serial_number', 'product', 'inventory', 'status', 'received_date', 'sold_date', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date', 'is_expired', 'shelf_life_days']
+    
+    label_columns = {'serial_number':'Serial Number', 'product':'Product', 'inventory':'Inventory', 'status':'Status', 'received_date':'Received Date', 'sold_date':'Sold Date', 'is_perishable':'Is Perishable', 'production_date':'Production Date', 'expiration_date':'Expiration Date', 'best_by_date':'Best By Date', 'is_expired':'Is Expired', 'shelf_life_days':'Shelf Life Days'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['serial_number', 'product', 'inventory', 'status', 'received_date', 'sold_date', 'is_perishable', 'production_date', 'expiration_date', 'best_by_date', 'is_expired', 'shelf_life_days']
+class InventorySerialLogModelView(ModelView):
+    datamodel = SQLAInterface(InventorySerialLog)
+    list_title = 'List Inventory Serial Log'
+    show_title = 'Show Inventory Serial Log'
+    edit_title = 'Edit Inventory Serial Log'
+    add_title  = 'Add Inventory Serial Log'
+ 
+    list_columns = ['serialized_item', 'inventory', 'bin', 'changed_by', 'change_date', 'status', 'reason']
+    # show_columns = ['serialized_item', 'inventory', 'bin', 'changed_by', 'change_date', 'status', 'reason']
+    # edit_columns = ['serialized_item', 'inventory', 'bin', 'changed_by', 'change_date', 'status', 'reason']
+    add_columns = ['serialized_item', 'inventory', 'bin', 'changed_by', 'change_date', 'status', 'reason']
+    # search_columns = ['serialized_item', 'inventory', 'bin', 'changed_by', 'change_date', 'status', 'reason']
+    description_columns = {
+        'id' : 'None',
+        'serialized_item_id_fk' : 'None',
+        'inventory_id_fk' : 'None',
+        'bin_id_fk' : 'Link to the bin where the inventory is stored',
+        'changed_by_id_fk' : 'None',
+        'change_date' : 'None',
+        'status' : 'The product’s new state',
+        'reason' : 'Why was the change made?',
+    }
+    # list_exclude_columns = ['serialized_item', 'inventory', 'bin', 'changed_by', 'change_date', 'status', 'reason']
+    # show_exclude_columns = ['serialized_item', 'inventory', 'bin', 'changed_by', 'change_date', 'status', 'reason']
+    # edit_exclude_columns = ['serialized_item', 'inventory', 'bin', 'changed_by', 'change_date', 'status', 'reason']
+    # add_exclude_columns = ['serialized_item', 'inventory', 'bin', 'changed_by', 'change_date', 'status', 'reason']
+    # search_exclude_columns = ['serialized_item', 'inventory', 'bin', 'changed_by', 'change_date', 'status', 'reason']
+    # order_columns = ['serialized_item', 'inventory', 'bin', 'changed_by', 'change_date', 'status', 'reason']
+    # add_columns = ['serialized_item', 'inventory', 'bin', 'changed_by', 'change_date', 'status', 'reason']
+    # add_columns = ['serialized_item', 'inventory', 'bin', 'changed_by', 'change_date', 'status', 'reason']
+    # add_columns = ['serialized_item', 'inventory', 'bin', 'changed_by', 'change_date', 'status', 'reason']
+    
+    label_columns = {'serialized_item':'Serialized Item', 'inventory':'Inventory', 'bin':'Bin', 'changed_by':'Changed By', 'change_date':'Change Date', 'status':'Status', 'reason':'Reason'}
+    # base_filters = [['created_by', FilterEqualFunction, get_user],['name', FilterStartsWith, 'a']]
+    # base_order = ("name", "asc")
+    # page_size = 100 
+#    list_columns = ['serialized_item', 'inventory', 'bin', 'changed_by', 'change_date', 'status', 'reason']
+class Person_PersonLearnerMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [PersonLearnerModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class BillerCategory_BillerMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(BillerCategory)
-    related_views = [BillerModelView]
+class Geoname_AlternatenameMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Geoname)
+    related_views = [AlternatenameModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Country_StateMasterDetailView(MasterDetailView):
+class Geoname_CountryMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Geoname)
+    related_views = [CountryModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Disease_CropDiseaseLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Disease)
+    related_views = [CropDiseaseLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Crop_CropDiseaseLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Crop)
+    related_views = [CropDiseaseLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Pest_CropPestLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Pest)
+    related_views = [CropPestLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Crop_CropPestLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Crop)
+    related_views = [CropPestLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Crop_CropVarietyMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Crop)
+    related_views = [CropVarietyModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_HerdMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [HerdModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Geoname_HerdMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Geoname)
+    related_views = [HerdModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class IsicSection_IsicDivisionMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(IsicSection)
+    related_views = [IsicDivisionModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Topology_LayerMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Topology)
+    related_views = [LayerModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_LeaderboardMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [LeaderboardModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_LearningPathMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [LearningPathModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Module_LessonMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Module)
+    related_views = [LessonModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Languagecodes_LessonMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Languagecodes)
+    related_views = [LessonModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class LoanTransactionStrategy_LoanTransactionRuleMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(LoanTransactionStrategy)
+    related_views = [LoanTransactionRuleModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_PersonAdminDataMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [PersonAdminDataModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Badge_PersonBadgesMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Badge)
+    related_views = [PersonBadgesModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_PersonBadgesMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [PersonBadgesModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Geoname_PersonEducationMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Geoname)
+    related_views = [PersonEducationModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_PersonEducationMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [PersonEducationModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_PersonHouseholdMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [PersonHouseholdModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Languagecodes_PersonLanguageMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Languagecodes)
+    related_views = [PersonLanguageModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_PersonLanguageMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [PersonLanguageModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_PersonLevelMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [PersonLevelModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_PersonLifeEventMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [PersonLifeEventModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Geoname_PersonLifeEventMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Geoname)
+    related_views = [PersonLifeEventModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_PersonLocationLogMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [PersonLocationLogModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Geoname_PersonLocationLogMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Geoname)
+    related_views = [PersonLocationLogModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_PersonRelationshipsLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [PersonRelationshipsLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_PersonTodoMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [PersonTodoModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Geoname_PersonTodoMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Geoname)
+    related_views = [PersonTodoModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class PersonTodo_PersonTodoMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(PersonTodo)
+    related_views = [PersonTodoModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class MimeType_SourceDocumentMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(MimeType)
+    related_views = [SourceDocumentModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_SourceDocumentMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [SourceDocumentModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Languagecodes_SourceDocumentMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Languagecodes)
+    related_views = [SourceDocumentModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_UserPointsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [UserPointsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Country_Admin1codesMasterDetailView(MasterDetailView):
     datamodel = SQLAInterface(Country)
-    related_views = [StateModelView]
+    related_views = [Admin1codesModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class TokenProvider_TokenMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(TokenProvider)
-    related_views = [TokenModelView]
+class Geoname_Admin1codesMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Geoname)
+    related_views = [Admin1codesModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Biller_BillerOfferingMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Biller)
-    related_views = [BillerOfferingModelView]
-    show_template = 'appbuilder/general/model/show_cascade.html'
-
-class State_LgaMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(State)
-    related_views = [LgaModelView]
-    show_template = 'appbuilder/general/model/show_cascade.html'
-
-class Bank_AgentMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Bank)
-    related_views = [AgentModelView]
-    show_template = 'appbuilder/general/model/show_cascade.html'
-
-class Country_AgentMasterDetailView(MasterDetailView):
+class Country_Admin2codesMasterDetailView(MasterDetailView):
     datamodel = SQLAInterface(Country)
-    related_views = [AgentModelView]
+    related_views = [Admin2codesModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class UserExt_AgentMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(UserExt)
-    related_views = [AgentModelView]
+class Geoname_Admin2codesMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Geoname)
+    related_views = [Admin2codesModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Lga_AgentMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Lga)
-    related_views = [AgentModelView]
+class Country_AnimalBreedMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Country)
+    related_views = [AnimalBreedModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class State_AgentMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(State)
-    related_views = [AgentModelView]
+class Languagecodes_ContentMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Languagecodes)
+    related_views = [ContentModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Agent_AgentMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Agent)
-    related_views = [AgentModelView]
+class MimeType_ContentMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(MimeType)
+    related_views = [ContentModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class AgentTier_AgentMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(AgentTier)
-    related_views = [AgentModelView]
+class Content_ContentMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Content)
+    related_views = [ContentModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class UserExt_PosMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(UserExt)
-    related_views = [PosModelView]
+class Person_ContentMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [ContentModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class State_PosMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(State)
-    related_views = [PosModelView]
+class SourceDocument_ContentMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(SourceDocument)
+    related_views = [ContentModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Lga_PosMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Lga)
-    related_views = [PosModelView]
+class IsicDivision_IsicGroupMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(IsicDivision)
+    related_views = [IsicGroupModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Pos_AgentPosLinkMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Pos)
-    related_views = [AgentPosLinkModelView]
+class LearningPath_LearningPathContentMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(LearningPath)
+    related_views = [LearningPathContentModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Agent_AgentPosLinkMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Agent)
-    related_views = [AgentPosLinkModelView]
+class Module_LearningPathContentMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Module)
+    related_views = [LearningPathContentModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class State_CommissionMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(State)
-    related_views = [CommissionModelView]
+class Person_LessonEngagementMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [LessonEngagementModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class TransType_CommissionMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(TransType)
-    related_views = [CommissionModelView]
+class Lesson_LessonEngagementMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Lesson)
+    related_views = [LessonEngagementModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Agent_CommissionMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Agent)
-    related_views = [CommissionModelView]
+class Person_PersonAdditionalDataMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [PersonAdditionalDataModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Currency_CommissionMasterDetailView(MasterDetailView):
+class Country_PersonAdditionalDataMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Country)
+    related_views = [PersonAdditionalDataModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Lesson_QuizMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Lesson)
+    related_views = [QuizModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Country_TimezoneMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Country)
+    related_views = [TimezoneModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Geoname_AnimalMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Geoname)
+    related_views = [AnimalModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class AnimalBreed_AnimalMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(AnimalBreed)
+    related_views = [AnimalModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Animal_AnimalMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Animal)
+    related_views = [AnimalModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_AnimalMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [AnimalModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Content_ContentRecommendationsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Content)
+    related_views = [ContentRecommendationsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_ContentRecommendationsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [ContentRecommendationsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class IsicGroup_IsicClassMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(IsicGroup)
+    related_views = [IsicClassModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Lesson_LessonContentLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Lesson)
+    related_views = [LessonContentLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Content_LessonContentLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Content)
+    related_views = [LessonContentLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Country_OrgMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Country)
+    related_views = [OrgModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_OrgMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [OrgModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Geoname_OrgMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Geoname)
+    related_views = [OrgModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Admin1codes_OrgMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Admin1codes)
+    related_views = [OrgModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Admin2codes_OrgMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Admin2codes)
+    related_views = [OrgModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Quiz_QuizQuestionMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Quiz)
+    related_views = [QuizQuestionModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_PurchaseOrderMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [PurchaseOrderModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_SalesOrderMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [SalesOrderModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_AccGlAccountMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [AccGlAccountModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_AccGlAccountMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [AccGlAccountModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Currency_AccGlAccountMasterDetailView(MasterDetailView):
     datamodel = SQLAInterface(Currency)
-    related_views = [CommissionModelView]
+    related_views = [AccGlAccountModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class BillerOffering_CommissionMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(BillerOffering)
-    related_views = [CommissionModelView]
+class AccGlAccount_AccGlAccountMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(AccGlAccount)
+    related_views = [AccGlAccountModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Biller_CommissionMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Biller)
-    related_views = [CommissionModelView]
-    show_template = 'appbuilder/general/model/show_cascade.html'
-
-class CustomerSegment_CommissionMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(CustomerSegment)
-    related_views = [CommissionModelView]
-    show_template = 'appbuilder/general/model/show_cascade.html'
-
-class Lga_CommissionMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Lga)
-    related_views = [CommissionModelView]
-    show_template = 'appbuilder/general/model/show_cascade.html'
-
-class Promotion_CommissionMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Promotion)
-    related_views = [CommissionModelView]
-    show_template = 'appbuilder/general/model/show_cascade.html'
-
-class AgentTier_CommissionMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(AgentTier)
-    related_views = [CommissionModelView]
-    show_template = 'appbuilder/general/model/show_cascade.html'
-
-class RiskProfile_CommissionMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(RiskProfile)
-    related_views = [CommissionModelView]
-    show_template = 'appbuilder/general/model/show_cascade.html'
-
-class Agent_PersonMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Agent)
-    related_views = [PersonModelView]
-    show_template = 'appbuilder/general/model/show_cascade.html'
-
-class Person_PersonMasterDetailView(MasterDetailView):
+class Person_AccGlClosureMasterDetailView(MasterDetailView):
     datamodel = SQLAInterface(Person)
-    related_views = [PersonModelView]
+    related_views = [AccGlClosureModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Pos_WalletMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Pos)
-    related_views = [WalletModelView]
+class Org_AccGlClosureMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [AccGlClosureModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Agent_WalletMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Agent)
-    related_views = [WalletModelView]
+class Animal_AnimalHealthMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Animal)
+    related_views = [AnimalHealthModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Person_AgentPersonLinkMasterDetailView(MasterDetailView):
+class Person_AnimalHealthMasterDetailView(MasterDetailView):
     datamodel = SQLAInterface(Person)
-    related_views = [AgentPersonLinkModelView]
+    related_views = [AnimalHealthModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Agent_AgentPersonLinkMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Agent)
-    related_views = [AgentPersonLinkModelView]
+class Timezone_CalendarMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Timezone)
+    related_views = [CalendarModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Agent_ContactMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Agent)
-    related_views = [ContactModelView]
+class Person_CalendarMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [CalendarModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class ContactType_ContactMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(ContactType)
+class Org_CalendarMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [CalendarModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_ContactMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
     related_views = [ContactModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
@@ -1861,13 +6233,23 @@ class Person_ContactMasterDetailView(MasterDetailView):
     related_views = [ContactModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
+class ContactType_ContactMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(ContactType)
+    related_views = [ContactModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Languagecodes_DocMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Languagecodes)
+    related_views = [DocModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
 class MimeType_DocMasterDetailView(MasterDetailView):
     datamodel = SQLAInterface(MimeType)
     related_views = [DocModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class DocType_DocMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(DocType)
+class Org_DocMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
     related_views = [DocModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
@@ -1876,353 +6258,1600 @@ class Person_DocMasterDetailView(MasterDetailView):
     related_views = [DocModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Agent_DocMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Agent)
+class DocType_DocMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(DocType)
     related_views = [DocModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Person_PersonAdminDataMasterDetailView(MasterDetailView):
+class Org_FundMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [FundModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_HerdAnimalLinkMasterDetailView(MasterDetailView):
     datamodel = SQLAInterface(Person)
-    related_views = [PersonAdminDataModelView]
+    related_views = [HerdAnimalLinkModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Bank_TransMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Bank)
-    related_views = [TransModelView]
+class Animal_HerdAnimalLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Animal)
+    related_views = [HerdAnimalLinkModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Pos_TransMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Pos)
-    related_views = [TransModelView]
+class Herd_HerdAnimalLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Herd)
+    related_views = [HerdAnimalLinkModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Promotion_TransMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Promotion)
-    related_views = [TransModelView]
+class Org_LoanRiskAnalysisMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [LoanRiskAnalysisModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Coupon_TransMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Coupon)
-    related_views = [TransModelView]
+class Org_LtagBatchMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [LtagBatchModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class CustomerSegment_TransMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(CustomerSegment)
-    related_views = [TransModelView]
+class Country_OpportunityMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Country)
+    related_views = [OpportunityModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class RiskProfile_TransMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(RiskProfile)
-    related_views = [TransModelView]
+class ProductClass_OpportunityMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(ProductClass)
+    related_views = [OpportunityModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class AgentTier_TransMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(AgentTier)
-    related_views = [TransModelView]
+class Person_OpportunityMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [OpportunityModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class BillerOffering_TransMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(BillerOffering)
-    related_views = [TransModelView]
+class Org_OpportunityMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [OpportunityModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Currency_TransMasterDetailView(MasterDetailView):
+class Person_OrgPeopleLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [OrgPeopleLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_OrgPeopleLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [OrgPeopleLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_OrgSuppliesLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [OrgSuppliesLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class IsicClass_OrgSuppliesLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(IsicClass)
+    related_views = [OrgSuppliesLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_PersonEmploymentMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [PersonEmploymentModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_PersonEmploymentMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [PersonEmploymentModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_PipelineMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [PipelineModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Currency_ProductSkuLinkMasterDetailView(MasterDetailView):
     datamodel = SQLAInterface(Currency)
-    related_views = [TransModelView]
+    related_views = [ProductSkuLinkModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Biller_TransMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Biller)
-    related_views = [TransModelView]
+class Org_ProductSkuLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [ProductSkuLinkModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Wallet_TransMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Wallet)
-    related_views = [TransModelView]
-    show_template = 'appbuilder/general/model/show_cascade.html'
-
-class TransRoutingThresholds_TransMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(TransRoutingThresholds)
-    related_views = [TransModelView]
-    show_template = 'appbuilder/general/model/show_cascade.html'
-
-class Agent_TransMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Agent)
-    related_views = [TransModelView]
-    show_template = 'appbuilder/general/model/show_cascade.html'
-
-class PaymentCard_TransMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(PaymentCard)
-    related_views = [TransModelView]
-    show_template = 'appbuilder/general/model/show_cascade.html'
-
-class Doc_AgentDocLinkMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Doc)
-    related_views = [AgentDocLinkModelView]
-    show_template = 'appbuilder/general/model/show_cascade.html'
-
-class Agent_AgentDocLinkMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface(Agent)
-    related_views = [AgentDocLinkModelView]
-    show_template = 'appbuilder/general/model/show_cascade.html'
-
-class Person_PersonDocLinkMasterDetailView(MasterDetailView):
+class Person_ProductSkuLinkMasterDetailView(MasterDetailView):
     datamodel = SQLAInterface(Person)
-    related_views = [PersonDocLinkModelView]
+    related_views = [ProductSkuLinkModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class Doc_PersonDocLinkMasterDetailView(MasterDetailView):
+class ProductClass_ProductSkuLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(ProductClass)
+    related_views = [ProductSkuLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_QuoteMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [QuoteModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_ScoringModelMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [ScoringModelModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_SupplierParamMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [SupplierParamModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_UserResponseMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [UserResponseModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class QuizQuestion_UserResponseMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(QuizQuestion)
+    related_views = [UserResponseModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_WarehouseMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [WarehouseModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Geoname_WarehouseMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Geoname)
+    related_views = [WarehouseModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class PurchaseOrder_PurchaseOrderDetailsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(PurchaseOrder)
+    related_views = [PurchaseOrderDetailsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class ProductSkuLink_PurchaseOrderDetailsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(ProductSkuLink)
+    related_views = [PurchaseOrderDetailsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class ProductSkuLink_SalesOrderDetailsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(ProductSkuLink)
+    related_views = [SalesOrderDetailsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class SalesOrder_SalesOrderDetailsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(SalesOrder)
+    related_views = [SalesOrderDetailsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class AccGlAccount_AccBalancesMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(AccGlAccount)
+    related_views = [AccBalancesModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class AccGlAccount_AccGlJournalEntryMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(AccGlAccount)
+    related_views = [AccGlJournalEntryModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class AccGlJournalEntry_AccGlJournalEntryMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(AccGlJournalEntry)
+    related_views = [AccGlJournalEntryModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Currency_AccGlJournalEntryMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Currency)
+    related_views = [AccGlJournalEntryModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_AccGlJournalEntryMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [AccGlJournalEntryModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_AccGlJournalEntryMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [AccGlJournalEntryModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_AccProductLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [AccProductLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class ProductClass_AccProductLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(ProductClass)
+    related_views = [AccProductLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class AccGlAccount_AccProductLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(AccGlAccount)
+    related_views = [AccProductLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Warehouse_AisleMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Warehouse)
+    related_views = [AisleModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Contact_CalendarEventMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Contact)
+    related_views = [CalendarEventModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Calendar_CalendarEventMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Calendar)
+    related_views = [CalendarEventModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class CalendarEvent_CalendarEventMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(CalendarEvent)
+    related_views = [CalendarEventModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_InventoryOrderMapMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [InventoryOrderMapModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Quote_InventoryOrderMapMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Quote)
+    related_views = [InventoryOrderMapModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class SalesOrder_InventoryOrderMapMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(SalesOrder)
+    related_views = [InventoryOrderMapModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_InvoiceMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [InvoiceModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Quote_InvoiceMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Quote)
+    related_views = [InvoiceModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Geoname_LandParcelMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Geoname)
+    related_views = [LandParcelModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Doc_LandParcelMasterDetailView(MasterDetailView):
     datamodel = SQLAInterface(Doc)
-    related_views = [PersonDocLinkModelView]
+    related_views = [LandParcelModelView]
     show_template = 'appbuilder/general/model/show_cascade.html'
 
-class UserExtMultipleView(MultipleView):
-    datamodel = SQLAInterface(UserExt)
-    views = [StateModelView, AgentTierModelView, BankModelView, CountryModelView, AgentModelView, LgaModelView, UserExtModelView]
+class Org_LandParcelMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [LandParcelModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
 
-class LgaMultipleView(MultipleView):
-    datamodel = SQLAInterface(Lga)
-    views = [StateModelView, LgaModelView, UserExtModelView]
+class Org_LeadScoreMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [LeadScoreModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
 
-class AgentMultipleView(MultipleView):
-    datamodel = SQLAInterface(Agent)
-    views = [AgentModelView, PosModelView]
+class Opportunity_LeadScoreMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Opportunity)
+    related_views = [LeadScoreModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
 
-class RiskProfileMultipleView(MultipleView):
-    datamodel = SQLAInterface(RiskProfile)
-    views = [StateModelView, CustomerSegmentModelView, AgentModelView, CurrencyModelView, RiskProfileModelView, BillerOfferingModelView, LgaModelView, TransTypeModelView, PromotionModelView, BillerModelView, AgentTierModelView]
+class ScoringModel_LeadScoreMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(ScoringModel)
+    related_views = [LeadScoreModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class LoanTransactionStrategy_LoanProductMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(LoanTransactionStrategy)
+    related_views = [LoanProductModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Currency_LoanProductMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Currency)
+    related_views = [LoanProductModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Fund_LoanProductMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Fund)
+    related_views = [LoanProductModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Animal_LtagMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Animal)
+    related_views = [LtagModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class LtagBatch_LtagMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(LtagBatch)
+    related_views = [LtagModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Opportunity_OpportunityContactLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Opportunity)
+    related_views = [OpportunityContactLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Contact_OpportunityContactLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Contact)
+    related_views = [OpportunityContactLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class IsicClass_OpportunityIsicClassLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(IsicClass)
+    related_views = [OpportunityIsicClassLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Opportunity_OpportunityIsicClassLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Opportunity)
+    related_views = [OpportunityIsicClassLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Pipeline_PipelineStagesMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Pipeline)
+    related_views = [PipelineStagesModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class ProductSkuLink_ProductReturnMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(ProductSkuLink)
+    related_views = [ProductReturnModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Quote_QuoteDetailsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Quote)
+    related_views = [QuoteDetailsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class ProductSkuLink_QuoteDetailsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(ProductSkuLink)
+    related_views = [QuoteDetailsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class CalendarEvent_CalendarEventAttachmentMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(CalendarEvent)
+    related_views = [CalendarEventAttachmentModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Contact_CalendarEventAttendeeMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Contact)
+    related_views = [CalendarEventAttendeeModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_CalendarEventAttendeeMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [CalendarEventAttendeeModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class CalendarEvent_CalendarEventAttendeeMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(CalendarEvent)
+    related_views = [CalendarEventAttendeeModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class CalendarEvent_CalendarEventRecurrenceMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(CalendarEvent)
+    related_views = [CalendarEventRecurrenceModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class CalendarEvent_CalendarEventRemindersMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(CalendarEvent)
+    related_views = [CalendarEventRemindersModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class ProductSkuLink_InventoryOrderDetailMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(ProductSkuLink)
+    related_views = [InventoryOrderDetailModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class InventoryOrderMap_InventoryOrderDetailMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(InventoryOrderMap)
+    related_views = [InventoryOrderDetailModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class ProductSkuLink_InvoiceDetailsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(ProductSkuLink)
+    related_views = [InvoiceDetailsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Invoice_InvoiceDetailsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Invoice)
+    related_views = [InvoiceDetailsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Invoice_InvoicePaymentsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Invoice)
+    related_views = [InvoicePaymentsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class AccGlJournalEntry_InvoicePaymentsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(AccGlJournalEntry)
+    related_views = [InvoicePaymentsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_LandImprovementsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [LandImprovementsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class LandParcel_LandImprovementsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(LandParcel)
+    related_views = [LandImprovementsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_LandOwnershipHistoryMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [LandOwnershipHistoryModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class LandParcel_LandOwnershipHistoryMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(LandParcel)
+    related_views = [LandOwnershipHistoryModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class LandParcel_LandUseHistoryMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(LandParcel)
+    related_views = [LandUseHistoryModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Crop_LandUseHistoryMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Crop)
+    related_views = [LandUseHistoryModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_LandUseRecommendationsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [LandUseRecommendationsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class CropVariety_LandUseRecommendationsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(CropVariety)
+    related_views = [LandUseRecommendationsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class LandParcel_LandUseRecommendationsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(LandParcel)
+    related_views = [LandUseRecommendationsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_LoanMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [LoanModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_LoanMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [LoanModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Currency_LoanMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Currency)
+    related_views = [LoanModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class LoanTransactionStrategy_LoanMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(LoanTransactionStrategy)
+    related_views = [LoanModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Fund_LoanMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Fund)
+    related_views = [LoanModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class LoanProduct_LoanMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(LoanProduct)
+    related_views = [LoanModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class LoanTransactionStrategy_LoanProductStrategyOverrideMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(LoanTransactionStrategy)
+    related_views = [LoanProductStrategyOverrideModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class LoanProduct_LoanProductStrategyOverrideMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(LoanProduct)
+    related_views = [LoanProductStrategyOverrideModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_OpportunityPipelineStageLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [OpportunityPipelineStageLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class PipelineStages_OpportunityPipelineStageLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(PipelineStages)
+    related_views = [OpportunityPipelineStageLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Opportunity_OpportunityPipelineStageLinkMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Opportunity)
+    related_views = [OpportunityPipelineStageLinkModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Aisle_RackMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Aisle)
+    related_views = [RackModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_SoilTestsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [SoilTestsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class LandParcel_SoilTestsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(LandParcel)
+    related_views = [SoilTestsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class LandParcel_WaypointMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(LandParcel)
+    related_views = [WaypointModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_WaypointMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [WaypointModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Loan_LoanArrearsAgingMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Loan)
+    related_views = [LoanArrearsAgingModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Loan_LoanChargeMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Loan)
+    related_views = [LoanChargeModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Doc_LoanCollateralMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Doc)
+    related_views = [LoanCollateralModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Loan_LoanCollateralMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Loan)
+    related_views = [LoanCollateralModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_LoanGuarantorMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [LoanGuarantorModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Loan_LoanGuarantorMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Loan)
+    related_views = [LoanGuarantorModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_LoanGuarantorMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [LoanGuarantorModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_LoanOfficerAssignmentHistoryMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [LoanOfficerAssignmentHistoryModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Loan_LoanOfficerAssignmentHistoryMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Loan)
+    related_views = [LoanOfficerAssignmentHistoryModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Loan_LoanRepaymentScheduleMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Loan)
+    related_views = [LoanRepaymentScheduleModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Rack_ShelfMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Rack)
+    related_views = [ShelfModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Waypoint_WaypointAuditMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Waypoint)
+    related_views = [WaypointAuditModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Person_WaypointAuditMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Person)
+    related_views = [WaypointAuditModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Shelf_BinMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Shelf)
+    related_views = [BinModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Bin_InventoryMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Bin)
+    related_views = [InventoryModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_InventoryMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [InventoryModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class ProductSkuLink_InventoryMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(ProductSkuLink)
+    related_views = [InventoryModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_InventoryLogMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [InventoryLogModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Bin_InventoryLogMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Bin)
+    related_views = [InventoryLogModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Inventory_InventoryLogMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Inventory)
+    related_views = [InventoryLogModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class ProductSkuLink_InventoryLogMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(ProductSkuLink)
+    related_views = [InventoryLogModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Inventory_PerishableItemAlertsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Inventory)
+    related_views = [PerishableItemAlertsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class ProductSkuLink_SerializedItemsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(ProductSkuLink)
+    related_views = [SerializedItemsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Inventory_SerializedItemsMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Inventory)
+    related_views = [SerializedItemsModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class SerializedItems_InventorySerialLogMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(SerializedItems)
+    related_views = [InventorySerialLogModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Bin_InventorySerialLogMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Bin)
+    related_views = [InventorySerialLogModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Org_InventorySerialLogMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Org)
+    related_views = [InventorySerialLogModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class Inventory_InventorySerialLogMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface(Inventory)
+    related_views = [InventorySerialLogModelView]
+    show_template = 'appbuilder/general/model/show_cascade.html'
+
+class CropMultipleView(MultipleView):
+    datamodel = SQLAInterface(Crop)
+    views = [DiseaseModelView, CropModelView]
+
+class GeonameMultipleView(MultipleView):
+    datamodel = SQLAInterface(Geoname)
+    views = [GeonameModelView, PersonModelView]
+
+class LanguagecodesMultipleView(MultipleView):
+    datamodel = SQLAInterface(Languagecodes)
+    views = [LanguagecodesModelView, ModuleModelView]
 
 class PersonMultipleView(MultipleView):
     datamodel = SQLAInterface(Person)
-    views = [AgentModelView, PersonModelView]
+    views = [BadgeModelView, PersonModelView]
 
-class PaymentCardMultipleView(MultipleView):
-    datamodel = SQLAInterface(PaymentCard)
-    views = [PaymentCardModelView, BankModelView, CustomerSegmentModelView, AgentModelView, RiskProfileModelView, CurrencyModelView, TransRoutingThresholdsModelView, CouponModelView, BillerOfferingModelView, PosModelView, WalletModelView, PromotionModelView, BillerModelView, AgentTierModelView]
+class SourceDocumentMultipleView(MultipleView):
+    datamodel = SQLAInterface(SourceDocument)
+    views = [LanguagecodesModelView, PersonModelView, MimeTypeModelView, SourceDocumentModelView, ContentModelView]
 
-class DocMultipleView(MultipleView):
-    datamodel = SQLAInterface(Doc)
-    views = [DocModelView, PersonModelView]
+class ModuleMultipleView(MultipleView):
+    datamodel = SQLAInterface(Module)
+    views = [LearningPathModelView, ModuleModelView]
 
+class LessonMultipleView(MultipleView):
+    datamodel = SQLAInterface(Lesson)
+    views = [PersonModelView, LessonModelView]
 
-appbuilder.add_view(AgentTierModelView, "Agent Tier", icon="fa-folder-open-o", category="Operations")
-appbuilder.add_view(AgentModelView, "Agent", icon="fa-folder-open-o", category="Operations")
-appbuilder.add_view(CommissionModelView, "Commission", icon="fa-folder-open-o", category="Operations")
-appbuilder.add_view(WalletModelView, "Wallet", icon="fa-folder-open-o", category="Operations")
-appbuilder.add_separator("Operations")
+class CountryMultipleView(MultipleView):
+    datamodel = SQLAInterface(Country)
+    views = [PersonModelView, CountryModelView]
 
-appbuilder.add_view(BillerCategoryModelView, "Biller Category", icon="fa-folder-open-o", category="Setup")
+class ContentMultipleView(MultipleView):
+    datamodel = SQLAInterface(Content)
+    views = [ContentModelView, LessonModelView]
+
+class Admin2codesMultipleView(MultipleView):
+    datamodel = SQLAInterface(Admin2codes)
+    views = [GeonameModelView, Admin2codesModelView, CountryModelView, Admin1codesModelView, OrgModelView]
+
+class OrgMultipleView(MultipleView):
+    datamodel = SQLAInterface(Org)
+    views = [PersonModelView, OrgModelView, AccGlAccountModelView, CurrencyModelView]
+
+class ContactTypeMultipleView(MultipleView):
+    datamodel = SQLAInterface(ContactType)
+    views = [PersonModelView, OrgModelView, ContactTypeModelView]
+
+class DocTypeMultipleView(MultipleView):
+    datamodel = SQLAInterface(DocType)
+    views = [LanguagecodesModelView, PersonModelView, DocTypeModelView, MimeTypeModelView, OrgModelView]
+
+class HerdMultipleView(MultipleView):
+    datamodel = SQLAInterface(Herd)
+    views = [PersonModelView, AnimalModelView, HerdModelView]
+
+class IsicClassMultipleView(MultipleView):
+    datamodel = SQLAInterface(IsicClass)
+    views = [OrgModelView, IsicClassModelView]
+
+class QuizQuestionMultipleView(MultipleView):
+    datamodel = SQLAInterface(QuizQuestion)
+    views = [PersonModelView, QuizQuestionModelView]
+
+class ProductSkuLinkMultipleView(MultipleView):
+    datamodel = SQLAInterface(ProductSkuLink)
+    views = [PurchaseOrderModelView, ProductSkuLinkModelView]
+
+class SalesOrderMultipleView(MultipleView):
+    datamodel = SQLAInterface(SalesOrder)
+    views = [SalesOrderModelView, ProductSkuLinkModelView]
+
+class CalendarEventMultipleView(MultipleView):
+    datamodel = SQLAInterface(CalendarEvent)
+    views = [CalendarModelView, CalendarEventModelView, ContactModelView]
+
+class QuoteMultipleView(MultipleView):
+    datamodel = SQLAInterface(Quote)
+    views = [OrgModelView, QuoteModelView]
+
+class ScoringModelMultipleView(MultipleView):
+    datamodel = SQLAInterface(ScoringModel)
+    views = [ScoringModelModelView, OrgModelView, OpportunityModelView]
+
+class FundMultipleView(MultipleView):
+    datamodel = SQLAInterface(Fund)
+    views = [LoanTransactionStrategyModelView, FundModelView, CurrencyModelView]
+
+class LtagBatchMultipleView(MultipleView):
+    datamodel = SQLAInterface(LtagBatch)
+    views = [LtagBatchModelView, AnimalModelView]
+
+class ContactMultipleView(MultipleView):
+    datamodel = SQLAInterface(Contact)
+    views = [ContactModelView, OpportunityModelView]
+
+class OpportunityMultipleView(MultipleView):
+    datamodel = SQLAInterface(Opportunity)
+    views = [IsicClassModelView, OpportunityModelView]
+
+class InventoryOrderMapMultipleView(MultipleView):
+    datamodel = SQLAInterface(InventoryOrderMap)
+    views = [ProductSkuLinkModelView, InventoryOrderMapModelView]
+
+class InvoiceMultipleView(MultipleView):
+    datamodel = SQLAInterface(Invoice)
+    views = [InvoiceModelView, ProductSkuLinkModelView]
+
+class AccGlJournalEntryMultipleView(MultipleView):
+    datamodel = SQLAInterface(AccGlJournalEntry)
+    views = [InvoiceModelView, AccGlJournalEntryModelView]
+
+class LandParcelMultipleView(MultipleView):
+    datamodel = SQLAInterface(LandParcel)
+    views = [PersonModelView, LandParcelModelView]
+
+class LoanProductMultipleView(MultipleView):
+    datamodel = SQLAInterface(LoanProduct)
+    views = [LoanTransactionStrategyModelView, LoanProductModelView]
+
+class LoanMultipleView(MultipleView):
+    datamodel = SQLAInterface(Loan)
+    views = [DocModelView, LoanModelView]
+
+class InventoryMultipleView(MultipleView):
+    datamodel = SQLAInterface(Inventory)
+    views = [InventoryModelView, ProductSkuLinkModelView]
+
+appbuilder.add_view(TechParametersModelView, "Tech Parameters", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(BadgeModelView, "Badge", icon="fa-folder-open-o", category="Setup")
+
 appbuilder.add_view(ContactTypeModelView, "Contact Type", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(CropModelView, "Crop", icon="fa-folder-open-o", category="Setup")
+
 appbuilder.add_view(CurrencyModelView, "Currency", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(CountryModelView, "Country", icon="fa-folder-open-o", category="Setup")
-appbuilder.add_view(StateModelView, "State", icon="fa-folder-open-o", category="Setup")
-appbuilder.add_view(LgaModelView, "Lga", icon="fa-folder-open-o", category="Setup")
-appbuilder.add_view(BankModelView, "Bank", icon="fa-folder-open-o", category="Setup")
-
-appbuilder.add_view(CouponModelView, "Coupon", icon="fa-folder-open-o", category="Operations")
-appbuilder.add_view(PaymentCardModelView, "Payment Card", icon="fa-folder-open-o", category="Operations")
-appbuilder.add_view(TransTypeModelView, "Trans Type", icon="fa-folder-open-o", category="Operations")
-appbuilder.add_view(TransRoutingThresholdsModelView, "Trans Routing Thresholds", icon="fa-folder-open-o", category="Operations")
-appbuilder.add_view(BillerOfferingModelView, "Biller Offering", icon="fa-folder-open-o", category="Operations")
-
-
-
-
-appbuilder.add_view(CustomerSegmentModelView, "Customer Segment", icon="fa-folder-open-o", category="Setup")
+appbuilder.add_view(DiseaseModelView, "Disease", icon="fa-folder-open-o", category="Setup")
 
 appbuilder.add_view(DocTypeModelView, "Doc Type", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(FeaturecodesModelView, "Featurecodes", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(GeonameModelView, "Geoname", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(IsicSectionModelView, "Isic Section", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(LanguagecodesModelView, "Languagecodes", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(LoanTransactionModelView, "Loan Transaction", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(LoanTransactionStrategyModelView, "Loan Transaction Strategy", icon="fa-folder-open-o", category="Setup")
 
 appbuilder.add_view(MimeTypeModelView, "Mime Type", icon="fa-folder-open-o", category="Setup")
 
 appbuilder.add_view(MimeTypeMapModelView, "Mime Type Map", icon="fa-folder-open-o", category="Setup")
 
-
-
-appbuilder.add_view(PromotionModelView, "Promotion", icon="fa-folder-open-o", category="Setup")
-
-appbuilder.add_view(RiskProfileModelView, "Risk Profile", icon="fa-folder-open-o", category="Setup")
-
-appbuilder.add_view(TechparamsModelView, "Techparams", icon="fa-folder-open-o", category="Setup")
-
-appbuilder.add_view(TokenProviderModelView, "Token Provider", icon="fa-folder-open-o", category="Setup")
-
-
-
-
-appbuilder.add_view(UserExtModelView, "User Ext", icon="fa-folder-open-o", category="Setup")
-
-appbuilder.add_view(BillerModelView, "Biller", icon="fa-folder-open-o", category="Setup")
-
-
-
-appbuilder.add_view(TokenModelView, "Token", icon="fa-folder-open-o", category="Setup")
-
-
-
-
-
-
-
-appbuilder.add_view(PosModelView, "Pos", icon="fa-folder-open-o", category="Setup")
-
-appbuilder.add_view(AgentPosLinkModelView, "Agent Pos Link", icon="fa-folder-open-o", category="Setup")
-
-
+appbuilder.add_view(ModuleModelView, "Module", icon="fa-folder-open-o", category="Setup")
 
 appbuilder.add_view(PersonModelView, "Person", icon="fa-folder-open-o", category="Setup")
 
+appbuilder.add_view(PestModelView, "Pest", icon="fa-folder-open-o", category="Setup")
 
+appbuilder.add_view(ProductClassModelView, "Product Class", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(AgentPersonLinkModelView, "Agent Person Link", icon="fa-folder-open-o", category="Setup")
+appbuilder.add_view(SpatialRefSysModelView, "Spatial Ref Sys", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(TopologyModelView, "Topology", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(UsGazModelView, "Us Gaz", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(UsLexModelView, "Us Lex", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(UsRulesModelView, "Us Rules", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(PersonLearnerModelView, "Person Learner", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(AlternatenameModelView, "Alternatename", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(CountryModelView, "Country", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(CropDiseaseLinkModelView, "Crop Disease Link", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(CropPestLinkModelView, "Crop Pest Link", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(CropVarietyModelView, "Crop Variety", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(HerdModelView, "Herd", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(IsicDivisionModelView, "Isic Division", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(LayerModelView, "Layer", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(LeaderboardModelView, "Leaderboard", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(LearningPathModelView, "Learning Path", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(LessonModelView, "Lesson", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(LoanTransactionRuleModelView, "Loan Transaction Rule", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(PersonAdminDataModelView, "Person Admin Data", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(PersonBadgesModelView, "Person Badges", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(PersonEducationModelView, "Person Education", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(PersonHouseholdModelView, "Person Household", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(PersonLanguageModelView, "Person Language", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(PersonLevelModelView, "Person Level", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(PersonLifeEventModelView, "Person Life Event", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(PersonLocationLogModelView, "Person Location Log", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(PersonRelationshipsLinkModelView, "Person Relationships Link", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(PersonTodoModelView, "Person Todo", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(SourceDocumentModelView, "Source Document", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(UserPointsModelView, "User Points", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(Admin1codesModelView, "Admin1codes", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(Admin2codesModelView, "Admin2codes", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(AnimalBreedModelView, "Animal Breed", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(ContentModelView, "Content", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(IsicGroupModelView, "Isic Group", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(LearningPathContentModelView, "Learning Path Content", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(LessonEngagementModelView, "Lesson Engagement", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(PersonAdditionalDataModelView, "Person Additional Data", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(QuizModelView, "Quiz", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(TimezoneModelView, "Timezone", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(AnimalModelView, "Animal", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(ContentRecommendationsModelView, "Content Recommendations", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(IsicClassModelView, "Isic Class", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(LessonContentLinkModelView, "Lesson Content Link", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(OrgModelView, "Org", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(QuizQuestionModelView, "Quiz Question", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(PurchaseOrderModelView, "Purchase Order", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(SalesOrderModelView, "Sales Order", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(AccGlAccountModelView, "Acc Gl Account", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(AccGlClosureModelView, "Acc Gl Closure", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(AnimalHealthModelView, "Animal Health", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(CalendarModelView, "Calendar", icon="fa-folder-open-o", category="Setup")
 
 appbuilder.add_view(ContactModelView, "Contact", icon="fa-folder-open-o", category="Setup")
 
 appbuilder.add_view(DocModelView, "Doc", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(PersonAdminDataModelView, "Person Admin Data", icon="fa-folder-open-o", category="Setup")
+appbuilder.add_view(FundModelView, "Fund", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(TransModelView, "Trans", icon="fa-folder-open-o", category="Setup")
+appbuilder.add_view(HerdAnimalLinkModelView, "Herd Animal Link", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(AgentDocLinkModelView, "Agent Doc Link", icon="fa-folder-open-o", category="Setup")
+appbuilder.add_view(LoanRiskAnalysisModelView, "Loan Risk Analysis", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(PersonDocLinkModelView, "Person Doc Link", icon="fa-folder-open-o", category="Setup")
+appbuilder.add_view(LtagBatchModelView, "Ltag Batch", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(UserExt_UserExtMasterDetailView, "User Ext", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(OpportunityModelView, "Opportunity", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(BillerCategory_BillerMasterDetailView, "Biller Category", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(OrgPeopleLinkModelView, "Org People Link", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Country_StateMasterDetailView, "Country", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(OrgSuppliesLinkModelView, "Org Supplies Link", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(TokenProvider_TokenMasterDetailView, "Token Provider", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(PersonEmploymentModelView, "Person Employment", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Biller_BillerOfferingMasterDetailView, "Biller", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(PipelineModelView, "Pipeline", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(State_LgaMasterDetailView, "State", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(ProductSkuLinkModelView, "Product Sku Link", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Bank_AgentMasterDetailView, "Bank", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(QuoteModelView, "Quote", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Country_AgentMasterDetailView, "Country", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(ScoringModelModelView, "Scoring Model", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(UserExt_AgentMasterDetailView, "User Ext", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(SupplierParamModelView, "Supplier Param", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Lga_AgentMasterDetailView, "Lga", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(UserResponseModelView, "User Response", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(State_AgentMasterDetailView, "State", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(WarehouseModelView, "Warehouse", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Agent_AgentMasterDetailView, "Agent", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(PurchaseOrderDetailsModelView, "Purchase Order Details", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(AgentTier_AgentMasterDetailView, "Agent Tier", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(SalesOrderDetailsModelView, "Sales Order Details", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(UserExt_PosMasterDetailView, "User Ext", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(AccBalancesModelView, "Acc Balances", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(State_PosMasterDetailView, "State", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(AccGlJournalEntryModelView, "Acc Gl Journal Entry", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Lga_PosMasterDetailView, "Lga", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(AccProductLinkModelView, "Acc Product Link", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Pos_AgentPosLinkMasterDetailView, "Pos", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(AisleModelView, "Aisle", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Agent_AgentPosLinkMasterDetailView, "Agent", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(CalendarEventModelView, "Calendar Event", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(State_CommissionMasterDetailView, "State", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(InventoryOrderMapModelView, "Inventory Order Map", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(TransType_CommissionMasterDetailView, "Trans Type", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(InvoiceModelView, "Invoice", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Agent_CommissionMasterDetailView, "Agent", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(LandParcelModelView, "Land Parcel", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Currency_CommissionMasterDetailView, "Currency", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(LeadScoreModelView, "Lead Score", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(BillerOffering_CommissionMasterDetailView, "Biller Offering", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(LoanProductModelView, "Loan Product", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Biller_CommissionMasterDetailView, "Biller", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(LtagModelView, "Ltag", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(CustomerSegment_CommissionMasterDetailView, "Customer Segment", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(OpportunityContactLinkModelView, "Opportunity Contact Link", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Lga_CommissionMasterDetailView, "Lga", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(OpportunityIsicClassLinkModelView, "Opportunity Isic Class Link", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Promotion_CommissionMasterDetailView, "Promotion", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(PipelineStagesModelView, "Pipeline Stages", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(AgentTier_CommissionMasterDetailView, "Agent Tier", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(ProductReturnModelView, "Product Return", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(RiskProfile_CommissionMasterDetailView, "Risk Profile", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(QuoteDetailsModelView, "Quote Details", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Agent_PersonMasterDetailView, "Agent", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(CalendarEventAttachmentModelView, "Calendar Event Attachment", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Person_PersonMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(CalendarEventAttendeeModelView, "Calendar Event Attendee", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Pos_WalletMasterDetailView, "Pos", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(CalendarEventRecurrenceModelView, "Calendar Event Recurrence", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Agent_WalletMasterDetailView, "Agent", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(CalendarEventRemindersModelView, "Calendar Event Reminders", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Person_AgentPersonLinkMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(InventoryOrderDetailModelView, "Inventory Order Detail", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Agent_AgentPersonLinkMasterDetailView, "Agent", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(InvoiceDetailsModelView, "Invoice Details", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Agent_ContactMasterDetailView, "Agent", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(InvoicePaymentsModelView, "Invoice Payments", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(ContactType_ContactMasterDetailView, "Contact Type", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(LandImprovementsModelView, "Land Improvements", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Person_ContactMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(LandOwnershipHistoryModelView, "Land Ownership History", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(MimeType_DocMasterDetailView, "Mime Type", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(LandUseHistoryModelView, "Land Use History", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(DocType_DocMasterDetailView, "Doc Type", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(LandUseRecommendationsModelView, "Land Use Recommendations", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Person_DocMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(LoanModelView, "Loan", icon="fa-folder-open-o", category="Setup")
 
-appbuilder.add_view(Agent_DocMasterDetailView, "Agent", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(LoanProductStrategyOverrideModelView, "Loan Product Strategy Override", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(OpportunityPipelineStageLinkModelView, "Opportunity Pipeline Stage Link", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(RackModelView, "Rack", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(SoilTestsModelView, "Soil Tests", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(WaypointModelView, "Waypoint", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(LoanArrearsAgingModelView, "Loan Arrears Aging", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(LoanChargeModelView, "Loan Charge", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(LoanCollateralModelView, "Loan Collateral", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(LoanGuarantorModelView, "Loan Guarantor", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(LoanOfficerAssignmentHistoryModelView, "Loan Officer Assignment History", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(LoanRepaymentScheduleModelView, "Loan Repayment Schedule", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(ShelfModelView, "Shelf", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(WaypointAuditModelView, "Waypoint Audit", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(BinModelView, "Bin", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(InventoryModelView, "Inventory", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(InventoryLogModelView, "Inventory Log", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(PerishableItemAlertsModelView, "Perishable Item Alerts", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(SerializedItemsModelView, "Serialized Items", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(InventorySerialLogModelView, "Inventory Serial Log", icon="fa-folder-open-o", category="Setup")
+
+appbuilder.add_view(Person_PersonLearnerMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Geoname_AlternatenameMasterDetailView, "Geoname", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Geoname_CountryMasterDetailView, "Geoname", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Disease_CropDiseaseLinkMasterDetailView, "Disease", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Crop_CropDiseaseLinkMasterDetailView, "Crop", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Pest_CropPestLinkMasterDetailView, "Pest", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Crop_CropPestLinkMasterDetailView, "Crop", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Crop_CropVarietyMasterDetailView, "Crop", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_HerdMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Geoname_HerdMasterDetailView, "Geoname", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(IsicSection_IsicDivisionMasterDetailView, "Isic Section", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Topology_LayerMasterDetailView, "Topology", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_LeaderboardMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_LearningPathMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Module_LessonMasterDetailView, "Module", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Languagecodes_LessonMasterDetailView, "Languagecodes", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(LoanTransactionStrategy_LoanTransactionRuleMasterDetailView, "Loan Transaction Strategy", icon="fa-folder-open-o", category="Review")
 
 appbuilder.add_view(Person_PersonAdminDataMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(Bank_TransMasterDetailView, "Bank", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(Badge_PersonBadgesMasterDetailView, "Badge", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(Pos_TransMasterDetailView, "Pos", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(Person_PersonBadgesMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(Promotion_TransMasterDetailView, "Promotion", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(Geoname_PersonEducationMasterDetailView, "Geoname", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(Coupon_TransMasterDetailView, "Coupon", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(Person_PersonEducationMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(CustomerSegment_TransMasterDetailView, "Customer Segment", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(Person_PersonHouseholdMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(RiskProfile_TransMasterDetailView, "Risk Profile", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(Languagecodes_PersonLanguageMasterDetailView, "Languagecodes", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(AgentTier_TransMasterDetailView, "Agent Tier", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(Person_PersonLanguageMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(BillerOffering_TransMasterDetailView, "Biller Offering", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(Person_PersonLevelMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(Currency_TransMasterDetailView, "Currency", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(Person_PersonLifeEventMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(Biller_TransMasterDetailView, "Biller", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(Geoname_PersonLifeEventMasterDetailView, "Geoname", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(Wallet_TransMasterDetailView, "Wallet", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(Person_PersonLocationLogMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(TransRoutingThresholds_TransMasterDetailView, "Trans Routing Thresholds", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(Geoname_PersonLocationLogMasterDetailView, "Geoname", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(Agent_TransMasterDetailView, "Agent", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(Person_PersonRelationshipsLinkMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(PaymentCard_TransMasterDetailView, "Payment Card", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(Person_PersonTodoMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(Doc_AgentDocLinkMasterDetailView, "Doc", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(Geoname_PersonTodoMasterDetailView, "Geoname", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(Agent_AgentDocLinkMasterDetailView, "Agent", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(PersonTodo_PersonTodoMasterDetailView, "Person Todo", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(Person_PersonDocLinkMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(MimeType_SourceDocumentMasterDetailView, "Mime Type", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(Doc_PersonDocLinkMasterDetailView, "Doc", icon="fa-folder-open-o", category="Review")
+appbuilder.add_view(Person_SourceDocumentMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(UserExtMultipleView, "User Ext", icon="fa-folder-open-o", category="Inspect")
+appbuilder.add_view(Languagecodes_SourceDocumentMasterDetailView, "Languagecodes", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(LgaMultipleView, "Lga", icon="fa-folder-open-o", category="Inspect")
+appbuilder.add_view(Person_UserPointsMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(AgentMultipleView, "Agent", icon="fa-folder-open-o", category="Inspect")
+appbuilder.add_view(Country_Admin1codesMasterDetailView, "Country", icon="fa-folder-open-o", category="Review")
 
-appbuilder.add_view(RiskProfileMultipleView, "Risk Profile", icon="fa-folder-open-o", category="Inspect")
+appbuilder.add_view(Geoname_Admin1codesMasterDetailView, "Geoname", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Country_Admin2codesMasterDetailView, "Country", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Geoname_Admin2codesMasterDetailView, "Geoname", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Country_AnimalBreedMasterDetailView, "Country", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Languagecodes_ContentMasterDetailView, "Languagecodes", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(MimeType_ContentMasterDetailView, "Mime Type", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Content_ContentMasterDetailView, "Content", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_ContentMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(SourceDocument_ContentMasterDetailView, "Source Document", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(IsicDivision_IsicGroupMasterDetailView, "Isic Division", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(LearningPath_LearningPathContentMasterDetailView, "Learning Path", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Module_LearningPathContentMasterDetailView, "Module", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_LessonEngagementMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Lesson_LessonEngagementMasterDetailView, "Lesson", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_PersonAdditionalDataMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Country_PersonAdditionalDataMasterDetailView, "Country", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Lesson_QuizMasterDetailView, "Lesson", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Country_TimezoneMasterDetailView, "Country", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Geoname_AnimalMasterDetailView, "Geoname", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(AnimalBreed_AnimalMasterDetailView, "Animal Breed", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Animal_AnimalMasterDetailView, "Animal", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_AnimalMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Content_ContentRecommendationsMasterDetailView, "Content", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_ContentRecommendationsMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(IsicGroup_IsicClassMasterDetailView, "Isic Group", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Lesson_LessonContentLinkMasterDetailView, "Lesson", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Content_LessonContentLinkMasterDetailView, "Content", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Country_OrgMasterDetailView, "Country", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_OrgMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Geoname_OrgMasterDetailView, "Geoname", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Admin1codes_OrgMasterDetailView, "Admin1codes", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Admin2codes_OrgMasterDetailView, "Admin2codes", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Quiz_QuizQuestionMasterDetailView, "Quiz", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_PurchaseOrderMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_SalesOrderMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_AccGlAccountMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_AccGlAccountMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Currency_AccGlAccountMasterDetailView, "Currency", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(AccGlAccount_AccGlAccountMasterDetailView, "Acc Gl Account", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_AccGlClosureMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_AccGlClosureMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Animal_AnimalHealthMasterDetailView, "Animal", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_AnimalHealthMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Timezone_CalendarMasterDetailView, "Timezone", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_CalendarMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_CalendarMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_ContactMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_ContactMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(ContactType_ContactMasterDetailView, "Contact Type", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Languagecodes_DocMasterDetailView, "Languagecodes", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(MimeType_DocMasterDetailView, "Mime Type", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_DocMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_DocMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(DocType_DocMasterDetailView, "Doc Type", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_FundMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_HerdAnimalLinkMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Animal_HerdAnimalLinkMasterDetailView, "Animal", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Herd_HerdAnimalLinkMasterDetailView, "Herd", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_LoanRiskAnalysisMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_LtagBatchMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Country_OpportunityMasterDetailView, "Country", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(ProductClass_OpportunityMasterDetailView, "Product Class", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_OpportunityMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_OpportunityMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_OrgPeopleLinkMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_OrgPeopleLinkMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_OrgSuppliesLinkMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(IsicClass_OrgSuppliesLinkMasterDetailView, "Isic Class", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_PersonEmploymentMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_PersonEmploymentMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_PipelineMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Currency_ProductSkuLinkMasterDetailView, "Currency", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_ProductSkuLinkMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_ProductSkuLinkMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(ProductClass_ProductSkuLinkMasterDetailView, "Product Class", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_QuoteMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_ScoringModelMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_SupplierParamMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_UserResponseMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(QuizQuestion_UserResponseMasterDetailView, "Quiz Question", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_WarehouseMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Geoname_WarehouseMasterDetailView, "Geoname", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(PurchaseOrder_PurchaseOrderDetailsMasterDetailView, "Purchase Order", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(ProductSkuLink_PurchaseOrderDetailsMasterDetailView, "Product Sku Link", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(ProductSkuLink_SalesOrderDetailsMasterDetailView, "Product Sku Link", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(SalesOrder_SalesOrderDetailsMasterDetailView, "Sales Order", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(AccGlAccount_AccBalancesMasterDetailView, "Acc Gl Account", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(AccGlAccount_AccGlJournalEntryMasterDetailView, "Acc Gl Account", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(AccGlJournalEntry_AccGlJournalEntryMasterDetailView, "Acc Gl Journal Entry", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Currency_AccGlJournalEntryMasterDetailView, "Currency", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_AccGlJournalEntryMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_AccGlJournalEntryMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_AccProductLinkMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(ProductClass_AccProductLinkMasterDetailView, "Product Class", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(AccGlAccount_AccProductLinkMasterDetailView, "Acc Gl Account", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Warehouse_AisleMasterDetailView, "Warehouse", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Contact_CalendarEventMasterDetailView, "Contact", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Calendar_CalendarEventMasterDetailView, "Calendar", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(CalendarEvent_CalendarEventMasterDetailView, "Calendar Event", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_InventoryOrderMapMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Quote_InventoryOrderMapMasterDetailView, "Quote", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(SalesOrder_InventoryOrderMapMasterDetailView, "Sales Order", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_InvoiceMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Quote_InvoiceMasterDetailView, "Quote", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Geoname_LandParcelMasterDetailView, "Geoname", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Doc_LandParcelMasterDetailView, "Doc", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_LandParcelMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_LeadScoreMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Opportunity_LeadScoreMasterDetailView, "Opportunity", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(ScoringModel_LeadScoreMasterDetailView, "Scoring Model", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(LoanTransactionStrategy_LoanProductMasterDetailView, "Loan Transaction Strategy", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Currency_LoanProductMasterDetailView, "Currency", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Fund_LoanProductMasterDetailView, "Fund", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Animal_LtagMasterDetailView, "Animal", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(LtagBatch_LtagMasterDetailView, "Ltag Batch", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Opportunity_OpportunityContactLinkMasterDetailView, "Opportunity", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Contact_OpportunityContactLinkMasterDetailView, "Contact", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(IsicClass_OpportunityIsicClassLinkMasterDetailView, "Isic Class", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Opportunity_OpportunityIsicClassLinkMasterDetailView, "Opportunity", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Pipeline_PipelineStagesMasterDetailView, "Pipeline", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(ProductSkuLink_ProductReturnMasterDetailView, "Product Sku Link", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Quote_QuoteDetailsMasterDetailView, "Quote", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(ProductSkuLink_QuoteDetailsMasterDetailView, "Product Sku Link", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(CalendarEvent_CalendarEventAttachmentMasterDetailView, "Calendar Event", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Contact_CalendarEventAttendeeMasterDetailView, "Contact", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_CalendarEventAttendeeMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(CalendarEvent_CalendarEventAttendeeMasterDetailView, "Calendar Event", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(CalendarEvent_CalendarEventRecurrenceMasterDetailView, "Calendar Event", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(CalendarEvent_CalendarEventRemindersMasterDetailView, "Calendar Event", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(ProductSkuLink_InventoryOrderDetailMasterDetailView, "Product Sku Link", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(InventoryOrderMap_InventoryOrderDetailMasterDetailView, "Inventory Order Map", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(ProductSkuLink_InvoiceDetailsMasterDetailView, "Product Sku Link", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Invoice_InvoiceDetailsMasterDetailView, "Invoice", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Invoice_InvoicePaymentsMasterDetailView, "Invoice", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(AccGlJournalEntry_InvoicePaymentsMasterDetailView, "Acc Gl Journal Entry", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_LandImprovementsMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(LandParcel_LandImprovementsMasterDetailView, "Land Parcel", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_LandOwnershipHistoryMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(LandParcel_LandOwnershipHistoryMasterDetailView, "Land Parcel", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(LandParcel_LandUseHistoryMasterDetailView, "Land Parcel", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Crop_LandUseHistoryMasterDetailView, "Crop", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_LandUseRecommendationsMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(CropVariety_LandUseRecommendationsMasterDetailView, "Crop Variety", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(LandParcel_LandUseRecommendationsMasterDetailView, "Land Parcel", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_LoanMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_LoanMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Currency_LoanMasterDetailView, "Currency", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(LoanTransactionStrategy_LoanMasterDetailView, "Loan Transaction Strategy", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Fund_LoanMasterDetailView, "Fund", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(LoanProduct_LoanMasterDetailView, "Loan Product", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(LoanTransactionStrategy_LoanProductStrategyOverrideMasterDetailView, "Loan Transaction Strategy", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(LoanProduct_LoanProductStrategyOverrideMasterDetailView, "Loan Product", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_OpportunityPipelineStageLinkMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(PipelineStages_OpportunityPipelineStageLinkMasterDetailView, "Pipeline Stages", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Opportunity_OpportunityPipelineStageLinkMasterDetailView, "Opportunity", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Aisle_RackMasterDetailView, "Aisle", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_SoilTestsMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(LandParcel_SoilTestsMasterDetailView, "Land Parcel", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(LandParcel_WaypointMasterDetailView, "Land Parcel", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_WaypointMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Loan_LoanArrearsAgingMasterDetailView, "Loan", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Loan_LoanChargeMasterDetailView, "Loan", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Doc_LoanCollateralMasterDetailView, "Doc", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Loan_LoanCollateralMasterDetailView, "Loan", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_LoanGuarantorMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Loan_LoanGuarantorMasterDetailView, "Loan", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_LoanGuarantorMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_LoanOfficerAssignmentHistoryMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Loan_LoanOfficerAssignmentHistoryMasterDetailView, "Loan", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Loan_LoanRepaymentScheduleMasterDetailView, "Loan", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Rack_ShelfMasterDetailView, "Rack", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Waypoint_WaypointAuditMasterDetailView, "Waypoint", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Person_WaypointAuditMasterDetailView, "Person", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Shelf_BinMasterDetailView, "Shelf", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Bin_InventoryMasterDetailView, "Bin", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_InventoryMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(ProductSkuLink_InventoryMasterDetailView, "Product Sku Link", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_InventoryLogMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Bin_InventoryLogMasterDetailView, "Bin", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Inventory_InventoryLogMasterDetailView, "Inventory", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(ProductSkuLink_InventoryLogMasterDetailView, "Product Sku Link", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Inventory_PerishableItemAlertsMasterDetailView, "Inventory", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(ProductSkuLink_SerializedItemsMasterDetailView, "Product Sku Link", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Inventory_SerializedItemsMasterDetailView, "Inventory", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(SerializedItems_InventorySerialLogMasterDetailView, "Serialized Items", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Bin_InventorySerialLogMasterDetailView, "Bin", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Org_InventorySerialLogMasterDetailView, "Org", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(Inventory_InventorySerialLogMasterDetailView, "Inventory", icon="fa-folder-open-o", category="Review")
+
+appbuilder.add_view(CropMultipleView, "Crop", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(GeonameMultipleView, "Geoname", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(LanguagecodesMultipleView, "Languagecodes", icon="fa-folder-open-o", category="Inspect")
 
 appbuilder.add_view(PersonMultipleView, "Person", icon="fa-folder-open-o", category="Inspect")
 
-appbuilder.add_view(PaymentCardMultipleView, "Payment Card", icon="fa-folder-open-o", category="Inspect")
+appbuilder.add_view(SourceDocumentMultipleView, "Source Document", icon="fa-folder-open-o", category="Inspect")
 
-appbuilder.add_view(DocMultipleView, "Doc", icon="fa-folder-open-o", category="Inspect")
+appbuilder.add_view(ModuleMultipleView, "Module", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(LessonMultipleView, "Lesson", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(CountryMultipleView, "Country", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(ContentMultipleView, "Content", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(Admin2codesMultipleView, "Admin2codes", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(OrgMultipleView, "Org", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(ContactTypeMultipleView, "Contact Type", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(DocTypeMultipleView, "Doc Type", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(HerdMultipleView, "Herd", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(IsicClassMultipleView, "Isic Class", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(QuizQuestionMultipleView, "Quiz Question", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(ProductSkuLinkMultipleView, "Product Sku Link", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(SalesOrderMultipleView, "Sales Order", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(CalendarEventMultipleView, "Calendar Event", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(QuoteMultipleView, "Quote", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(ScoringModelMultipleView, "Scoring Model", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(FundMultipleView, "Fund", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(LtagBatchMultipleView, "Ltag Batch", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(ContactMultipleView, "Contact", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(OpportunityMultipleView, "Opportunity", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(InventoryOrderMapMultipleView, "Inventory Order Map", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(InvoiceMultipleView, "Invoice", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(AccGlJournalEntryMultipleView, "Acc Gl Journal Entry", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(LandParcelMultipleView, "Land Parcel", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(LoanProductMultipleView, "Loan Product", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(LoanMultipleView, "Loan", icon="fa-folder-open-o", category="Inspect")
+
+appbuilder.add_view(InventoryMultipleView, "Inventory", icon="fa-folder-open-o", category="Inspect")
 
 
 appbuilder.add_link("rest_api", href="/swagger/v1", icon="fa-sliders", label="REST Api", category="Utilities")

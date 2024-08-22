@@ -14,8 +14,8 @@ import inflect
 p = inflect.engine()
 
 from db_utils import *
-import headers
-from py_templates.utils import *
+import oheaders as headers
+from utils import *
 
 
 def inspect_metadata(database_uri):
@@ -611,15 +611,15 @@ def gen_kivy(metadata, inspector):
 
 if __name__ == '__main__':
     # DATABASE_URI = 'postgresql://username:password@localhost:5432/mydatabase'
-    DATABASE_URI = "postgresql:///bbtmp"
+    DATABASE_URI = "postgresql:///kujatmp"
     metadata, inspector = inspect_metadata(DATABASE_URI)
 
     # m = gen_models(metadata, inspector)
-    write_file('models.py', gen_models(metadata, inspector))
+    write_file('gen/models.py', gen_models(metadata, inspector))
 
     # a = gen_api(metadata, inspector)
-    write_file('py_templates/apis.py', gen_api(metadata, inspector))
+    write_file('gen/apis.py', gen_api(metadata, inspector))
 
     # v = gen_views(metadata, inspector)
-    write_file('views.py', gen_views(metadata, inspector))
-    write_file('py_templates/gql.py', gen_graphql(metadata, inspector))
+    write_file('gen/views.py', gen_views(metadata, inspector))
+    write_file('gen/gql.py', gen_graphql(metadata, inspector))

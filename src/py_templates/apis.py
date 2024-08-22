@@ -13,36 +13,27 @@ from flask_appbuilder.models.filters import BaseFilter
 from sqlalchemy import or_
 from sqlalchemy.sql import text
 
-from src import appbuilder, db
-from models import *
+from . import appbuilder, db
+from .models import *
 
 from flask_appbuilder.api import ModelRestApi, BaseApi, expose, rison
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 
-class AgentTierApi(ModelRestApi):
-    resource = "agent_tier"
-    datamodel = SQLAInterface(AgentTier)
+class TechParametersApi(ModelRestApi):
+    resource = "Tech_Parameters"
+    datamodel = SQLAInterface(TechParameters)
     allow_browser_login = True
  
-appbuilder.add_api(AgentTierApi)
+appbuilder.add_api(TechParametersApi)
 
 
 
-class BankApi(ModelRestApi):
-    resource = "bank"
-    datamodel = SQLAInterface(Bank)
+class BadgeApi(ModelRestApi):
+    resource = "badge"
+    datamodel = SQLAInterface(Badge)
     allow_browser_login = True
  
-appbuilder.add_api(BankApi)
-
-
-
-class BillerCategoryApi(ModelRestApi):
-    resource = "biller_category"
-    datamodel = SQLAInterface(BillerCategory)
-    allow_browser_login = True
- 
-appbuilder.add_api(BillerCategoryApi)
+appbuilder.add_api(BadgeApi)
 
 
 
@@ -55,21 +46,12 @@ appbuilder.add_api(ContactTypeApi)
 
 
 
-class CountryApi(ModelRestApi):
-    resource = "country"
-    datamodel = SQLAInterface(Country)
+class CropApi(ModelRestApi):
+    resource = "crop"
+    datamodel = SQLAInterface(Crop)
     allow_browser_login = True
  
-appbuilder.add_api(CountryApi)
-
-
-
-class CouponApi(ModelRestApi):
-    resource = "coupon"
-    datamodel = SQLAInterface(Coupon)
-    allow_browser_login = True
- 
-appbuilder.add_api(CouponApi)
+appbuilder.add_api(CropApi)
 
 
 
@@ -82,12 +64,12 @@ appbuilder.add_api(CurrencyApi)
 
 
 
-class CustomerSegmentApi(ModelRestApi):
-    resource = "customer_segment"
-    datamodel = SQLAInterface(CustomerSegment)
+class DiseaseApi(ModelRestApi):
+    resource = "disease"
+    datamodel = SQLAInterface(Disease)
     allow_browser_login = True
  
-appbuilder.add_api(CustomerSegmentApi)
+appbuilder.add_api(DiseaseApi)
 
 
 
@@ -97,6 +79,60 @@ class DocTypeApi(ModelRestApi):
     allow_browser_login = True
  
 appbuilder.add_api(DocTypeApi)
+
+
+
+class FeaturecodesApi(ModelRestApi):
+    resource = "featurecodes"
+    datamodel = SQLAInterface(Featurecodes)
+    allow_browser_login = True
+ 
+appbuilder.add_api(FeaturecodesApi)
+
+
+
+class GeonameApi(ModelRestApi):
+    resource = "geoname"
+    datamodel = SQLAInterface(Geoname)
+    allow_browser_login = True
+ 
+appbuilder.add_api(GeonameApi)
+
+
+
+class IsicSectionApi(ModelRestApi):
+    resource = "isic_section"
+    datamodel = SQLAInterface(IsicSection)
+    allow_browser_login = True
+ 
+appbuilder.add_api(IsicSectionApi)
+
+
+
+class LanguagecodesApi(ModelRestApi):
+    resource = "languagecodes"
+    datamodel = SQLAInterface(Languagecodes)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LanguagecodesApi)
+
+
+
+class LoanTransactionApi(ModelRestApi):
+    resource = "loan_transaction"
+    datamodel = SQLAInterface(LoanTransaction)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LoanTransactionApi)
+
+
+
+class LoanTransactionStrategyApi(ModelRestApi):
+    resource = "loan_transaction_strategy"
+    datamodel = SQLAInterface(LoanTransactionStrategy)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LoanTransactionStrategyApi)
 
 
 
@@ -118,156 +154,12 @@ appbuilder.add_api(MimeTypeMapApi)
 
 
 
-class PaymentCardApi(ModelRestApi):
-    resource = "payment_card"
-    datamodel = SQLAInterface(PaymentCard)
+class ModuleApi(ModelRestApi):
+    resource = "module"
+    datamodel = SQLAInterface(Module)
     allow_browser_login = True
  
-appbuilder.add_api(PaymentCardApi)
-
-
-
-class PromotionApi(ModelRestApi):
-    resource = "promotion"
-    datamodel = SQLAInterface(Promotion)
-    allow_browser_login = True
- 
-appbuilder.add_api(PromotionApi)
-
-
-
-class RiskProfileApi(ModelRestApi):
-    resource = "risk_profile"
-    datamodel = SQLAInterface(RiskProfile)
-    allow_browser_login = True
- 
-appbuilder.add_api(RiskProfileApi)
-
-
-
-class TechparamsApi(ModelRestApi):
-    resource = "techparams"
-    datamodel = SQLAInterface(Techparams)
-    allow_browser_login = True
- 
-appbuilder.add_api(TechparamsApi)
-
-
-
-class TokenProviderApi(ModelRestApi):
-    resource = "token_provider"
-    datamodel = SQLAInterface(TokenProvider)
-    allow_browser_login = True
- 
-appbuilder.add_api(TokenProviderApi)
-
-
-
-class TransRoutingThresholdsApi(ModelRestApi):
-    resource = "trans_routing_thresholds"
-    datamodel = SQLAInterface(TransRoutingThresholds)
-    allow_browser_login = True
- 
-appbuilder.add_api(TransRoutingThresholdsApi)
-
-
-
-class TransTypeApi(ModelRestApi):
-    resource = "trans_type"
-    datamodel = SQLAInterface(TransType)
-    allow_browser_login = True
- 
-appbuilder.add_api(TransTypeApi)
-
-
-
-class UserExtApi(ModelRestApi):
-    resource = "user_ext"
-    datamodel = SQLAInterface(UserExt)
-    allow_browser_login = True
- 
-appbuilder.add_api(UserExtApi)
-
-
-
-class BillerApi(ModelRestApi):
-    resource = "biller"
-    datamodel = SQLAInterface(Biller)
-    allow_browser_login = True
- 
-appbuilder.add_api(BillerApi)
-
-
-
-class StateApi(ModelRestApi):
-    resource = "state"
-    datamodel = SQLAInterface(State)
-    allow_browser_login = True
- 
-appbuilder.add_api(StateApi)
-
-
-
-class TokenApi(ModelRestApi):
-    resource = "token"
-    datamodel = SQLAInterface(Token)
-    allow_browser_login = True
- 
-appbuilder.add_api(TokenApi)
-
-
-
-class BillerOfferingApi(ModelRestApi):
-    resource = "biller_offering"
-    datamodel = SQLAInterface(BillerOffering)
-    allow_browser_login = True
- 
-appbuilder.add_api(BillerOfferingApi)
-
-
-
-class LgaApi(ModelRestApi):
-    resource = "lga"
-    datamodel = SQLAInterface(Lga)
-    allow_browser_login = True
- 
-appbuilder.add_api(LgaApi)
-
-
-
-class AgentApi(ModelRestApi):
-    resource = "agent"
-    datamodel = SQLAInterface(Agent)
-    allow_browser_login = True
- 
-appbuilder.add_api(AgentApi)
-
-
-
-class PosApi(ModelRestApi):
-    resource = "pos"
-    datamodel = SQLAInterface(Pos)
-    allow_browser_login = True
- 
-appbuilder.add_api(PosApi)
-
-
-
-class AgentPosLinkApi(ModelRestApi):
-    resource = "agent_pos_link"
-    datamodel = SQLAInterface(AgentPosLink)
-    allow_browser_login = True
- 
-appbuilder.add_api(AgentPosLinkApi)
-
-
-
-class CommissionApi(ModelRestApi):
-    resource = "commission"
-    datamodel = SQLAInterface(Commission)
-    allow_browser_login = True
- 
-appbuilder.add_api(CommissionApi)
+appbuilder.add_api(ModuleApi)
 
 
 
@@ -280,21 +172,489 @@ appbuilder.add_api(PersonApi)
 
 
 
-class WalletApi(ModelRestApi):
-    resource = "wallet"
-    datamodel = SQLAInterface(Wallet)
+class PestApi(ModelRestApi):
+    resource = "pest"
+    datamodel = SQLAInterface(Pest)
     allow_browser_login = True
  
-appbuilder.add_api(WalletApi)
+appbuilder.add_api(PestApi)
 
 
 
-class AgentPersonLinkApi(ModelRestApi):
-    resource = "agent_person_link"
-    datamodel = SQLAInterface(AgentPersonLink)
+class ProductClassApi(ModelRestApi):
+    resource = "product_class"
+    datamodel = SQLAInterface(ProductClass)
     allow_browser_login = True
  
-appbuilder.add_api(AgentPersonLinkApi)
+appbuilder.add_api(ProductClassApi)
+
+
+
+class SpatialRefSysApi(ModelRestApi):
+    resource = "spatial_ref_sys"
+    datamodel = SQLAInterface(SpatialRefSys)
+    allow_browser_login = True
+ 
+appbuilder.add_api(SpatialRefSysApi)
+
+
+
+class TopologyApi(ModelRestApi):
+    resource = "topology"
+    datamodel = SQLAInterface(Topology)
+    allow_browser_login = True
+ 
+appbuilder.add_api(TopologyApi)
+
+
+
+class UsGazApi(ModelRestApi):
+    resource = "us_gaz"
+    datamodel = SQLAInterface(UsGaz)
+    allow_browser_login = True
+ 
+appbuilder.add_api(UsGazApi)
+
+
+
+class UsLexApi(ModelRestApi):
+    resource = "us_lex"
+    datamodel = SQLAInterface(UsLex)
+    allow_browser_login = True
+ 
+appbuilder.add_api(UsLexApi)
+
+
+
+class UsRulesApi(ModelRestApi):
+    resource = "us_rules"
+    datamodel = SQLAInterface(UsRules)
+    allow_browser_login = True
+ 
+appbuilder.add_api(UsRulesApi)
+
+
+
+class PersonLearnerApi(ModelRestApi):
+    resource = "Person_Learner"
+    datamodel = SQLAInterface(PersonLearner)
+    allow_browser_login = True
+ 
+appbuilder.add_api(PersonLearnerApi)
+
+
+
+class AlternatenameApi(ModelRestApi):
+    resource = "alternatename"
+    datamodel = SQLAInterface(Alternatename)
+    allow_browser_login = True
+ 
+appbuilder.add_api(AlternatenameApi)
+
+
+
+class CountryApi(ModelRestApi):
+    resource = "country"
+    datamodel = SQLAInterface(Country)
+    allow_browser_login = True
+ 
+appbuilder.add_api(CountryApi)
+
+
+
+class CropDiseaseLinkApi(ModelRestApi):
+    resource = "crop_disease_link"
+    datamodel = SQLAInterface(CropDiseaseLink)
+    allow_browser_login = True
+ 
+appbuilder.add_api(CropDiseaseLinkApi)
+
+
+
+class CropPestLinkApi(ModelRestApi):
+    resource = "crop_pest_link"
+    datamodel = SQLAInterface(CropPestLink)
+    allow_browser_login = True
+ 
+appbuilder.add_api(CropPestLinkApi)
+
+
+
+class CropVarietyApi(ModelRestApi):
+    resource = "crop_variety"
+    datamodel = SQLAInterface(CropVariety)
+    allow_browser_login = True
+ 
+appbuilder.add_api(CropVarietyApi)
+
+
+
+class HerdApi(ModelRestApi):
+    resource = "herd"
+    datamodel = SQLAInterface(Herd)
+    allow_browser_login = True
+ 
+appbuilder.add_api(HerdApi)
+
+
+
+class IsicDivisionApi(ModelRestApi):
+    resource = "isic_division"
+    datamodel = SQLAInterface(IsicDivision)
+    allow_browser_login = True
+ 
+appbuilder.add_api(IsicDivisionApi)
+
+
+
+class LayerApi(ModelRestApi):
+    resource = "layer"
+    datamodel = SQLAInterface(Layer)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LayerApi)
+
+
+
+class LeaderboardApi(ModelRestApi):
+    resource = "leaderboard"
+    datamodel = SQLAInterface(Leaderboard)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LeaderboardApi)
+
+
+
+class LearningPathApi(ModelRestApi):
+    resource = "learning_path"
+    datamodel = SQLAInterface(LearningPath)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LearningPathApi)
+
+
+
+class LessonApi(ModelRestApi):
+    resource = "lesson"
+    datamodel = SQLAInterface(Lesson)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LessonApi)
+
+
+
+class LoanTransactionRuleApi(ModelRestApi):
+    resource = "loan_transaction_rule"
+    datamodel = SQLAInterface(LoanTransactionRule)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LoanTransactionRuleApi)
+
+
+
+class PersonAdminDataApi(ModelRestApi):
+    resource = "person_admin_data"
+    datamodel = SQLAInterface(PersonAdminData)
+    allow_browser_login = True
+ 
+appbuilder.add_api(PersonAdminDataApi)
+
+
+
+class PersonBadgesApi(ModelRestApi):
+    resource = "person_badges"
+    datamodel = SQLAInterface(PersonBadges)
+    allow_browser_login = True
+ 
+appbuilder.add_api(PersonBadgesApi)
+
+
+
+class PersonEducationApi(ModelRestApi):
+    resource = "person_education"
+    datamodel = SQLAInterface(PersonEducation)
+    allow_browser_login = True
+ 
+appbuilder.add_api(PersonEducationApi)
+
+
+
+class PersonHouseholdApi(ModelRestApi):
+    resource = "person_household"
+    datamodel = SQLAInterface(PersonHousehold)
+    allow_browser_login = True
+ 
+appbuilder.add_api(PersonHouseholdApi)
+
+
+
+class PersonLanguageApi(ModelRestApi):
+    resource = "person_language"
+    datamodel = SQLAInterface(PersonLanguage)
+    allow_browser_login = True
+ 
+appbuilder.add_api(PersonLanguageApi)
+
+
+
+class PersonLevelApi(ModelRestApi):
+    resource = "person_level"
+    datamodel = SQLAInterface(PersonLevel)
+    allow_browser_login = True
+ 
+appbuilder.add_api(PersonLevelApi)
+
+
+
+class PersonLifeEventApi(ModelRestApi):
+    resource = "person_life_event"
+    datamodel = SQLAInterface(PersonLifeEvent)
+    allow_browser_login = True
+ 
+appbuilder.add_api(PersonLifeEventApi)
+
+
+
+class PersonLocationLogApi(ModelRestApi):
+    resource = "person_location_log"
+    datamodel = SQLAInterface(PersonLocationLog)
+    allow_browser_login = True
+ 
+appbuilder.add_api(PersonLocationLogApi)
+
+
+
+class PersonRelationshipsLinkApi(ModelRestApi):
+    resource = "person_relationships_link"
+    datamodel = SQLAInterface(PersonRelationshipsLink)
+    allow_browser_login = True
+ 
+appbuilder.add_api(PersonRelationshipsLinkApi)
+
+
+
+class PersonTodoApi(ModelRestApi):
+    resource = "person_todo"
+    datamodel = SQLAInterface(PersonTodo)
+    allow_browser_login = True
+ 
+appbuilder.add_api(PersonTodoApi)
+
+
+
+class SourceDocumentApi(ModelRestApi):
+    resource = "source_document"
+    datamodel = SQLAInterface(SourceDocument)
+    allow_browser_login = True
+ 
+appbuilder.add_api(SourceDocumentApi)
+
+
+
+class UserPointsApi(ModelRestApi):
+    resource = "user_points"
+    datamodel = SQLAInterface(UserPoints)
+    allow_browser_login = True
+ 
+appbuilder.add_api(UserPointsApi)
+
+
+
+class Admin1codesApi(ModelRestApi):
+    resource = "admin1codes"
+    datamodel = SQLAInterface(Admin1codes)
+    allow_browser_login = True
+ 
+appbuilder.add_api(Admin1codesApi)
+
+
+
+class Admin2codesApi(ModelRestApi):
+    resource = "admin2codes"
+    datamodel = SQLAInterface(Admin2codes)
+    allow_browser_login = True
+ 
+appbuilder.add_api(Admin2codesApi)
+
+
+
+class AnimalBreedApi(ModelRestApi):
+    resource = "animal_breed"
+    datamodel = SQLAInterface(AnimalBreed)
+    allow_browser_login = True
+ 
+appbuilder.add_api(AnimalBreedApi)
+
+
+
+class ContentApi(ModelRestApi):
+    resource = "content"
+    datamodel = SQLAInterface(Content)
+    allow_browser_login = True
+ 
+appbuilder.add_api(ContentApi)
+
+
+
+class IsicGroupApi(ModelRestApi):
+    resource = "isic_group"
+    datamodel = SQLAInterface(IsicGroup)
+    allow_browser_login = True
+ 
+appbuilder.add_api(IsicGroupApi)
+
+
+
+class LearningPathContentApi(ModelRestApi):
+    resource = "learning_path_content"
+    datamodel = SQLAInterface(LearningPathContent)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LearningPathContentApi)
+
+
+
+class LessonEngagementApi(ModelRestApi):
+    resource = "lesson_engagement"
+    datamodel = SQLAInterface(LessonEngagement)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LessonEngagementApi)
+
+
+
+class PersonAdditionalDataApi(ModelRestApi):
+    resource = "person_additional_data"
+    datamodel = SQLAInterface(PersonAdditionalData)
+    allow_browser_login = True
+ 
+appbuilder.add_api(PersonAdditionalDataApi)
+
+
+
+class QuizApi(ModelRestApi):
+    resource = "quiz"
+    datamodel = SQLAInterface(Quiz)
+    allow_browser_login = True
+ 
+appbuilder.add_api(QuizApi)
+
+
+
+class TimezoneApi(ModelRestApi):
+    resource = "timezone"
+    datamodel = SQLAInterface(Timezone)
+    allow_browser_login = True
+ 
+appbuilder.add_api(TimezoneApi)
+
+
+
+class AnimalApi(ModelRestApi):
+    resource = "animal"
+    datamodel = SQLAInterface(Animal)
+    allow_browser_login = True
+ 
+appbuilder.add_api(AnimalApi)
+
+
+
+class ContentRecommendationsApi(ModelRestApi):
+    resource = "content_recommendations"
+    datamodel = SQLAInterface(ContentRecommendations)
+    allow_browser_login = True
+ 
+appbuilder.add_api(ContentRecommendationsApi)
+
+
+
+class IsicClassApi(ModelRestApi):
+    resource = "isic_class"
+    datamodel = SQLAInterface(IsicClass)
+    allow_browser_login = True
+ 
+appbuilder.add_api(IsicClassApi)
+
+
+
+class LessonContentLinkApi(ModelRestApi):
+    resource = "lesson_content_link"
+    datamodel = SQLAInterface(LessonContentLink)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LessonContentLinkApi)
+
+
+
+class OrgApi(ModelRestApi):
+    resource = "org"
+    datamodel = SQLAInterface(Org)
+    allow_browser_login = True
+ 
+appbuilder.add_api(OrgApi)
+
+
+
+class QuizQuestionApi(ModelRestApi):
+    resource = "quiz_question"
+    datamodel = SQLAInterface(QuizQuestion)
+    allow_browser_login = True
+ 
+appbuilder.add_api(QuizQuestionApi)
+
+
+
+class PurchaseOrderApi(ModelRestApi):
+    resource = "Purchase_Order"
+    datamodel = SQLAInterface(PurchaseOrder)
+    allow_browser_login = True
+ 
+appbuilder.add_api(PurchaseOrderApi)
+
+
+
+class SalesOrderApi(ModelRestApi):
+    resource = "Sales_Order"
+    datamodel = SQLAInterface(SalesOrder)
+    allow_browser_login = True
+ 
+appbuilder.add_api(SalesOrderApi)
+
+
+
+class AccGlAccountApi(ModelRestApi):
+    resource = "acc_gl_account"
+    datamodel = SQLAInterface(AccGlAccount)
+    allow_browser_login = True
+ 
+appbuilder.add_api(AccGlAccountApi)
+
+
+
+class AccGlClosureApi(ModelRestApi):
+    resource = "acc_gl_closure"
+    datamodel = SQLAInterface(AccGlClosure)
+    allow_browser_login = True
+ 
+appbuilder.add_api(AccGlClosureApi)
+
+
+
+class AnimalHealthApi(ModelRestApi):
+    resource = "animal_health"
+    datamodel = SQLAInterface(AnimalHealth)
+    allow_browser_login = True
+ 
+appbuilder.add_api(AnimalHealthApi)
+
+
+
+class CalendarApi(ModelRestApi):
+    resource = "calendar"
+    datamodel = SQLAInterface(Calendar)
+    allow_browser_login = True
+ 
+appbuilder.add_api(CalendarApi)
 
 
 
@@ -316,37 +676,577 @@ appbuilder.add_api(DocApi)
 
 
 
-class PersonAdminDataApi(ModelRestApi):
-    resource = "person_admin_data"
-    datamodel = SQLAInterface(PersonAdminData)
+class FundApi(ModelRestApi):
+    resource = "fund"
+    datamodel = SQLAInterface(Fund)
     allow_browser_login = True
  
-appbuilder.add_api(PersonAdminDataApi)
+appbuilder.add_api(FundApi)
 
 
 
-class TransApi(ModelRestApi):
-    resource = "trans"
-    datamodel = SQLAInterface(Trans)
+class HerdAnimalLinkApi(ModelRestApi):
+    resource = "herd_animal_link"
+    datamodel = SQLAInterface(HerdAnimalLink)
     allow_browser_login = True
  
-appbuilder.add_api(TransApi)
+appbuilder.add_api(HerdAnimalLinkApi)
 
 
 
-class AgentDocLinkApi(ModelRestApi):
-    resource = "agent_doc_link"
-    datamodel = SQLAInterface(AgentDocLink)
+class LoanRiskAnalysisApi(ModelRestApi):
+    resource = "loan_risk_analysis"
+    datamodel = SQLAInterface(LoanRiskAnalysis)
     allow_browser_login = True
  
-appbuilder.add_api(AgentDocLinkApi)
+appbuilder.add_api(LoanRiskAnalysisApi)
 
 
 
-class PersonDocLinkApi(ModelRestApi):
-    resource = "person_doc_link"
-    datamodel = SQLAInterface(PersonDocLink)
+class LtagBatchApi(ModelRestApi):
+    resource = "ltag_batch"
+    datamodel = SQLAInterface(LtagBatch)
     allow_browser_login = True
  
-appbuilder.add_api(PersonDocLinkApi)
+appbuilder.add_api(LtagBatchApi)
+
+
+
+class OpportunityApi(ModelRestApi):
+    resource = "opportunity"
+    datamodel = SQLAInterface(Opportunity)
+    allow_browser_login = True
+ 
+appbuilder.add_api(OpportunityApi)
+
+
+
+class OrgPeopleLinkApi(ModelRestApi):
+    resource = "org_people_link"
+    datamodel = SQLAInterface(OrgPeopleLink)
+    allow_browser_login = True
+ 
+appbuilder.add_api(OrgPeopleLinkApi)
+
+
+
+class OrgSuppliesLinkApi(ModelRestApi):
+    resource = "org_supplies_link"
+    datamodel = SQLAInterface(OrgSuppliesLink)
+    allow_browser_login = True
+ 
+appbuilder.add_api(OrgSuppliesLinkApi)
+
+
+
+class PersonEmploymentApi(ModelRestApi):
+    resource = "person_employment"
+    datamodel = SQLAInterface(PersonEmployment)
+    allow_browser_login = True
+ 
+appbuilder.add_api(PersonEmploymentApi)
+
+
+
+class PipelineApi(ModelRestApi):
+    resource = "pipeline"
+    datamodel = SQLAInterface(Pipeline)
+    allow_browser_login = True
+ 
+appbuilder.add_api(PipelineApi)
+
+
+
+class ProductSkuLinkApi(ModelRestApi):
+    resource = "product_sku_link"
+    datamodel = SQLAInterface(ProductSkuLink)
+    allow_browser_login = True
+ 
+appbuilder.add_api(ProductSkuLinkApi)
+
+
+
+class QuoteApi(ModelRestApi):
+    resource = "quote"
+    datamodel = SQLAInterface(Quote)
+    allow_browser_login = True
+ 
+appbuilder.add_api(QuoteApi)
+
+
+
+class ScoringModelApi(ModelRestApi):
+    resource = "scoring_model"
+    datamodel = SQLAInterface(ScoringModel)
+    allow_browser_login = True
+ 
+appbuilder.add_api(ScoringModelApi)
+
+
+
+class SupplierParamApi(ModelRestApi):
+    resource = "supplier_param"
+    datamodel = SQLAInterface(SupplierParam)
+    allow_browser_login = True
+ 
+appbuilder.add_api(SupplierParamApi)
+
+
+
+class UserResponseApi(ModelRestApi):
+    resource = "user_response"
+    datamodel = SQLAInterface(UserResponse)
+    allow_browser_login = True
+ 
+appbuilder.add_api(UserResponseApi)
+
+
+
+class WarehouseApi(ModelRestApi):
+    resource = "warehouse"
+    datamodel = SQLAInterface(Warehouse)
+    allow_browser_login = True
+ 
+appbuilder.add_api(WarehouseApi)
+
+
+
+class PurchaseOrderDetailsApi(ModelRestApi):
+    resource = "Purchase_Order_Details"
+    datamodel = SQLAInterface(PurchaseOrderDetails)
+    allow_browser_login = True
+ 
+appbuilder.add_api(PurchaseOrderDetailsApi)
+
+
+
+class SalesOrderDetailsApi(ModelRestApi):
+    resource = "Sales_Order_Details"
+    datamodel = SQLAInterface(SalesOrderDetails)
+    allow_browser_login = True
+ 
+appbuilder.add_api(SalesOrderDetailsApi)
+
+
+
+class AccBalancesApi(ModelRestApi):
+    resource = "acc_balances"
+    datamodel = SQLAInterface(AccBalances)
+    allow_browser_login = True
+ 
+appbuilder.add_api(AccBalancesApi)
+
+
+
+class AccGlJournalEntryApi(ModelRestApi):
+    resource = "acc_gl_journal_entry"
+    datamodel = SQLAInterface(AccGlJournalEntry)
+    allow_browser_login = True
+ 
+appbuilder.add_api(AccGlJournalEntryApi)
+
+
+
+class AccProductLinkApi(ModelRestApi):
+    resource = "acc_product_link"
+    datamodel = SQLAInterface(AccProductLink)
+    allow_browser_login = True
+ 
+appbuilder.add_api(AccProductLinkApi)
+
+
+
+class AisleApi(ModelRestApi):
+    resource = "aisle"
+    datamodel = SQLAInterface(Aisle)
+    allow_browser_login = True
+ 
+appbuilder.add_api(AisleApi)
+
+
+
+class CalendarEventApi(ModelRestApi):
+    resource = "calendar_event"
+    datamodel = SQLAInterface(CalendarEvent)
+    allow_browser_login = True
+ 
+appbuilder.add_api(CalendarEventApi)
+
+
+
+class InventoryOrderMapApi(ModelRestApi):
+    resource = "inventory_order_map"
+    datamodel = SQLAInterface(InventoryOrderMap)
+    allow_browser_login = True
+ 
+appbuilder.add_api(InventoryOrderMapApi)
+
+
+
+class InvoiceApi(ModelRestApi):
+    resource = "invoice"
+    datamodel = SQLAInterface(Invoice)
+    allow_browser_login = True
+ 
+appbuilder.add_api(InvoiceApi)
+
+
+
+class LandParcelApi(ModelRestApi):
+    resource = "land_parcel"
+    datamodel = SQLAInterface(LandParcel)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LandParcelApi)
+
+
+
+class LeadScoreApi(ModelRestApi):
+    resource = "lead_score"
+    datamodel = SQLAInterface(LeadScore)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LeadScoreApi)
+
+
+
+class LoanProductApi(ModelRestApi):
+    resource = "loan_product"
+    datamodel = SQLAInterface(LoanProduct)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LoanProductApi)
+
+
+
+class LtagApi(ModelRestApi):
+    resource = "ltag"
+    datamodel = SQLAInterface(Ltag)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LtagApi)
+
+
+
+class OpportunityContactLinkApi(ModelRestApi):
+    resource = "opportunity_contact_link"
+    datamodel = SQLAInterface(OpportunityContactLink)
+    allow_browser_login = True
+ 
+appbuilder.add_api(OpportunityContactLinkApi)
+
+
+
+class OpportunityIsicClassLinkApi(ModelRestApi):
+    resource = "opportunity_isic_class_link"
+    datamodel = SQLAInterface(OpportunityIsicClassLink)
+    allow_browser_login = True
+ 
+appbuilder.add_api(OpportunityIsicClassLinkApi)
+
+
+
+class PipelineStagesApi(ModelRestApi):
+    resource = "pipeline_stages"
+    datamodel = SQLAInterface(PipelineStages)
+    allow_browser_login = True
+ 
+appbuilder.add_api(PipelineStagesApi)
+
+
+
+class ProductReturnApi(ModelRestApi):
+    resource = "product_return"
+    datamodel = SQLAInterface(ProductReturn)
+    allow_browser_login = True
+ 
+appbuilder.add_api(ProductReturnApi)
+
+
+
+class QuoteDetailsApi(ModelRestApi):
+    resource = "quote_details"
+    datamodel = SQLAInterface(QuoteDetails)
+    allow_browser_login = True
+ 
+appbuilder.add_api(QuoteDetailsApi)
+
+
+
+class CalendarEventAttachmentApi(ModelRestApi):
+    resource = "calendar_event_attachment"
+    datamodel = SQLAInterface(CalendarEventAttachment)
+    allow_browser_login = True
+ 
+appbuilder.add_api(CalendarEventAttachmentApi)
+
+
+
+class CalendarEventAttendeeApi(ModelRestApi):
+    resource = "calendar_event_attendee"
+    datamodel = SQLAInterface(CalendarEventAttendee)
+    allow_browser_login = True
+ 
+appbuilder.add_api(CalendarEventAttendeeApi)
+
+
+
+class CalendarEventRecurrenceApi(ModelRestApi):
+    resource = "calendar_event_recurrence"
+    datamodel = SQLAInterface(CalendarEventRecurrence)
+    allow_browser_login = True
+ 
+appbuilder.add_api(CalendarEventRecurrenceApi)
+
+
+
+class CalendarEventRemindersApi(ModelRestApi):
+    resource = "calendar_event_reminders"
+    datamodel = SQLAInterface(CalendarEventReminders)
+    allow_browser_login = True
+ 
+appbuilder.add_api(CalendarEventRemindersApi)
+
+
+
+class InventoryOrderDetailApi(ModelRestApi):
+    resource = "inventory_order_detail"
+    datamodel = SQLAInterface(InventoryOrderDetail)
+    allow_browser_login = True
+ 
+appbuilder.add_api(InventoryOrderDetailApi)
+
+
+
+class InvoiceDetailsApi(ModelRestApi):
+    resource = "invoice_details"
+    datamodel = SQLAInterface(InvoiceDetails)
+    allow_browser_login = True
+ 
+appbuilder.add_api(InvoiceDetailsApi)
+
+
+
+class InvoicePaymentsApi(ModelRestApi):
+    resource = "invoice_payments"
+    datamodel = SQLAInterface(InvoicePayments)
+    allow_browser_login = True
+ 
+appbuilder.add_api(InvoicePaymentsApi)
+
+
+
+class LandImprovementsApi(ModelRestApi):
+    resource = "land_improvements"
+    datamodel = SQLAInterface(LandImprovements)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LandImprovementsApi)
+
+
+
+class LandOwnershipHistoryApi(ModelRestApi):
+    resource = "land_ownership_history"
+    datamodel = SQLAInterface(LandOwnershipHistory)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LandOwnershipHistoryApi)
+
+
+
+class LandUseHistoryApi(ModelRestApi):
+    resource = "land_use_history"
+    datamodel = SQLAInterface(LandUseHistory)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LandUseHistoryApi)
+
+
+
+class LandUseRecommendationsApi(ModelRestApi):
+    resource = "land_use_recommendations"
+    datamodel = SQLAInterface(LandUseRecommendations)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LandUseRecommendationsApi)
+
+
+
+class LoanApi(ModelRestApi):
+    resource = "loan"
+    datamodel = SQLAInterface(Loan)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LoanApi)
+
+
+
+class LoanProductStrategyOverrideApi(ModelRestApi):
+    resource = "loan_product_strategy_override"
+    datamodel = SQLAInterface(LoanProductStrategyOverride)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LoanProductStrategyOverrideApi)
+
+
+
+class OpportunityPipelineStageLinkApi(ModelRestApi):
+    resource = "opportunity_pipeline_stage_link"
+    datamodel = SQLAInterface(OpportunityPipelineStageLink)
+    allow_browser_login = True
+ 
+appbuilder.add_api(OpportunityPipelineStageLinkApi)
+
+
+
+class RackApi(ModelRestApi):
+    resource = "rack"
+    datamodel = SQLAInterface(Rack)
+    allow_browser_login = True
+ 
+appbuilder.add_api(RackApi)
+
+
+
+class SoilTestsApi(ModelRestApi):
+    resource = "soil_tests"
+    datamodel = SQLAInterface(SoilTests)
+    allow_browser_login = True
+ 
+appbuilder.add_api(SoilTestsApi)
+
+
+
+class WaypointApi(ModelRestApi):
+    resource = "waypoint"
+    datamodel = SQLAInterface(Waypoint)
+    allow_browser_login = True
+ 
+appbuilder.add_api(WaypointApi)
+
+
+
+class LoanArrearsAgingApi(ModelRestApi):
+    resource = "loan_arrears_aging"
+    datamodel = SQLAInterface(LoanArrearsAging)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LoanArrearsAgingApi)
+
+
+
+class LoanChargeApi(ModelRestApi):
+    resource = "loan_charge"
+    datamodel = SQLAInterface(LoanCharge)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LoanChargeApi)
+
+
+
+class LoanCollateralApi(ModelRestApi):
+    resource = "loan_collateral"
+    datamodel = SQLAInterface(LoanCollateral)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LoanCollateralApi)
+
+
+
+class LoanGuarantorApi(ModelRestApi):
+    resource = "loan_guarantor"
+    datamodel = SQLAInterface(LoanGuarantor)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LoanGuarantorApi)
+
+
+
+class LoanOfficerAssignmentHistoryApi(ModelRestApi):
+    resource = "loan_officer_assignment_history"
+    datamodel = SQLAInterface(LoanOfficerAssignmentHistory)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LoanOfficerAssignmentHistoryApi)
+
+
+
+class LoanRepaymentScheduleApi(ModelRestApi):
+    resource = "loan_repayment_schedule"
+    datamodel = SQLAInterface(LoanRepaymentSchedule)
+    allow_browser_login = True
+ 
+appbuilder.add_api(LoanRepaymentScheduleApi)
+
+
+
+class ShelfApi(ModelRestApi):
+    resource = "shelf"
+    datamodel = SQLAInterface(Shelf)
+    allow_browser_login = True
+ 
+appbuilder.add_api(ShelfApi)
+
+
+
+class WaypointAuditApi(ModelRestApi):
+    resource = "waypoint_audit"
+    datamodel = SQLAInterface(WaypointAudit)
+    allow_browser_login = True
+ 
+appbuilder.add_api(WaypointAuditApi)
+
+
+
+class BinApi(ModelRestApi):
+    resource = "bin"
+    datamodel = SQLAInterface(Bin)
+    allow_browser_login = True
+ 
+appbuilder.add_api(BinApi)
+
+
+
+class InventoryApi(ModelRestApi):
+    resource = "inventory"
+    datamodel = SQLAInterface(Inventory)
+    allow_browser_login = True
+ 
+appbuilder.add_api(InventoryApi)
+
+
+
+class InventoryLogApi(ModelRestApi):
+    resource = "inventory_log"
+    datamodel = SQLAInterface(InventoryLog)
+    allow_browser_login = True
+ 
+appbuilder.add_api(InventoryLogApi)
+
+
+
+class PerishableItemAlertsApi(ModelRestApi):
+    resource = "perishable_item_alerts"
+    datamodel = SQLAInterface(PerishableItemAlerts)
+    allow_browser_login = True
+ 
+appbuilder.add_api(PerishableItemAlertsApi)
+
+
+
+class SerializedItemsApi(ModelRestApi):
+    resource = "serialized_items"
+    datamodel = SQLAInterface(SerializedItems)
+    allow_browser_login = True
+ 
+appbuilder.add_api(SerializedItemsApi)
+
+
+
+class InventorySerialLogApi(ModelRestApi):
+    resource = "inventory_serial_log"
+    datamodel = SQLAInterface(InventorySerialLog)
+    allow_browser_login = True
+ 
+appbuilder.add_api(InventorySerialLogApi)
 

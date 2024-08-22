@@ -10,6 +10,7 @@ from sqlalchemy import (
     INTEGER, TEXT, VARCHAR,
     NUMERIC, BOOLEAN, Time, DECIMAL, Column
 )
+from sqlalchemy.sql import sqltypes
 # from sqlalchemy.dialects.postgresql import (
 #     ARRAY, BIGINT, BIT, BOOLEAN, BYTEA, CHAR, CIDR, CITEXT, DATE, DATEMULTIRANGE,
 #     DATERANGE, DOMAIN, DOUBLE_PRECISION, ENUM, FLOAT, HSTORE, INET, INT4MULTIRANGE,
@@ -84,7 +85,8 @@ def map_pgsql_datatypes(pg_type: str):
     elif pg_type in ('time', 'timetz'):
         return 'Time'
     elif pg_type.startswith('timestamp'):  # in ('timestamp', 'timestamptz'):
-        return "DateTime, server_default=text('NOW()')"
+        return "DateTime"
+        # return "DateTime, server_default=text('NOW()')"
     elif pg_type in ('bytea', 'byte', 'blob'):
         return 'LargeBinary'
     elif pg_type == 'uuid':
@@ -315,11 +317,11 @@ def get_table_schema(metadata):
     for table in metadata.tables.values():
         columns = []
         for col in table.columns:
-            field_type = get_field_type(col.type)
+            field_type = get_field_type(col['type'])
 
             # Handle the case where field_type is None
             if field_type is None:
-                print(f"Unsupported column type: {col.type} in table {table.name}")
+                print(f"Unsupported column type: {col['type']} in table {table.name}")
                 continue
 
             if col.default is not None:
@@ -342,10 +344,10 @@ def get_table_schema(metadata):
 
             # Handle computed columns.
             if col.info.get("computed"):
-                field_type = fields.Func(col.name, as_string=True)
+                field_type = fields.Func(col['name'], as_string=True)
 
             # Handle foreign keys and relationships.
-            if isinstance(col.type, ForeignKey):
+            if isinstance(col['type'], ForeignKey):
                 ref_table = col.foreign_keys[0].referred_table
                 ref_col = [
                     x
@@ -355,9 +357,9 @@ def get_table_schema(metadata):
                 field_type = relationship(ref_table.name, backref=table.name)
 
             # Handle enum types.
-            elif isinstance(col.type, Enum):
+            elif isinstance(col['type'], Enum):
                 field_type = fields.Str()
-                col_enum_values = str(col.type).split("(")[1].strip().replace("'", "")
+                col_enum_values = str(col['type']).split("(")[1].strip().replace("'", "")
                 enum_values = [x.strip() for x in col_enum_values.split(",")]
                 field_choices = [(x, x) for x in enum_values]
                 setattr(field_type, "choices", field_choices)
@@ -369,7 +371,7 @@ def get_table_schema(metadata):
 
             # Add every property of the ReflectedColumn to the schema.
             # for prop in dir(col):
-            #     print(f'{table.name}\t col: {col.name}\t' + prop)
+            #     print(f'{table.name}\t col: {col['name']}\t' + prop)
             # if not callable(getattr(col, prop)) and prop != 'metadata' and prop != '__weakref__':
             #     setattr(field_type, prop, getattr(col, prop))
 
@@ -432,8 +434,120 @@ def is_association_table(table_name):
     return False
 
 
+from sqlalchemy import String, Text
+
+def get_display_column(columns):
+    """
+    Select an appropriate column or expression for display in __repr__ method.
+
+    Args:
+    columns (list): List of column dictionaries with 'name' and 'type' keys.
+
+    Returns:
+    tuple: (display_expr, is_expression)
+        display_expr (str): Name of the selected display column or a custom expression.
+        is_expression (bool): True if display_expr is a custom expression, False if it's a column name.
+    """
+    column_names = [col['name'] for col in columns]
+
+    # Check for first_name and last_name combination
+    if 'first_name' in column_names and 'last_name' in column_names:
+        return 'f"{self.first_name} {self.last_name}"', True
+
+    priority_names = [
+        'name', 'full_name', 'username', 'email', 'title', 'label', 'code', 'slug',
+        'description', 'display_name'
+    ]
+
+    # Check for priority names
+    for name in priority_names:
+        if name in column_names:
+            return name, False
+
+    # Check for custom naming patterns
+    custom_patterns = [
+        lambda x: x.endswith('_name'),
+        lambda x: x.endswith('_title'),
+        lambda x: x.endswith('_label'),
+        lambda x: x.startswith('name_'),
+        lambda x: x.startswith('title_'),
+        lambda x: x.startswith('label_')
+    ]
+
+    for pattern in custom_patterns:
+        matching_columns = [col['name'] for col in columns if pattern(col['name'])]
+        if matching_columns:
+            return matching_columns[0], False
+
+    # Prefer string-based columns
+    string_columns = [col['name'] for col in columns if isinstance(col['type'], (String, Text))]
+    if string_columns:
+        return string_columns[0], False
+
+    # Fall back to the primary key or the first column
+    primary_keys = [col['name'] for col in columns if col.get('primary_key', False)]
+    if primary_keys:
+        return primary_keys[0], False
+
+    return columns[0]['name'], False
+
+
+
+#     Select an appropriate column or expression for display in __repr__ method.
+
+#     Args:
+#     columns (list): List of column objects with 'name' and 'type' attributes.
+
+#     Returns:
+#     tuple: (display_expr, is_expression)
+#         display_expr (str): Name of the selected display column or a custom expression.
+#         is_expression (bool): True if display_expr is a custom expression, False if it's a column name.
+#     """
+#     column_names = [col['name'] for col in columns]
+
+#     # Check for first_name and last_name combination
+#     if 'first_name' in column_names and 'last_name' in column_names:
+#         return "f'{self.first_name} {self.last_name}'", True
+
+#     priority_names = [
+#         'name', 'full_name', 'username', 'email', 'title', 'label', 'code', 'slug',
+#         'description', 'display_name'
+#     ]
+
+#     # Check for priority names
+#     for name in priority_names:
+#         if name in column_names:
+#             return name, False
+
+#     # Check for custom naming patterns
+#     custom_patterns = [
+#         lambda x: x.endswith('_name'),
+#         lambda x: x.endswith('_title'),
+#         lambda x: x.endswith('_label'),
+#         lambda x: x.startswith('name_'),
+#         lambda x: x.startswith('title_'),
+#         lambda x: x.startswith('label_')
+#     ]
+
+#     for pattern in custom_patterns:
+#         matching_columns = [col['name'] for col in columns if pattern(col['name'])]
+#         if matching_columns:
+#             return matching_columns[0], False
+
+#     # Prefer string-based columns
+#     string_columns = [col['name'] for col in columns if isinstance(col['type'], (sqltypes.String, sqltypes.Text))]
+#     if string_columns:
+#         return string_columns[0], False
+
+#     # Fall back to the primary key or the first column
+#     primary_keys = [col['name'] for col in columns if col.primary_key]
+#     if primary_keys:
+#         return primary_keys[0], False
+
+#     return columns[0].name, False
+
 # Selects the best display name given a list of column names
-def get_display_column(column_names):
+def old_get_display_column(column_names):
     priorities = ['name', 'alias', 'title', 'label', 'display_name', 'code']
 
     for name in priorities:

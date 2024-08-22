@@ -124,6 +124,7 @@ from flask_appbuilder import Model
 from flask_appbuilder.models.mixins import AuditMixin, FileColumn, ImageColumn, UserExtensionMixin
 from flask_appbuilder.security.sqla.models import User
 from flask_appbuilder.filemanager import ImageManager
+from flask_appbuilder.filemanager import get_file_original_name
 
 from flask_appbuilder.models.decorators import renders
 from sqlalchemy_utils import aggregated, force_auto_coercion, observes
@@ -819,19 +820,16 @@ AFRICAN_LANGS = {
     "dua": {"flag": "cm", "name": "Duala"},
     "en": {"flag": "gb", "name": "English"},
     "ff": {"flag": "sn", "name": "Fula"},
-    "gu": {"flag": "mu", "name": "Gujarati"},
     "ha": {"flag": "ng", "name": "Hausa"},
     "hdy": {"flag": "dj", "name": "Hadiyya"},
     "ja": {"flag": "ma", "name": "Japanese"},
     "jgo": {"flag": "cm", "name": "Ngomba"},
-    "jv": {"flag": "id", "name": "Javanese"},
     "kab": {"flag": "dz", "name": "Kabyle"},
     "kam": {"flag": "ke", "name": "Kamba"},
     "khm": {"flag": "kh", "name": "Khmer"},
     "ki": {"flag": "ke", "name": "Kikuyu"},
     "kik": {"flag": "ke", "name": "Kikuyu"},
     "kin": {"flag": "cd", "name": "Kinyarwanda"},
-    "kir": {"flag": "km", "name": "Kyrgyz"},
     "kln": {"flag": "ke", "name": "Kalenjin"},
     "kmb": {"flag": "ao", "name": "Kimbundu"},
     "kok": {"flag": "in", "name": "Konkani"},
@@ -875,7 +873,6 @@ AFRICAN_LANGS = {
     "sw": {"flag": "ke", "name": "Swahili"},
     "swc": {"flag": "cd", "name": "Congo Swahili"},
     "ta": {"flag": "mu", "name": "Tamil"},
-    "tg": {"flag": "tj", "name": "Tajik"},
     "ti": {"flag": "er", "name": "Tigrinya"},
     "tn": {"flag": "za", "name": "Tswana"},
     "ts": {"flag": "za", "name": "Tsonga"},
@@ -1093,23 +1090,31 @@ def load_data():
 """
 
 MODEL_PHOTO = """
-    def photo_img(self):
+    def {column_name}(self):
             im = ImageManager()
-            if self.photo:
-                return Markup('<a href="' + url_for('PersonModelView.show',pk=str(self.id)) +\
+            if self.{col_name}:
+                return Markup('<a href="' + url_for('{table_class}ModelView.show',pk=str(self.id)) +\
                  '" class="thumbnail"><img src="' + im.get_url(self.photo) +\
                   '" alt="Photo" class="img-rounded img-responsive"></a>')
             else:
-                return Markup('<a href="' + url_for('PersonModelView.show',pk=str(self.id)) +\
+                return Markup('<a href="' + url_for('{table_class}ModelView.show',pk=str(self.id)) +\
                  '" class="thumbnail"><img src="//:0" alt="Photo" class="img-responsive"></a>')
 
-        def photo_img_thumbnail(self):
-            im = ImageManager()
-            if self.photo:
-                return Markup('<a href="' + url_for('PersonModelView.show',pk=str(self.id)) +\
+    def {column_name}_thumbnail(self):
+        im = ImageManager()
+        if self.photo:
+            return Markup('<a href="' + url_for('{table_class}ModelView.show',pk=str(self.id)) +\
                  '" class="thumbnail"><img src="' + im.get_url_thumbnail(self.photo) +\
-                  '" alt="Photo" class="img-rounded img-responsive"></a>')
-            else:
-                return Markup('<a href="' + url_for('PersonModelView.show',pk=str(self.id)) +\
-                 '" class="thumbnail"><img src="//:0" alt="Photo" class="img-responsive"></a>')
+                  '" alt="{column_name}" class="img-rounded img-responsive"></a>')
+        else:
+            return Markup('<a href="' + url_for('{table_class}ModelView.show',pk=str(self.id)) +\
+                 '" class="thumbnail"><img src="//:0" alt="{column_name}" class="img-responsive"></a>')
 """
+def gen_photo_column(column_name, table_class):
+    ret_list = []
+    col_name = column_name.split('_img')[0]
+    col_name = column_name.split('_photo')[0]
+    ret_list.append(f"    {col_name} = Column(ImageColumn(size=(300, 300, True), thumbnail_size=(30, 30, True) )")
+    ret_list.append(MODEL_PHOTO.format(column_name=column_name, table_class=table_class))
+
+def gen_file_column(column_name, table_class)
