@@ -287,6 +287,35 @@ class t_language_proficiency_level(enum.Enum):
     C1 = 'C1'
     C2 = 'C2'
 
+class t_org_category(enum.Enum):
+    NOT_PROVIDED = 'Not_Provided'
+    ARTS_CULTURE_HUMANITIES = 'Arts_Culture_Humanities'
+    EDUCATIONAL_INSTITUTIONS = 'Educational_Institutions'
+    ENVIRONMENTAL_QUALITY = 'Environmental_Quality'
+    ANIMAL_RELATED = 'Animal_Related'
+    HEALTH_GENERAL_REHABILITATIVE = 'Health_General_Rehabilitative'
+    MENTAL_HEALTH_CRISIS_INTERVENTION = 'Mental_Health_Crisis_Intervention'
+    DISEASES_DISORDERS_MEDICAL_DISCIPLINES = 'Diseases_Disorders_Medical_Disciplines'
+    MEDICAL_RESEARCH = 'Medical_Research'
+    CRIME_LEGAL_RELATED = 'Crime_Legal_Related'
+    EMPLOYMENT_JOB_RELATED = 'Employment_Job_Related'
+    FOOD_AGRICULTURE_NUTRITION = 'Food_Agriculture_Nutrition'
+    HOUSING_SHELTER = 'Housing_Shelter'
+    PUBLIC_SAFETY_DISASTER_PREPAREDNESS = 'Public_Safety_Disaster_Preparedness'
+    RECREATION_SPORTS_LEISURE_ATHLETICS = 'Recreation_Sports_Leisure_Athletics'
+    YOUTH_DEVELOPMENT = 'Youth_Development'
+    HUMAN_SERVICES_MULTIPURPOSE_OTHER = 'Human_Services_Multipurpose_Other'
+    INTERNATIONAL_FOREIGN_AFFAIRS_NATIONAL_SECURITY = 'International_Foreign_Affairs_National_Security'
+    CIVIL_RIGHTS_SOCIAL_ACTION_ADVOCACY = 'Civil_Rights_Social_Action_Advocacy'
+    COMMUNITY_IMPROVEMENT_CAPACITY_BUILDING = 'Community_Improvement_Capacity_Building'
+    PHILANTHROPY_VOLUNTARISM_GRANTMAKING_FOUNDATIONS = 'Philanthropy_Voluntarism_Grantmaking_Foundations'
+    SCIENCE_TECHNOLOGY_RESEARCH_INSTITUTES_SERVICES = 'Science_Technology_Research_Institutes_Services'
+    SOCIAL_SCIENCE_RESEARCH_INSTITUTES_SERVICES = 'Social_Science_Research_Institutes_Services'
+    PUBLIC_SOCIETY_BENEFIT_MULTIPURPOSE_OTHER = 'Public_Society_Benefit_Multipurpose_Other'
+    RELIGION_RELATED_SPIRITUAL_DEVELOPMENT = 'Religion_Related_Spiritual_Development'
+    MUTUAL_MEMBERSHIP_BENEFIT_ORGANIZATIONS_OTHER = 'Mutual_Membership_Benefit_Organizations_Other'
+    UNKNOWN = 'Unknown'
+
 class t_org_hierarchy_type(enum.Enum):
     PARENT = 'parent'
     SUBSIDIARY = 'subsidiary'
@@ -545,55 +574,39 @@ class t_transaction_status(enum.Enum):
     CONSOLIDATED = 'consolidated'
 
 
-class Country(Model):
-  __tablename__ = "country"
-  __table_args__ = (
-        Index('country_iso_alpha2_key', 'iso_alpha2', unique=True),
-        Index('country_iso_alpha3_key', 'iso_alpha3', unique=True),
-        {'comment': 'Country Data needs expansion'},
-    )
-  id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-  iso_alpha2 = Column(String, nullable=False, comment="2-letter ISO 3166-1 alpha code e.g., US for the United States")
-  iso_alpha3 = Column(String, nullable=False, comment="3-letter ISO 3166-1 alpha code e.g., USA for the United States")
-  iso_numeric = Column(Integer, comment="ISO 3166-1 numeric code e.g., 840 for the United States")
-  fips_code = Column(String, comment="Federal Information Processing Standard code, used by the US government")
-  name = Column(String, comment="Full name of the country")
-  capital = Column(String, comment="Capital city of the country")
-  areainsqkm = Column(Float, comment="Total area of the country in square kilometers")
-  population = Column(Integer, comment="Estimated population of the country")
-  continent = Column(String, comment="Abbreviation of the continent the country is located in")
-  tld = Column(String, comment="Top Level Domain for the country e.g., .us for the United States")
-  currencycode = Column(String, comment="ISO code of the country’s currency e.g., USD for US Dollar")
-  currencyname = Column(String, comment="Full name of the country’s currency e.g., Dollar for US Dollar")
-  phone = Column(String, comment="Country dialing code e.g., +1 for the United States")
-  postalcode = Column(String, comment="Template or format of postal codes in the country")
-  postalcoderegex = Column(String, comment="Regular expression pattern to validate postal codes")
-  languages = Column(String, comment="Commonly spoken languages in the country, represented as ISO codes")
-  geo_id_fk = Column(Integer, ForeignKey('geoname.id'), comment="Reference to geoname table; linking country data with geographical name data")
-  neighbors = Column(String, comment="Neighboring countries, usually represented as ISO codes")
-  equivfipscode = Column(String, comment="Equivalent FIPS code in cases where it might differ from the primary FIPS code")
-  flag = Column(Text, comment="Field to store a link or representation of the country’s flag")
-  geo = relationship('Geoname', back_populates='country')
+class Alternatename(Model):
+  __tablename__ = "alternatename"
+  id = Column(Integer, primary_key=True, nullable=False, comment="Unique identifier for each alternate name entry")
+  geo_id_fk = Column(Integer, ForeignKey('geoname.id'), comment="Reference to the geoname table; denotes which location this alternate name pertains to")
+  isolanguage = Column(String, comment="ISO language code denoting the language of this alternate name, e.g., en for English")
+  alternatename = Column(String, comment="The alternate name itself in the specified language")
+  ispreferredname = Column(Boolean, default=False, comment="Indicates if this is the preferred name in the associated language")
+  isshortname = Column(Boolean, default=False, comment="Indicates if this name is a short version or abbreviation")
+  iscolloquial = Column(Boolean, default=False, comment="Indicates if this name is colloquial or informal")
+  ishistoric = Column(Boolean, default=False, comment="Indicates if this name is historic and no longer widely in use")
+  name_from = Column(String, comment="Used for transliterations; the script or system from which the name was derived")
+  name_to = Column(String, comment="Used for transliterations; the script or system to which the name was translated")
+  geo = relationship('Geoname', back_populates='alternatename')
 
   def __repr__(self):
-        return f'<{self.__class__.__name__} {self.name}>'
+        return f'<{self.__class__.__name__} {self.name_from}>'
 
 
 class Admin1codes(Model):
   __tablename__ = "admin1codes"
   __table_args__ = (
         Index('admin1codes_admin1_code_idx', 'admin1_code'),
-        Index('admin1codes_countrycode_id_fk_admin1_code_idx', 'countrycode_id_fk', 'admin1_code'),
-        Index('admin1codes_countrycode_id_fk_idx', 'countrycode_id_fk'),
+        Index('admin1codes_country_id_fk_admin1_code_idx', 'country_id_fk', 'admin1_code'),
+        Index('admin1codes_country_id_fk_idx', 'country_id_fk'),
     )
   id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
   code = Column(String, comment="Primary identifier, typically a combination of country code and admin1 code e.g., US.AL for Alabama, United States")
-  countrycode_id_fk = Column(Integer, ForeignKey('country.id'), comment="3-letter ISO 3166-1 alpha code of the country e.g., USA for the United States")
+  country_id_fk = Column(Integer, ForeignKey('country.id'), comment="3-letter ISO 3166-1 alpha code of the country e.g., USA for the United States")
   admin1_code = Column(String, comment="Unique identifier within a country for this first-level administrative division. E.g., AL for Alabama")
   name = Column(String, comment="Local name of the administrative division in the official language")
   alt_name_english = Column(String, comment="Alternative name or translation of the division in English")
   geo_id_fk = Column(Integer, ForeignKey('geoname.id'), comment="Reference to geoname table; linking administrative division data with geographical name data")
-  countrycode = relationship('Country', back_populates='admin1codes')
+  country = relationship('Country', back_populates='admin1codes')
   geo = relationship('Geoname', back_populates='admin1codes')
 
   def __repr__(self):
@@ -604,16 +617,16 @@ class Admin2codes(Model):
   __tablename__ = "admin2codes"
   __table_args__ = (
         Index('admin2codes_code_idx', 'code'),
-        Index('admin2codes_countrycode_id_fk_admin1_code_idx', 'countrycode_id_fk', 'admin1_code'),
+        Index('admin2codes_country_id_fk_admin1_code_idx', 'country_id_fk', 'admin1_code'),
     )
   id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
   code = Column(String, comment="Primary identifier, typically a combination of country code, admin1 code, and an additional code representing the second-level administrative division e.g., US.AL.001")
-  countrycode_id_fk = Column(Integer, ForeignKey('country.id'), comment="3-letter ISO 3166-1 alpha code of the country this division belongs to e.g., USA for the United States")
+  country_id_fk = Column(Integer, ForeignKey('country.id'), comment="3-letter ISO 3166-1 alpha code of the country this division belongs to e.g., USA for the United States")
   admin1_code = Column(String, comment="ref: > admin1codes.admin1_code,Reference to the first-level administrative division. E.g., US.AL for Alabama in the United States")
   name = Column(String, comment="Local name of the second-level administrative division in the official language")
   alt_name_english = Column(String, comment="Alternative name or translation of the division in English")
   geo_id_fk = Column(Integer, ForeignKey('geoname.id'), comment="Reference to geoname table; linking second-level administrative division data with geographical name data")
-  countrycode = relationship('Country', back_populates='admin2codes')
+  country = relationship('Country', back_populates='admin2codes')
   geo = relationship('Geoname', back_populates='admin2codes')
 
   def __repr__(self):
@@ -663,27 +676,35 @@ class Currency(Model):
         return f'<{self.__class__.__name__} {self.name}>'
 
 
-class Geoname(Model):
-  __tablename__ = "geoname"
-  id = Column(Integer, primary_key=True, nullable=False, autoincrement=True, comment="Unique identifier for each geoname")
-  name = Column(String, comment="Local name of the place or location")
-  asciiname = Column(String, comment="ASCII version of the name, suitable for URL or systems that dont support unicode")
-  alternatenames = Column(Text, comment="Alternative names or variations of the location name, possibly in different languages or scripts")
-  latitude = Column(Float, comment="Latitude coordinate of the location")
-  longitude = Column(Float, comment="Longitude coordinate of the location")
-  fclass = Column(String, comment="Feature class, represents general type/category of the location e.g. P for populated place, A for administrative division")
-  fcode = Column(String, comment="Feature code, more specific than feature class, indicating the exact type of feature")
-  country = Column(String, comment="ISO-3166 2-letter country code")
-  cc2 = Column(String, comment="Alternative country codes if the location is near a border")
-  admin1 = Column(String, comment="Primary administrative division, e.g., state in the USA, oblast in Russia")
-  admin2 = Column(String, comment="Secondary administrative division, e.g., county in the USA")
-  admin3 = Column(String, comment="Tertiary administrative division, specific to each country")
-  admin4 = Column(String, comment="Quaternary administrative division, specific to each country")
-  population = Column(BigInteger, comment="Population of the location if applicable")
-  elevation = Column(Integer, comment="Elevation above sea level in meters")
-  gtopo30 = Column(Integer, comment="Digital elevation model, indicates the average elevation of 30x30 area in meters")
-  timezone = Column(String, comment="The timezone in which the location lies, based on the IANA Time Zone Database")
-  moddate = Column(Date, comment="The last date when the record was modified or updated")
+class Country(Model):
+  __tablename__ = "country"
+  __table_args__ = (
+        Index('country_iso_alpha2_key', 'iso_alpha2', unique=True),
+        Index('country_iso_alpha3_key', 'iso_alpha3', unique=True),
+        {'comment': 'Country Data needs expansion'},
+    )
+  id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+  iso_alpha2 = Column(String, nullable=False, comment="2-letter ISO 3166-1 alpha code e.g., US for the United States")
+  iso_alpha3 = Column(String, nullable=False, comment="3-letter ISO 3166-1 alpha code e.g., USA for the United States")
+  iso_numeric = Column(Integer, comment="ISO 3166-1 numeric code e.g., 840 for the United States")
+  fips_code = Column(String, comment="Federal Information Processing Standard code, used by the US government")
+  name = Column(String, comment="Full name of the country")
+  capital = Column(String, comment="Capital city of the country")
+  areainsqkm = Column(Float, comment="Total area of the country in square kilometers")
+  population = Column(Integer, comment="Estimated population of the country")
+  continent = Column(String, comment="Abbreviation of the continent the country is located in")
+  tld = Column(String, comment="Top Level Domain for the country e.g., .us for the United States")
+  currencycode = Column(String, comment="ISO code of the country’s currency e.g., USD for US Dollar")
+  currencyname = Column(String, comment="Full name of the country’s currency e.g., Dollar for US Dollar")
+  phone = Column(String, comment="Country dialing code e.g., +1 for the United States")
+  postalcode = Column(String, comment="Template or format of postal codes in the country")
+  postalcoderegex = Column(String, comment="Regular expression pattern to validate postal codes")
+  languages = Column(String, comment="Commonly spoken languages in the country, represented as ISO codes")
+  geo_id_fk = Column(Integer, ForeignKey('geoname.id'), comment="Reference to geoname table; linking country data with geographical name data")
+  neighbors = Column(String, comment="Neighboring countries, usually represented as ISO codes")
+  equivfipscode = Column(String, comment="Equivalent FIPS code in cases where it might differ from the primary FIPS code")
+  flag = Column(Text, comment="Field to store a link or representation of the country’s flag")
+  geo = relationship('Geoname', back_populates='country')
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
@@ -692,10 +713,10 @@ class Geoname(Model):
 class Timezone(Model):
   __tablename__ = "timezone"
   id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-  country_code_id_fk = Column(Integer, ForeignKey('country.id'))
+  country_id_fk = Column(Integer, ForeignKey('country.id'))
   timezonename = Column(String)
   comments = Column(Text)
-  country_code = relationship('Country', back_populates='timezone')
+  country = relationship('Country', back_populates='timezone')
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.timezonename}>'
@@ -753,7 +774,7 @@ class Person(Model):
   points = Column(Integer)
   level = Column(Integer)
   social_media_imported = Column(Boolean, default=False)
-  person_badges = relationship('PersonBadge', back_populates='person')
+  people = relationship('PersonBadge', secondary='person_badge', back_populates='person')
 
 
   def __repr__(self):
@@ -766,6 +787,7 @@ class Organization(Model):
   name = Column(String, nullable=False)
   legal_name = Column(String)
   org_type = Column(String, nullable=False)
+  org_cat = Column(String)
   status = Column(String, nullable=False)
   industry = Column(String)
   website = Column(String)
@@ -828,6 +850,7 @@ class OrganizationDocuments(Model):
   document_name = Column(String, nullable=False)
   document_path = Column(String, nullable=False)
   upload_date = Column(DateTime, default=func.now())
+  document_summary = Column(Text)
   organization = relationship('Organization', back_populates='organization_documents')
 
   def __repr__(self):
@@ -853,7 +876,10 @@ class SocialMediaProfile(Model):
 
 class OrganizationContact(Model):
   __tablename__ = "organization_contact"
-  __table_args__ = ({'comment': 'A person at the organization to contact'})
+  __table_args__ = (
+        Index('organization_contact_organization_id_fk_person_id_fk_idx', 'organization_id_fk', 'person_id_fk'),
+        {'comment': 'A person at the organization to contact'},
+    )
   id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
   organization_id_fk = Column(Integer, ForeignKey('organization.id'), nullable=False)
   person_id_fk = Column(Integer, ForeignKey('person.id'))
@@ -942,6 +968,9 @@ class PersonOrganizationClaim(Model):
 
 class OrganizationHierarchy(Model):
   __tablename__ = "organization_hierarchy"
+  __table_args__ = (
+        Index('organization_hierarchy_parent_org_id_fk_child_org_id_fk_idx', 'parent_org_id_fk', 'child_org_id_fk', unique=True),
+    )
   id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
   parent_org_id_fk = Column(Integer, ForeignKey('organization.id'))
   child_org_id_fk = Column(Integer, ForeignKey('organization.id'))
@@ -1001,24 +1030,6 @@ class OrganizationProfile(Model):
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.funding_focus_areas}>'
-
-
-class DocumentSubmission(Model):
-  __tablename__ = "document_submission"
-  id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-  organization_id_fk = Column(Integer, ForeignKey('organization.id'), nullable=False)
-  document_type = Column(String)
-  document_name = Column(String)
-  file_path = Column(String)
-  upload_date = Column(DateTime, default=func.now())
-  status = Column(String)
-  next_status = Column(String)
-  review_notes = Column(Text)
-  review_date = Column(DateTime)
-  organization = relationship('Organization', back_populates='document_submission')
-
-  def __repr__(self):
-        return f'<{self.__class__.__name__} {self.document_name}>'
 
 
 class BoardMember(Model):
@@ -1268,20 +1279,6 @@ class OnboardingProgress(Model):
         return f'<{self.__class__.__name__} {self.id}>'
 
 
-class Notification(Model):
-  __tablename__ = "notification"
-  id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-  person_id_fk = Column(Integer, ForeignKey('person.id'), nullable=False)
-  message = Column(Text)
-  notification_type = Column(String)
-  created_date = Column(DateTime, default=func.now())
-  read_date = Column(DateTime)
-  person = relationship('Person', back_populates='notification')
-
-  def __repr__(self):
-        return f'<{self.__class__.__name__} {self.message}>'
-
-
 class Report(Model):
   __tablename__ = "report"
   id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
@@ -1344,7 +1341,7 @@ class Badge(Model):
   description = Column(String)
   criteria = Column(String)
   icon = Column(String)
-  person_badges = relationship('PersonBadge', back_populates='badge')
+  badges = relationship('PersonBadge', secondary='person_badge', back_populates='badge')
 
 
   def __repr__(self):
@@ -1380,6 +1377,20 @@ class Leaderboard(Model):
   score = Column(Integer)
   last_updated = Column(DateTime, default=func.now())
   person = relationship('Person', back_populates='leaderboard')
+
+  def __repr__(self):
+        return f'<{self.__class__.__name__} {self.id}>'
+
+
+class UserChallenge(Model):
+  __tablename__ = "user_challenge"
+  id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+  person_id_fk = Column(Integer, ForeignKey('person.id'), nullable=False)
+  challenge_id_fk = Column(Integer, ForeignKey('gamification_challenge.id'), nullable=False)
+  completed = Column(Boolean, default=False)
+  completion_date = Column(DateTime)
+  challenge = relationship('GamificationChallenge', back_populates='user_challenge')
+  person = relationship('Person', back_populates='user_challenge')
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.id}>'
@@ -1461,20 +1472,6 @@ class GamificationChallenge(Model):
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
-
-
-class UserChallenge(Model):
-  __tablename__ = "user_challenge"
-  id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-  person_id_fk = Column(Integer, ForeignKey('person.id'), nullable=False)
-  challenge_id_fk = Column(Integer, ForeignKey('gamification_challenge.id'), nullable=False)
-  completed = Column(Boolean, default=False)
-  completion_date = Column(DateTime)
-  challenge = relationship('GamificationChallenge', back_populates='user_challenge')
-  person = relationship('Person', back_populates='user_challenge')
-
-  def __repr__(self):
-        return f'<{self.__class__.__name__} {self.id}>'
 
 
 class ProfileUpdateReminder(Model):
@@ -1617,22 +1614,32 @@ class PersonHonorAward(Model):
         return f'<{self.__class__.__name__} {self.title}>'
 
 
-class Alternatename(Model):
-  __tablename__ = "alternatename"
-  id = Column(Integer, primary_key=True, nullable=False, comment="Unique identifier for each alternate name entry")
-  geo_id_fk = Column(Integer, ForeignKey('geoname.id'), comment="Reference to the geoname table; denotes which location this alternate name pertains to")
-  isolanguage = Column(String, comment="ISO language code denoting the language of this alternate name, e.g., en for English")
-  alternatename = Column(String, comment="The alternate name itself in the specified language")
-  ispreferredname = Column(Boolean, default=False, comment="Indicates if this is the preferred name in the associated language")
-  isshortname = Column(Boolean, default=False, comment="Indicates if this name is a short version or abbreviation")
-  iscolloquial = Column(Boolean, default=False, comment="Indicates if this name is colloquial or informal")
-  ishistoric = Column(Boolean, default=False, comment="Indicates if this name is historic and no longer widely in use")
-  name_from = Column(String, comment="Used for transliterations; the script or system from which the name was derived")
-  name_to = Column(String, comment="Used for transliterations; the script or system to which the name was translated")
-  geo = relationship('Geoname', back_populates='alternatename')
+class Geoname(Model):
+  __tablename__ = "geoname"
+  id = Column(Integer, primary_key=True, nullable=False, autoincrement=True, comment="Unique identifier for each geoname")
+  name = Column(String, comment="Local name of the place or location")
+  asciiname = Column(String, comment="ASCII version of the name, suitable for URL or systems that dont support unicode")
+  alt_names = Column(Text, comment="Alternative names or variations of the location name, possibly in different languages or scripts")
+  latitude = Column(Float, comment="Latitude coordinate of the location")
+  longitude = Column(Float, comment="Longitude coordinate of the location")
+  fclass = Column(String, comment="Feature class, represents general type/category of the location e.g. P for populated place, A for administrative division")
+  fcode = Column(String, comment="Feature code, more specific than feature class, indicating the exact type of feature")
+  countrycode = Column(String, comment="ISO-3166 2-letter country code")
+  country_id_fk = Column(Integer, ForeignKey('country.id'))
+  cc2 = Column(String, comment="Alternative country codes if the location is near a border")
+  admin1 = Column(String, comment="Primary administrative division, e.g., state in the USA, oblast in Russia")
+  admin2 = Column(String, comment="Secondary administrative division, e.g., county in the USA")
+  admin3 = Column(String, comment="Tertiary administrative division, specific to each country")
+  admin4 = Column(String, comment="Quaternary administrative division, specific to each country")
+  population = Column(BigInteger, comment="Population of the location if applicable")
+  elevation = Column(Integer, comment="Elevation above sea level in meters")
+  gtopo30 = Column(Integer, comment="Digital elevation model, indicates the average elevation of 30x30 area in meters")
+  timezone = Column(String, comment="The timezone in which the location lies, based on the IANA Time Zone Database")
+  moddate = Column(Date, comment="The last date when the record was modified or updated")
+  country = relationship('Country', back_populates='geoname')
 
   def __repr__(self):
-        return f'<{self.__class__.__name__} {self.name_from}>'
+        return f'<{self.__class__.__name__} {self.name}>'
 
 
 class Contact(Model):
@@ -1665,6 +1672,24 @@ class Contact(Model):
         return f'<{self.__class__.__name__} {self.contact_value}>'
 
 
+class DocumentSubmission(Model):
+  __tablename__ = "document_submission"
+  id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+  organization_id_fk = Column(Integer, ForeignKey('organization.id'), nullable=False)
+  document_type = Column(String)
+  document_name = Column(String)
+  file_path = Column(String)
+  upload_date = Column(DateTime, default=func.now())
+  status = Column(String)
+  next_status = Column(String)
+  review_notes = Column(Text)
+  review_date = Column(DateTime)
+  organization = relationship('Organization', back_populates='document_submission')
+
+  def __repr__(self):
+        return f'<{self.__class__.__name__} {self.document_name}>'
+
+
 class OrganizationAward(Model):
   __tablename__ = "organization_award"
   id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
@@ -1677,6 +1702,20 @@ class OrganizationAward(Model):
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
+
+
+class Notification(Model):
+  __tablename__ = "notification"
+  id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+  person_id_fk = Column(Integer, ForeignKey('person.id'), nullable=False)
+  message = Column(Text)
+  notification_type = Column(String)
+  created_date = Column(DateTime, default=func.now())
+  read_date = Column(DateTime)
+  person = relationship('Person', back_populates='notification')
+
+  def __repr__(self):
+        return f'<{self.__class__.__name__} {self.message}>'
 
 
 class Skill(Model):

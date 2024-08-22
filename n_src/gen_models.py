@@ -155,21 +155,6 @@ def gen_enum(enum):
         enum_code.append(f"    {label.upper()} = '{label}'")
     return enum_code
 
-# def gen_association_tables(metadata, inspector):
-#     """Generate code for association tables."""
-#     assoc_table_code = []
-#     assoc_table_code.append("\n# Association Tables")
-
-#     for table_name in inspector.get_table_names():
-#         if is_association_table(table_name, inspector):
-#             assoc_table_code.extend(gen_association_table(table_name, metadata, inspector))
-
-#     assoc_table_code.append("\n")
-#     return assoc_table_code
-
-
-
-
 
 def gen_association_table(table_name, metadata, inspector):
     """Generate code for a single association table."""
@@ -226,13 +211,28 @@ def gen_association_table(table_name, metadata, inspector):
     table_code.append("")
     return table_code
 
+
+
 def update_related_tables_for_association(table_name, metadata, inspector, model_code):
     """Update related tables to include the association relationship."""
     fks = inspector.get_foreign_keys(table_name)
+    table = metadata.tables[table_name]
+
     for fk in fks:
         referred_table = fk['referred_table']
         referred_table_class = snake_to_pascal(referred_table)
-        association_name = p.plural(table_name)
+        local_cols = fk['constrained_columns']
+        remote_cols = fk['referred_columns']
+
+        # Determine if it's a many-to-many relationship
+        is_many_to_many = len(fks) > 1
+
+        if is_many_to_many:
+            association_name = p.plural(table_name)
+            relationship_name = p.plural(referred_table)
+        else:
+            association_name = table_name
+            relationship_name = p.singular(table_name)
 
         # Find the index of the related table in the model_code
         table_start_index = next(i for i, line in enumerate(model_code) if line.startswith(f"class {referred_table_class}("))
@@ -246,13 +246,40 @@ def update_related_tables_for_association(table_name, metadata, inspector, model
             next_class_index = next((i for i, line in enumerate(model_code[table_start_index + 1:]) if line.startswith("class ")), None)
             insert_index = table_start_index + next_class_index if next_class_index is not None else len(model_code)
 
-        # Add the relationship to the related table
-        relationship_str = f"  {association_name} = relationship('{snake_to_pascal(table_name)}', back_populates='{referred_table}')"
-        model_code.insert(insert_index, relationship_str)
+        # Check if the relationship already exists
+        existing_relationship = next((i for i in range(table_start_index, insert_index)
+                                      if f"{relationship_name} = relationship(" in model_code[i]), None)
 
-        # Add a blank line for better readability if it's not the end of the file
-        if insert_index < len(model_code):
-            model_code.insert(insert_index + 1, "")
+        if existing_relationship is None:
+            # Add the relationship to the related table
+            if is_many_to_many:
+                relationship_str = f"  {relationship_name} = relationship('{snake_to_pascal(table_name)}', secondary='{table_name}', back_populates='{referred_table}')"
+            else:
+                relationship_str = f"    {relationship_name} = relationship('{snake_to_pascal(table_name)}', back_populates='{referred_table}')"
+            print(relationship_str)
+            model_code.insert(insert_index, relationship_str)
+
+            # Add a blank line for better readability if it's not the end of the file
+            if insert_index < len(model_code):
+                model_code.insert(insert_index + 1, "")
+
+        # Update the association table's relationship
+        assoc_table_index = next(i for i, line in enumerate(model_code) if line.startswith(f"class {snake_to_pascal(table_name)}("))
+        assoc_repr_index = next((i for i, line in enumerate(model_code[assoc_table_index:]) if line.strip().startswith("def __repr__")), None)
+        if assoc_repr_index is not None:
+            assoc_insert_index = assoc_table_index + assoc_repr_index
+        else:
+            assoc_insert_index = len(model_code)
+
+        existing_assoc_relationship = next((i for i in range(assoc_table_index, assoc_insert_index)
+                                            if f"{referred_table} = relationship(" in model_code[i]), None)
+
+        if existing_assoc_relationship is None:
+            assoc_relationship_str = f"    {referred_table} = relationship('{referred_table_class}', back_populates='{relationship_name}')"
+            model_code.insert(assoc_insert_index, assoc_relationship_str)
+
+            if assoc_insert_index < len(model_code):
+                model_code.insert(assoc_insert_index + 1, "")
 
 
 
@@ -492,20 +519,70 @@ def process_default_value(default):
     else:
         return None
 
-
 def is_association_table(table_name, inspector):
-    """Check if a table is an association table."""
+    """
+    Check if a table is an association table.
+
+    An association table typically has the following characteristics:
+    1. At least two foreign keys
+    2. All foreign key columns are part of the primary key
+    3. May have additional columns (e.g., for additional association data)
+    4. Usually has no more than one or two non-foreign key columns
+    """
     fks = inspector.get_foreign_keys(table_name)
     if len(fks) < 2:
-        return False
+        return False  # Association tables should have at least two foreign keys
 
     pk_constraint = inspector.get_pk_constraint(table_name)
-    pk_columns = pk_constraint['constrained_columns']
+    pk_columns = set(pk_constraint['constrained_columns'])
     fk_columns = set(col for fk in fks for col in fk['constrained_columns'])
 
     columns = inspector.get_columns(table_name)
-    # Allow for additional columns, but ensure all FKs are part of the PK
-    return fk_columns.issubset(set(pk_columns))
+    all_columns = set(col['name'] for col in columns)
+
+    # Check if all foreign key columns are part of the primary key
+    if not fk_columns.issubset(pk_columns):
+        return False
+
+    # Check the number of non-foreign key columns
+    non_fk_columns = all_columns - fk_columns
+    if len(non_fk_columns) > 3:
+        return False  # Probably not an association table if it has more than two non-FK columns
+
+    # If we've passed all checks, it's likely an association table
+    return True
+
+# def is_association_table(table_name, inspector):
+#     """Check if a table is an association table.
+
+#     An association table typically has the following characteristics:
+#     1. At least two foreign keys
+#     2. All foreign key columns are part of the primary key
+#     3. May have additional columns (e.g., for additional association data)
+#     4. Usually has no more than one or two non-foreign key columns
+#     """
+#     fks = inspector.get_foreign_keys(table_name)
+#     if len(fks) < 2:
+#         return False
+
+#     pk_constraint = inspector.get_pk_constraint(table_name)
+#     pk_columns = pk_constraint['constrained_columns']
+#     fk_columns = set(col for fk in fks for col in fk['constrained_columns'])
+
+#     columns = inspector.get_columns(table_name)
+#      # Check if all foreign key columns are part of the primary key
+#     # if not fk_columns.issubset(pk_columns):
+#     #     return False
+
+#     # # Check the number of non-foreign key columns
+#     # non_fk_columns = all_columns - fk_columns
+#     # if len(non_fk_columns) > 2:
+#     #     return False  # Probably not an association table if it has more than two non-FK columns
+
+#     # # If we've passed all checks, it's likely an association table
+#     # return True
+#     # Allow for additional columns, but ensure all FKs are part of the PK
+#     return fk_columns.issubset(set(pk_columns))
 
 def analyze_cardinality(table_name, fk, inspector):
     """Analyze the cardinality of a relationship."""
