@@ -11,7 +11,7 @@ p = inflect.engine()
 def generate_views(database_uri):
     """
     Generate Flask-AppBuilder views for all tables in the database.
-    
+
     :param database_uri: SQLAlchemy database URI
     :return: String containing the generated views code
     """
@@ -27,8 +27,12 @@ def generate_views(database_uri):
     views.extend([
         "from flask_appbuilder import ModelView, MasterDetailView, MultipleView",
         "from flask_appbuilder.models.sqla.interface import SQLAInterface",
+        "from flask_appbuilder.fields import AJAXSelectField",
+        "from flask_appbuilder.fieldwidgets import Select2AJAXWidget, Select2SlaveAJAXWidget",
         "from flask_appbuilder.actions import action",
         "from flask_appbuilder.security.decorators import has_access",
+        "from flask_appbuilder.forms import DynamicForm",
+        "from wtforms import StringField",
         "from . import appbuilder, db",
         "from .models import *\n\n"
     ])
@@ -37,16 +41,16 @@ def generate_views(database_uri):
     for table in metadata.sorted_tables:
         model_name = snake_to_pascal(table.name)
         view_class = f"{model_name}View"
-        
+
         # Skip Flask-AppBuilder system tables
         if model_name.lower().startswith('ab_'):
             continue
 
-        views.append(generate_model_view(table, model_name, view_class))
+        views.append(generate_model_view(table, model_name, view_class, inspector))
         view_registrations.append(f"appbuilder.add_view({view_class}, '{pascal_to_words(model_name)}', icon='fa-table', category='Data')")
 
     # Generate MasterDetailViews
-    master_detail_views = generate_master_detail_views(metadata)
+    master_detail_views = generate_master_detail_views(metadata, inspector)
     views.extend(master_detail_views)
 
     # Generate MultipleViews
@@ -59,8 +63,11 @@ def generate_views(database_uri):
 
     return "\n".join(views)
 
-def generate_model_view(table, model_name, view_class):
-    """Generate a regular ModelView for a table."""
+
+
+def generate_model_view(table, model_name, view_class, inspector):
+    """Generate a comprehensive ModelView for a table."""
+    columns = get_columns(table)
     view_code = [
         f"class {view_class}(ModelView):",
         f"    datamodel = SQLAInterface({model_name})",
@@ -68,18 +75,76 @@ def generate_model_view(table, model_name, view_class):
         f"    show_title = '{snake_to_words(table.name)} Details'",
         f"    add_title = 'Add {snake_to_words(table.name)}'",
         f"    edit_title = 'Edit {snake_to_words(table.name)}'",
-        f"    list_columns = {get_list_columns(table)}",
-        f"    label_columns = {get_label_columns(table)}",
+        f"    list_columns = {columns}",
+        f"    show_columns = {columns}",
+        f"    add_columns = {columns}",
+        f"    edit_columns = {columns}",
+        f"    list_exclude_columns = []",
+        f"    show_exclude_columns = []",
+        f"    add_exclude_columns = []",
+        f"    edit_exclude_columns = []",
         f"    search_columns = {get_search_columns(table)}",
-        f"    show_columns = {get_show_columns(table)}",
-        f"    add_columns = {get_add_columns(table)}",
-        f"    edit_columns = {get_edit_columns(table)}",
+        f"    label_columns = {get_label_columns(table)}",
+        generate_description_columns(table, inspector),
+        generate_fieldsets(table),
+        generate_show_fieldsets(table),
+        generate_add_fieldsets(table),
+        generate_edit_fieldsets(table),
+        "    # Base Order",
+        "    # base_order = ('name', 'asc')",
+        "",
+        "    # Base Filters",
+        "    # base_filters = [['name', FilterStartsWith, 'A']]",
+        "",
+        "    # Forms",
+        "    # add_form = None",
+        "    # edit_form = None",
+        "",
+        "    # Widgets",
+        "    # show_widget = None",
+        "    # add_widget = None",
+        "    # edit_widget = None",
+        "    # list_widget = None",
+        "",
+        "    # Related Views",
+        "    # related_views = []",
+        "",
+        "    # List Widgets",
+        "    # list_template = 'appbuilder/general/model/list.html'",
+        "    # list_widget = ListWidget",
+        "",
+        "    # Show Widget",
+        "    # show_template = 'appbuilder/general/model/show.html'",
+        "    # show_widget = ShowWidget",
+        "",
+        "    # Add Widget",
+        "    # add_template = 'appbuilder/general/model/add.html'",
+        "    # add_widget = FormWidget",
+        "",
+        "    # Edit Widget",
+        "    # edit_template = 'appbuilder/general/model/edit.html'",
+        "    # edit_widget = FormWidget",
+        "",
+        "    # Query Select Fields",
+        "    # query_select_fields = {}",
+        "",
+        "    # Pagination",
+        "    # page_size = 10",
+        "",
+        "    # Inline Forms",
+        "    # inline_models = None",
+        "",
+        "    # Custom Templates",
+        "    # list_template = 'my_list_template.html'",
+        "    # show_template = 'my_show_template.html'",
+        "    # add_template = 'my_add_template.html'",
+        "    # edit_template = 'my_edit_template.html'",
         generate_repr_method(table),
         ""
     ]
     return "\n".join(view_code)
 
-def generate_master_detail_views(metadata):
+def generate_master_detail_views(metadata, inspector):
     """Generate MasterDetailViews for tables with foreign key relationships."""
     master_detail_views = []
     view_registrations = []
@@ -96,8 +161,44 @@ def generate_master_detail_views(metadata):
                 f"    datamodel = SQLAInterface({parent_model_name})",
                 f"    related_views = [{child_model_name}View]",
                 f"    list_title = '{snake_to_words(parent_table.name)} with {snake_to_words(table.name)}'",
-                f"    show_template = 'appbuilder/general/model/show_cascade.html'",
-                ""
+                f"    show_title = '{snake_to_words(parent_table.name)} Detail'",
+                f"    add_title = 'Add {snake_to_words(parent_table.name)}'",
+                f"    edit_title = 'Edit {snake_to_words(parent_table.name)}'",
+                generate_description_columns(parent_table, inspector),
+                generate_fieldsets(parent_table),
+                generate_show_fieldsets(parent_table),
+                generate_add_fieldsets(parent_table),
+                generate_edit_fieldsets(parent_table),
+                "",
+                "    # Base Order",
+                "    # base_order = ('name', 'asc')",
+                "",
+                "    # Base Filters",
+                "    # base_filters = [['name', FilterStartsWith, 'A']]",
+                "",
+                "    # Forms",
+                "    # add_form = None",
+                "    # edit_form = None",
+                "",
+                "    # Widgets",
+                "    # show_widget = None",
+                "    # add_widget = None",
+                "    # edit_widget = None",
+                "    # list_widget = None",
+                "",
+                "    # List Widgets",
+                "    # list_template = 'appbuilder/general/model/list.html'",
+                "    # list_widget = ListWidget",
+                "",
+                "    # Pagination",
+                "    # page_size = 10",
+                "",
+                "    # Custom Templates",
+                "    # list_template = 'my_list_template.html'",
+                "    # show_template = 'my_show_template.html'",
+                "    # add_template = 'my_add_template.html'",
+                "    # edit_template = 'my_edit_template.html'",
+                "",
             ]
             master_detail_views.extend(view_code)
             view_registrations.append(
@@ -130,7 +231,20 @@ def generate_multiple_views(metadata):
                 f"class {view_class}(MultipleView):",
                 f"    datamodel = SQLAInterface({model_name})",
                 f"    views = [{', '.join(related_views)}]",
-                ""
+                "",
+                "    # Base Order",
+                "    # base_order = ('name', 'asc')",
+                "",
+                "    # List Widgets",
+                "    # list_template = 'appbuilder/general/model/list.html'",
+                "    # list_widget = ListWidget",
+                "",
+                "    # Pagination",
+                "    # page_size = 10",
+                "",
+                "    # Custom Templates",
+                "    # list_template = 'my_list_template.html'",
+                "",
             ]
             multiple_views.extend(view_code)
             view_registrations.append(
@@ -141,29 +255,67 @@ def generate_multiple_views(metadata):
     multiple_views.extend(view_registrations)
     return multiple_views
 
-def get_list_columns(table):
-    """Generate list of columns for list view."""
-    return [col.name for col in table.columns if not col.name.endswith('_id')]
 
-def get_label_columns(table):
-    """Generate dictionary of user-friendly labels for columns."""
-    return {col.name: snake_to_words(col.name) for col in table.columns}
+def get_columns(table):
+    """Generate list of all columns for a table."""
+    return [col.name for col in table.columns]
+
 
 def get_search_columns(table):
     """Generate list of searchable columns."""
     return [col.name for col in table.columns if isinstance(col.type, (sqltypes.String, sqltypes.Text))]
 
-def get_show_columns(table):
-    """Generate list of columns for show view."""
-    return [col.name for col in table.columns]
+def get_label_columns(table):
+    """Generate dictionary of user-friendly labels for columns."""
+    return {col.name: snake_to_words(col.name) for col in table.columns}
 
-def get_add_columns(table):
-    """Generate list of columns for add view."""
-    return [col.name for col in table.columns if col.name != 'id' and not col.name.endswith('_id')]
+def generate_description_columns(table, inspector):
+    """Generate description_columns dictionary with column comments as hints."""
+    descriptions = {}
+    for column in inspector.get_columns(table.name):
+        if column['comment']:
+            descriptions[column['name']] = column['comment']
 
-def get_edit_columns(table):
-    """Generate list of columns for edit view."""
-    return [col.name for col in table.columns if col.name != 'id']
+    if descriptions:
+        return f"    description_columns = {descriptions}"
+    else:
+        return "    description_columns = {}"
+
+def generate_fieldsets(table):
+    """Generate fieldsets for a table."""
+    columns = get_columns(table)
+    return f"""
+    list_fieldsets = [
+        ('Summary', {{'fields': {columns}}})
+    ]
+    """
+
+def generate_show_fieldsets(table):
+    """Generate show_fieldsets for a table."""
+    columns = get_columns(table)
+    return f"""
+    show_fieldsets = [
+        ('Summary', {{'fields': {columns}}})
+    ]
+    """
+
+def generate_add_fieldsets(table):
+    """Generate add_fieldsets for a table."""
+    columns = [col for col in get_columns(table) if col != 'id']
+    return f"""
+    add_fieldsets = [
+        ('Add {snake_to_words(table.name)}', {{'fields': {columns}}})
+    ]
+    """
+
+def generate_edit_fieldsets(table):
+    """Generate edit_fieldsets for a table."""
+    columns = [col for col in get_columns(table) if col != 'id']
+    return f"""
+    edit_fieldsets = [
+        ('Edit {snake_to_words(table.name)}', {{'fields': {columns}}})
+    ]
+    """
 
 def generate_repr_method(table):
     """Generate __repr__ method for the view."""
@@ -180,10 +332,10 @@ def main():
     args = parser.parse_args()
 
     views_code = generate_views(args.uri)
-    
+
     with open(args.output, "w") as f:
         f.write(views_code)
-    
+
     print(f"Views generated successfully in {args.output}")
 
 if __name__ == '__main__':

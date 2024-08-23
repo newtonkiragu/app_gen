@@ -3,10 +3,10 @@ flask_graphql
 flask-appbuilder
 flask-talisman
 psycopg2
-sqlalachemy
+sqlalchemy
 graphene
 graphene_sqlalchemy
-sqlalachemy_searchable
+sqlalchemy_searchable
 flask_graphql
 whoosh
 kivy

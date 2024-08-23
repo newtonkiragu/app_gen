@@ -9,37 +9,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="beef659a-f4de-45e7-80c5-ef056e8b7ba6" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/n_src/codegen.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/n_src/db_utils.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/n_src/gen/apis.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/n_src/gen/models.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/n_src/gen/newmodels.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/n_src/gen/xmodels.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/n_src/gen_models.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/n_src/gen_modelsx.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/n_src/old/enhanced-gen-models-with-additional-features.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/n_src/old/gen_models.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/n_src/old/improved-association-table-gen.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/n_src/old/new-gen_models.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/n_src/old/old_gen_models.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/n_src/old/updated-gen-models.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/n_src/utils.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/gen-models.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/py_templates/datagrid_test.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/appgen.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/appgen.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/gamification.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/gen_views1.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/gen_views2.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/print_view.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/n_src/review.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/cody_history.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/cody_history.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/src/Makefile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/codegen.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/codegen.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/db_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/db_utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/headers.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/headers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/py_templates/DataSource.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/py_templates/DataSource.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/py_templates/apis.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/py_templates/apis.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/py_templates/gql.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/py_templates/gql.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/n_src/gen/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/n_src/gen/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/n_src/gen_views.py" beforeDir="false" afterPath="$PROJECT_DIR$/n_src/gen_views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
