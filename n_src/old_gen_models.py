@@ -52,8 +52,6 @@ from db_utils import map_pgsql_datatypes, get_display_column
 p = inflect.engine()
 Base = declarative_base()
 
-# Set the indentation to 4 spaces
-INDENT = "    "
 
 def gen_models(metadata, inspector):
     """Main function to generate model code."""
@@ -85,7 +83,7 @@ def gen_models(metadata, inspector):
                 insert_index += table_index
             else:
                 insert_index = len(model_code)
-            model_code.insert(insert_index, f"{INDENT}{rel}")
+            model_code.insert(insert_index, rel)
             model_code.insert(insert_index + 1, "")  # Add a blank line for readability
 
     # Generate association tables
@@ -99,6 +97,8 @@ def gen_models(metadata, inspector):
             model_code = update_related_tables_for_association(table_name, metadata, inspector, model_code)
 
     return model_code
+
+
 
 def gen_domains(inspector):
     """Generate code for database domains."""
@@ -121,14 +121,14 @@ def gen_domain(domain):
     domain_code.append(f"\nclass {domain_name}({BaseType}):")
 
     if domain["default"]:
-        domain_code.append(f"{INDENT}default = {domain['default']}")
+        domain_code.append(f"    default = {domain['default']}")
 
     if not domain["nullable"]:
-        domain_code.append(f"{INDENT}not_null = True")
+        domain_code.append(f"    not_null = True")
 
     for constraint in domain.get("constraints", []):
-        domain_code.append(f"{INDENT}# Constraint: {constraint['name']}")
-        domain_code.append(f"{INDENT}check = '{constraint['check']}'")
+        domain_code.append(f"    # Constraint: {constraint['name']}")
+        domain_code.append(f"    check = '{constraint['check']}'")
 
     return domain_code
 
@@ -148,8 +148,9 @@ def gen_enum(enum):
     enum_code = []
     enum_code.append(f"\nclass {enum['name']}(enum.Enum):")
     for label in enum["labels"]:
-        enum_code.append(f"{INDENT}{label.upper()} = '{label}'")
+        enum_code.append(f"    {label.upper()} = '{label}'")
     return enum_code
+
 
 def gen_association_table(table_name, metadata, inspector):
     """Generate code for a single association table."""
@@ -160,7 +161,7 @@ def gen_association_table(table_name, metadata, inspector):
 
     table_class = snake_to_pascal(table_name)
     table_code.append(f"class {table_class}(Model):")
-    table_code.append(f"{INDENT}__tablename__ = '{table_name}'")
+    table_code.append(f"  __tablename__ = '{table_name}'")
 
     for column in columns:
         col_name = column['name']
@@ -190,7 +191,7 @@ def gen_association_table(table_name, metadata, inspector):
             attributes.append(f"comment=\"{column['comment']}\"")
 
         attributes_str = ", ".join(attributes)
-        table_code.append(f"{INDENT}{col_name} = Column({col_type}, {attributes_str})")
+        table_code.append(f"  {col_name} = Column({col_type}, {attributes_str})")
 
     # Generate relationships for the association table
     for fk in fks:
@@ -198,10 +199,10 @@ def gen_association_table(table_name, metadata, inspector):
         backref_name = p.plural(table_name)
         relationship_str = f"relationship('{referred_table}', back_populates='{backref_name}')"
         rel_name = fk['constrained_columns'][0].replace('_id_fk', '').replace('_id', '')
-        table_code.append(f"{INDENT}{rel_name} = {relationship_str}")
+        table_code.append(f"  {rel_name} = {relationship_str}")
 
     if table_comment['text']:
-        table_code.append(f"{INDENT}__table_args__ = {{'comment': \"{table_comment['text']}\"}}")
+        table_code.append(f"  __table_args__ = {{'comment': \"{table_comment['text']}\"}}")
 
     table_code.append("")
     return table_code
@@ -254,7 +255,7 @@ def update_related_tables_for_association(table_name, metadata, inspector, model
             other_table = other_fk['referred_table']
             other_table_class = snake_to_pascal(other_table)
 
-            relationship_str = (f"{INDENT}{relationship_name} = relationship('{other_table_class}', "
+            relationship_str = (f"  {relationship_name} = relationship('{other_table_class}', "
                                 f"secondary='{table_name}', "
                                 f"back_populates='{p.plural(referred_table)}')")
             print(relationship_str)
@@ -262,6 +263,76 @@ def update_related_tables_for_association(table_name, metadata, inspector, model
             model_code.insert(insert_index + 1, "")  # Add a blank line for readability
 
     return model_code
+
+# def update_related_tables_for_association(table_name, metadata, inspector, model_code):
+#     """Update related tables to include the association relationship."""
+#     fks = inspector.get_foreign_keys(table_name)
+#     table = metadata.tables[table_name]
+
+#     for fk in fks:
+#         referred_table = fk['referred_table']
+#         referred_table_class = snake_to_pascal(referred_table)
+#         local_cols = fk['constrained_columns']
+#         remote_cols = fk['referred_columns']
+
+#         # Determine if it's a many-to-many relationship
+#         is_many_to_many = len(fks) > 1
+
+#         if is_many_to_many:
+#             association_name = p.plural(table_name)
+#             relationship_name = p.plural(referred_table)
+#         else:
+#             association_name = table_name
+#             relationship_name = p.singular(table_name)
+
+#         # Find the index of the related table in the model_code
+#         table_start_index = next(i for i, line in enumerate(model_code) if line.startswith(f"class {referred_table_class}("))
+
+#         # Find the index of __repr__ method or the end of the class
+#         repr_index = next((i for i, line in enumerate(model_code[table_start_index:]) if line.strip().startswith("def __repr__")), None)
+#         if repr_index is not None:
+#             insert_index = table_start_index + repr_index
+#         else:
+#             # If __repr__ is not found, find the next class or the end of the file
+#             next_class_index = next((i for i, line in enumerate(model_code[table_start_index + 1:]) if line.startswith("class ")), None)
+#             insert_index = table_start_index + next_class_index if next_class_index is not None else len(model_code)
+
+#         # Check if the relationship already exists
+#         existing_relationship = next((i for i in range(table_start_index, insert_index)
+#                                       if f"{relationship_name} = relationship(" in model_code[i]), None)
+
+#         if existing_relationship is None:
+#             # Add the relationship to the related table
+#             if is_many_to_many:
+#                 relationship_str = f"  {relationship_name} = relationship('{snake_to_pascal(table_name)}', secondary='{table_name}', back_populates='{referred_table}')"
+#             else:
+#                 relationship_str = f"  {relationship_name} = relationship('{snake_to_pascal(table_name)}', back_populates='{referred_table}')"
+#             print(relationship_str)
+#             model_code.insert(insert_index, relationship_str)
+
+#             # Add a blank line for better readability if it's not the end of the file
+#             if insert_index < len(model_code):
+#                 model_code.insert(insert_index + 1, "")
+
+#         # Update the association table's relationship
+#         assoc_table_index = next(i for i, line in enumerate(model_code) if line.startswith(f"class {snake_to_pascal(table_name)}("))
+#         assoc_repr_index = next((i for i, line in enumerate(model_code[assoc_table_index:]) if line.strip().startswith("def __repr__")), None)
+#         if assoc_repr_index is not None:
+#             assoc_insert_index = assoc_table_index + assoc_repr_index
+#         else:
+#             assoc_insert_index = len(model_code)
+
+#         existing_assoc_relationship = next((i for i in range(assoc_table_index, assoc_insert_index)
+#                                             if f"{referred_table} = relationship(" in model_code[i]), None)
+
+#         if existing_assoc_relationship is None:
+#             assoc_relationship_str = f"  {referred_table} = relationship('{referred_table_class}', back_populates='{relationship_name}')"
+#             model_code.insert(assoc_insert_index, assoc_relationship_str)
+
+#             if assoc_insert_index < len(model_code):
+#                 model_code.insert(assoc_insert_index + 1, "")
+
+
 
 def gen_tables(metadata, inspector, relationship_info, association_tables):
     """Generate code for database tables, excluding association tables."""
@@ -271,6 +342,7 @@ def gen_tables(metadata, inspector, relationship_info, association_tables):
             table = metadata.tables[table_name]
             table_code.extend(gen_table(table, inspector, relationship_info))
     return table_code
+
 
 def gen_table(table, inspector, relationship_info):
     """Generate code for a single table, including all constraints, indexes, and comments."""
@@ -285,7 +357,7 @@ def gen_table(table, inspector, relationship_info):
 
     table_class = snake_to_pascal(table_name)
     table_code.append(f"class {table_class}(Model):")
-    table_code.append(f'{INDENT}__tablename__ = "{table_name}"')
+    table_code.append(f'  __tablename__ = "{table_name}"')
     table_code.extend(gen_table_args(pk_constraint, uqs, indexes, table_comment))
 
     table_code.extend(gen_columns(columns, pk_constraint, fks, uqs, table_class))
@@ -322,6 +394,10 @@ def gen_column(column, pk_columns, fks, uqs, table_class):
     if column_name in pk_columns and len(pk_columns) == 1:
         attributes.append("primary_key=True")
 
+
+    # if column_name.lower() == 'id':
+    #     attributes.append('autoincrement=True')
+
     for fk in fks:
         if column_name in fk["constrained_columns"]:
             referred_table = fk["referred_table"]
@@ -342,13 +418,15 @@ def gen_column(column, pk_columns, fks, uqs, table_class):
 
     if column_name in [uq["column_names"] for uq in uqs if len(uq["column_names"]) == 1]:
         attributes.append("unique=True")
+
     if column.get('default') is not None:
-        default_value = process_default_value(column['default'])
-        if default_value == 'autoincrement':
-            attributes.append("autoincrement=True")
-        else:
-            if default_value is not None:
-                attributes.append(f"default={default_value}")
+             default_value = process_default_value(column['default'])
+             if default_value == 'autoincrement':
+                 attributes.append("autoincrement=True")
+             else:
+                 if default_value is not None:
+                     attributes.append(f"default={default_value}")
+
 
     if column.get("comment"):
         attributes.append(f"comment=\"{column['comment']}\"")
@@ -360,10 +438,11 @@ def gen_column(column, pk_columns, fks, uqs, table_class):
     elif column_name.endswith('_file') or column_name.endswith('_doc'):
         column_code.append(gen_file_column(column_name, table_class))
     else:
+        # column_code.append(f"  {column_name} = Column({column_type}, {attributes_str})")
         if attributes_str:
-            column_code.append(f"{INDENT}{column_name} = Column({column_type}, {attributes_str})")
+            column_code.append(f"  {column_name} = Column({column_type}, {attributes_str})")
         else:
-            column_code.append(f"{INDENT}{column_name} = Column({column_type})")
+            column_code.append(f"  {column_name} = Column({column_type})")
 
     return column_code
 
@@ -398,9 +477,9 @@ def gen_relationship(fk, table_name, table_class, inspector, relationship_info):
     if cardinality == 'many-to-many':
         association_table = find_association_table(table_name, referred_table, inspector)
         if association_table:
-            relationship_code.append(f"{INDENT}{p.plural(referred_table)} = relationship('{referred_class}', secondary='{association_table}', back_populates='{remote_relationship_name}')")
+            relationship_code.append(f"  {p.plural(referred_table)} = relationship('{referred_class}', secondary='{association_table}', back_populates='{remote_relationship_name}')")
             # We'll handle the other side of the relationship in update_related_tables_for_association
-            return relationship_code, []
+            return relationship_code
 
     # Generate relationship for the current table
     relationship_args = [f"'{referred_class}'", f"back_populates='{remote_relationship_name}'"]
@@ -414,7 +493,7 @@ def gen_relationship(fk, table_name, table_class, inspector, relationship_info):
         relationship_args.append(f"remote_side=[{', '.join([f'{referred_class}.{col}' for col in referred_columns])}]")
 
     relationship_str = ', '.join(relationship_args)
-    relationship_code.append(f"{INDENT}{local_relationship_name} = relationship({relationship_str})")
+    relationship_code.append(f"  {local_relationship_name} = relationship({relationship_str})")
 
     # Generate the reverse relationship (to be added to the referred table)
     reverse_relationship_code = []
@@ -426,9 +505,10 @@ def gen_relationship(fk, table_name, table_class, inspector, relationship_info):
         reverse_relationship_args.append("lazy='joined'")
 
     reverse_relationship_str = ', '.join(reverse_relationship_args)
-    reverse_relationship_code.append(f"{remote_relationship_name} = relationship({reverse_relationship_str})")
+    reverse_relationship_code.append(f"  {remote_relationship_name} = relationship({reverse_relationship_str})")
 
     return relationship_code, reverse_relationship_code
+
 
 def gen_table_args(pk_constraint, uqs, indexes, table_comment):
     """Generate __table_args__ for composite primary keys, unique constraints, indexes, and table comments."""
@@ -452,13 +532,14 @@ def gen_table_args(pk_constraint, uqs, indexes, table_comment):
     if table_comment['text']:
         cmnt = {'comment': table_comment['text']}
         table_args.append(str(cmnt))
+        # table_args.append(f"{'comment':\"{table_comment['text']}\"}")
 
     if table_args:
         if len(table_args) == 1 and table_comment['text']:
-            return [f"{INDENT}__table_args__ = ({table_args[0]})"]
+            return [f"  __table_args__ = ({table_args[0]})"]
         else:
-            args_str = f",\n{INDENT}{INDENT}".join(table_args)
-            return [f"{INDENT}__table_args__ = (\n{INDENT}{INDENT}{args_str},\n{INDENT})"]
+            args_str = ",\n        ".join(table_args)
+            return [f"  __table_args__ = (\n        {args_str},\n    )"]
     return []
 
 def gen_check_constraints(inspector, table_name):
@@ -470,10 +551,7 @@ def gen_check_constraints(inspector, table_name):
         constraint_name = cc['name']
         sql_expression = cc['sqltext']
         constraint_code.append(
-            f"{INDENT}__table_args__ = (\n"
-            f"{INDENT}{INDENT}CheckConstraint('{sql_expression}', name='{constraint_name}'),\n"
-            f"{INDENT}{INDENT}*__table_args__\n"
-            f"{INDENT})"
+            f"  __table_args__ = (\n        CheckConstraint('{sql_expression}', name='{constraint_name}'),\n        *__table_args__\n    )"
         )
 
     return constraint_code
@@ -481,20 +559,21 @@ def gen_check_constraints(inspector, table_name):
 def gen_repr_method(columns, pk_constraint):
     """Generate code for the __repr__ method, using the selected display column."""
     repr_code = []
-    repr_code.append(f"\n{INDENT}def __repr__(self):")
+    repr_code.append("\n  def __repr__(self):")
     pk_columns = pk_constraint['constrained_columns']
 
     display_expr, is_expression = get_display_column(columns)
 
     if len(pk_columns) > 1:
         pk_attrs = ", ".join([f"{pk}={{self.{pk}}}" for pk in pk_columns])
-        repr_code.append(f"{INDENT}{INDENT}return f'<{{self.__class__.__name__}}({pk_attrs})>'")
+        repr_code.append(f"        return f'<{{self.__class__.__name__}}({pk_attrs})>'")
     elif is_expression:
-        repr_code.append(f"{INDENT}{INDENT}return f'<{{self.__class__.__name__}} {{{{self.{display_expr.strip('f')}}}}}>'")
+        repr_code.append(f"        return f'<{{self.__class__.__name__}} {{{{self.{display_expr.strip('f')}}}}}>'")
     else:
-        repr_code.append(f"{INDENT}{INDENT}return f'<{{self.__class__.__name__}} {{self.{display_expr}}}>'")
+        repr_code.append(f"        return f'<{{self.__class__.__name__}} {{self.{display_expr}}}>'")
 
     return repr_code
+
 
 def process_default_value(default):
     """Process default value for a column."""
@@ -541,6 +620,38 @@ def is_association_table(table_name, inspector):
 
     # If we've passed all checks, it's likely an association table
     return True
+
+# def is_association_table(table_name, inspector):
+#     """Check if a table is an association table.
+
+#     An association table typically has the following characteristics:
+#     1. At least two foreign keys
+#     2. All foreign key columns are part of the primary key
+#     3. May have additional columns (e.g., for additional association data)
+#     4. Usually has no more than one or two non-foreign key columns
+#     """
+#     fks = inspector.get_foreign_keys(table_name)
+#     if len(fks) < 2:
+#         return False
+
+#     pk_constraint = inspector.get_pk_constraint(table_name)
+#     pk_columns = pk_constraint['constrained_columns']
+#     fk_columns = set(col for fk in fks for col in fk['constrained_columns'])
+
+#     columns = inspector.get_columns(table_name)
+#      # Check if all foreign key columns are part of the primary key
+#     # if not fk_columns.issubset(pk_columns):
+#     #     return False
+
+#     # # Check the number of non-foreign key columns
+#     # non_fk_columns = all_columns - fk_columns
+#     # if len(non_fk_columns) > 2:
+#     #     return False  # Probably not an association table if it has more than two non-FK columns
+
+#     # # If we've passed all checks, it's likely an association table
+#     # return True
+#     # Allow for additional columns, but ensure all FKs are part of the PK
+#     return fk_columns.issubset(set(pk_columns))
 
 def analyze_cardinality(table_name, fk, inspector):
     """Analyze the cardinality of a relationship."""
@@ -593,6 +704,7 @@ def find_association_table(table1, table2, inspector):
                 return table_name
     return None
 
+
 def main():
     """Main execution function."""
     parser = argparse.ArgumentParser(description='Generate SQLAlchemy models from database schema.')
@@ -612,5 +724,7 @@ def main():
 
     print(f"Models generated successfully. Output written to {args.output}")
 
+
 if __name__ == "__main__":
     main()
+
