@@ -574,22 +574,40 @@ class t_transaction_status(enum.Enum):
     CONSOLIDATED = 'consolidated'
 
 
-class Alternatename(Model):
-  __tablename__ = "alternatename"
-  id = Column(Integer, primary_key=True, nullable=False, comment="Unique identifier for each alternate name entry")
-  geo_id_fk = Column(Integer, ForeignKey('geoname.id'), comment="Reference to the geoname table; denotes which location this alternate name pertains to")
-  isolanguage = Column(String, comment="ISO language code denoting the language of this alternate name, e.g., en for English")
-  alternatename = Column(String, comment="The alternate name itself in the specified language")
-  ispreferredname = Column(Boolean, default=False, comment="Indicates if this is the preferred name in the associated language")
-  isshortname = Column(Boolean, default=False, comment="Indicates if this name is a short version or abbreviation")
-  iscolloquial = Column(Boolean, default=False, comment="Indicates if this name is colloquial or informal")
-  ishistoric = Column(Boolean, default=False, comment="Indicates if this name is historic and no longer widely in use")
-  name_from = Column(String, comment="Used for transliterations; the script or system from which the name was derived")
-  name_to = Column(String, comment="Used for transliterations; the script or system to which the name was translated")
-  geo = relationship('Geoname', back_populates='alternatename')
+class Country(Model):
+  __tablename__ = "country"
+  __table_args__ = (
+        Index('country_iso_alpha2_key', 'iso_alpha2', unique=True),
+        Index('country_iso_alpha3_key', 'iso_alpha3', unique=True),
+        {'comment': 'Country Data needs expansion'},
+    )
+  id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+  iso_alpha2 = Column(String, nullable=False, comment="2-letter ISO 3166-1 alpha code e.g., US for the United States")
+  iso_alpha3 = Column(String, nullable=False, comment="3-letter ISO 3166-1 alpha code e.g., USA for the United States")
+  iso_numeric = Column(Integer, comment="ISO 3166-1 numeric code e.g., 840 for the United States")
+  fips_code = Column(String, comment="Federal Information Processing Standard code, used by the US government")
+  name = Column(String, comment="Full name of the country")
+  capital = Column(String, comment="Capital city of the country")
+  areainsqkm = Column(Float, comment="Total area of the country in square kilometers")
+  population = Column(Integer, comment="Estimated population of the country")
+  continent = Column(String, comment="Abbreviation of the continent the country is located in")
+  tld = Column(String, comment="Top Level Domain for the country e.g., .us for the United States")
+  currencycode = Column(String, comment="ISO code of the country’s currency e.g., USD for US Dollar")
+  currencyname = Column(String, comment="Full name of the country’s currency e.g., Dollar for US Dollar")
+  phone = Column(String, comment="Country dialing code e.g., +1 for the United States")
+  postalcode = Column(String, comment="Template or format of postal codes in the country")
+  postalcoderegex = Column(String, comment="Regular expression pattern to validate postal codes")
+  languages = Column(String, comment="Commonly spoken languages in the country, represented as ISO codes")
+  geo_id_fk = Column(Integer, ForeignKey('geoname.id'), comment="Reference to geoname table; linking country data with geographical name data")
+  neighbors = Column(String, comment="Neighboring countries, usually represented as ISO codes")
+  equivfipscode = Column(String, comment="Equivalent FIPS code in cases where it might differ from the primary FIPS code")
+  flag = Column(Text, comment="Field to store a link or representation of the country’s flag")
+  geo_id = relationship('Geoname', back_populates='country', lazy='joined')
+  country = relationship('Country', back_populates='geo_id', lazy='joined')
+
 
   def __repr__(self):
-        return f'<{self.__class__.__name__} {self.name_from}>'
+        return f'<{self.__class__.__name__} {self.name}>'
 
 
 class Admin1codes(Model):
@@ -606,8 +624,12 @@ class Admin1codes(Model):
   name = Column(String, comment="Local name of the administrative division in the official language")
   alt_name_english = Column(String, comment="Alternative name or translation of the division in English")
   geo_id_fk = Column(Integer, ForeignKey('geoname.id'), comment="Reference to geoname table; linking administrative division data with geographical name data")
-  country = relationship('Country', back_populates='admin1codes')
-  geo = relationship('Geoname', back_populates='admin1codes')
+  country_id = relationship('Country', back_populates='admin1codes', lazy='joined')
+  geo_id = relationship('Geoname', back_populates='admin1codes', lazy='joined')
+  admin1codes = relationship('Admin1codes', back_populates='country_id', lazy='joined')
+
+  admin1codes = relationship('Admin1codes', back_populates='geo_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
@@ -626,8 +648,12 @@ class Admin2codes(Model):
   name = Column(String, comment="Local name of the second-level administrative division in the official language")
   alt_name_english = Column(String, comment="Alternative name or translation of the division in English")
   geo_id_fk = Column(Integer, ForeignKey('geoname.id'), comment="Reference to geoname table; linking second-level administrative division data with geographical name data")
-  country = relationship('Country', back_populates='admin2codes')
-  geo = relationship('Geoname', back_populates='admin2codes')
+  country_id = relationship('Country', back_populates='admin2codes', lazy='joined')
+  geo_id = relationship('Geoname', back_populates='admin2codes', lazy='joined')
+  admin2codes = relationship('Admin2codes', back_populates='country_id', lazy='joined')
+
+  admin2codes = relationship('Admin2codes', back_populates='geo_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
@@ -676,38 +702,20 @@ class Currency(Model):
         return f'<{self.__class__.__name__} {self.name}>'
 
 
-class Country(Model):
-  __tablename__ = "country"
-  __table_args__ = (
-        Index('country_iso_alpha2_key', 'iso_alpha2', unique=True),
-        Index('country_iso_alpha3_key', 'iso_alpha3', unique=True),
-        {'comment': 'Country Data needs expansion'},
-    )
-  id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-  iso_alpha2 = Column(String, nullable=False, comment="2-letter ISO 3166-1 alpha code e.g., US for the United States")
-  iso_alpha3 = Column(String, nullable=False, comment="3-letter ISO 3166-1 alpha code e.g., USA for the United States")
-  iso_numeric = Column(Integer, comment="ISO 3166-1 numeric code e.g., 840 for the United States")
-  fips_code = Column(String, comment="Federal Information Processing Standard code, used by the US government")
-  name = Column(String, comment="Full name of the country")
-  capital = Column(String, comment="Capital city of the country")
-  areainsqkm = Column(Float, comment="Total area of the country in square kilometers")
-  population = Column(Integer, comment="Estimated population of the country")
-  continent = Column(String, comment="Abbreviation of the continent the country is located in")
-  tld = Column(String, comment="Top Level Domain for the country e.g., .us for the United States")
-  currencycode = Column(String, comment="ISO code of the country’s currency e.g., USD for US Dollar")
-  currencyname = Column(String, comment="Full name of the country’s currency e.g., Dollar for US Dollar")
-  phone = Column(String, comment="Country dialing code e.g., +1 for the United States")
-  postalcode = Column(String, comment="Template or format of postal codes in the country")
-  postalcoderegex = Column(String, comment="Regular expression pattern to validate postal codes")
-  languages = Column(String, comment="Commonly spoken languages in the country, represented as ISO codes")
-  geo_id_fk = Column(Integer, ForeignKey('geoname.id'), comment="Reference to geoname table; linking country data with geographical name data")
-  neighbors = Column(String, comment="Neighboring countries, usually represented as ISO codes")
-  equivfipscode = Column(String, comment="Equivalent FIPS code in cases where it might differ from the primary FIPS code")
-  flag = Column(Text, comment="Field to store a link or representation of the country’s flag")
-  geo = relationship('Geoname', back_populates='country')
+class Alternatename(Model):
+  __tablename__ = "alternatename"
+  id = Column(Integer, primary_key=True, nullable=False, comment="Unique identifier for each alternate name entry")
+  isolanguage = Column(String, comment="ISO language code denoting the language of this alternate name, e.g., en for English")
+  alternatename = Column(String, comment="The alternate name itself in the specified language")
+  ispreferredname = Column(Boolean, default=False, comment="Indicates if this is the preferred name in the associated language")
+  isshortname = Column(Boolean, default=False, comment="Indicates if this name is a short version or abbreviation")
+  iscolloquial = Column(Boolean, default=False, comment="Indicates if this name is colloquial or informal")
+  ishistoric = Column(Boolean, default=False, comment="Indicates if this name is historic and no longer widely in use")
+  name_from = Column(String, comment="Used for transliterations; the script or system from which the name was derived")
+  name_to = Column(String, comment="Used for transliterations; the script or system to which the name was translated")
 
   def __repr__(self):
-        return f'<{self.__class__.__name__} {self.name}>'
+        return f'<{self.__class__.__name__} {self.name_from}>'
 
 
 class Timezone(Model):
@@ -716,7 +724,9 @@ class Timezone(Model):
   country_id_fk = Column(Integer, ForeignKey('country.id'))
   timezonename = Column(String)
   comments = Column(Text)
-  country = relationship('Country', back_populates='timezone')
+  country_id = relationship('Country', back_populates='timezone', lazy='joined')
+  timezone = relationship('Timezone', back_populates='country_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.timezonename}>'
@@ -774,7 +784,7 @@ class Person(Model):
   points = Column(Integer)
   level = Column(Integer)
   social_media_imported = Column(Boolean, default=False)
-  people = relationship('PersonBadge', secondary='person_badge', back_populates='person')
+  person_badges = relationship('Badge', secondary='person_badge', back_populates='people')
 
 
   def __repr__(self):
@@ -835,8 +845,12 @@ class Organization(Model):
   profile_completion = Column(Integer)
   last_profile_update = Column(DateTime)
   associated_people_id_fk = Column(Integer, ForeignKey('person.id'))
-  associated_people = relationship('Person', back_populates='organization')
-  country_of_operation = relationship('Country', back_populates='organization')
+  associated_people_id = relationship('Person', back_populates='organization', lazy='joined')
+  country_of_operation_id = relationship('Country', back_populates='organization', lazy='joined')
+  organization = relationship('Organization', back_populates='associated_people_id', lazy='joined')
+
+  organization = relationship('Organization', back_populates='country_of_operation_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
@@ -851,7 +865,9 @@ class OrganizationDocuments(Model):
   document_path = Column(String, nullable=False)
   upload_date = Column(DateTime, default=func.now())
   document_summary = Column(Text)
-  organization = relationship('Organization', back_populates='organization_documents')
+  organization = relationship('Organization', back_populates='organization_documents', lazy='joined')
+  organization_documents = relationship('OrganizationDocuments', back_populates='organization', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.document_name}>'
@@ -867,8 +883,12 @@ class SocialMediaProfile(Model):
   access_token = Column(String)
   refresh_token = Column(String)
   token_expiry = Column(DateTime)
-  org = relationship('Organization', back_populates='social_media_profile')
-  person = relationship('Person', back_populates='social_media_profile')
+  org_id = relationship('Organization', back_populates='social_media_profile', lazy='joined')
+  person_id = relationship('Person', back_populates='social_media_profile', lazy='joined')
+  social_media_profile = relationship('SocialMediaProfile', back_populates='org_id', lazy='joined')
+
+  social_media_profile = relationship('SocialMediaProfile', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.platform}>'
@@ -892,8 +912,12 @@ class OrganizationContact(Model):
   is_primary = Column(Boolean, default=False)
   status = Column(String)
   notes = Column(Text)
-  organization = relationship('Organization', back_populates='organization_contact')
-  person = relationship('Person', back_populates='organization_contact')
+  organization_id = relationship('Organization', back_populates='organization_contact', lazy='joined')
+  person_id = relationship('Person', back_populates='organization_contact', lazy='joined')
+  organization_contact = relationship('OrganizationContact', back_populates='organization_id', lazy='joined')
+
+  organization_contact = relationship('OrganizationContact', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.org_email}>'
@@ -910,8 +934,12 @@ class ContactApplication(Model):
   status = Column(String)
   review_date = Column(DateTime)
   review_notes = Column(Text)
-  organization = relationship('Organization', back_populates='contact_application')
-  person = relationship('Person', back_populates='contact_application')
+  organization_id = relationship('Organization', back_populates='contact_application', lazy='joined')
+  person_id = relationship('Person', back_populates='contact_application', lazy='joined')
+  contact_application = relationship('ContactApplication', back_populates='organization_id', lazy='joined')
+
+  contact_application = relationship('ContactApplication', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.position}>'
@@ -928,7 +956,9 @@ class OrganizationVerification(Model):
   last_verification_date = Column(Date)
   verification_status = Column(String)
   verification_notes = Column(Text)
-  organization = relationship('Organization', back_populates='organization_verification')
+  organization_id = relationship('Organization', back_populates='organization_verification', lazy='joined')
+  organization_verification = relationship('OrganizationVerification', back_populates='organization_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.registration_number}>'
@@ -944,7 +974,9 @@ class OrganizationPrograms(Model):
   end_date = Column(Date)
   budget = Column(Numeric)
   impact_assessment = Column(Text)
-  organization = relationship('Organization', back_populates='organization_programs')
+  organization = relationship('Organization', back_populates='organization_programs', lazy='joined')
+  organization_programs = relationship('OrganizationPrograms', back_populates='organization', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.program_name}>'
@@ -959,8 +991,12 @@ class PersonOrganizationClaim(Model):
   status = Column(String, comment="Pending, Approved, Rejected")
   claim_date = Column(DateTime, default=func.now())
   review_date = Column(DateTime)
-  organization = relationship('Organization', back_populates='person_organization_claim')
-  person = relationship('Person', back_populates='person_organization_claim')
+  organization = relationship('Organization', back_populates='person_organization_claim', lazy='joined')
+  person = relationship('Person', back_populates='person_organization_claim', lazy='joined')
+  person_organization_claim = relationship('PersonOrganizationClaim', back_populates='organization', lazy='joined')
+
+  person_organization_claim = relationship('PersonOrganizationClaim', back_populates='person', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.claim_type}>'
@@ -975,8 +1011,12 @@ class OrganizationHierarchy(Model):
   parent_org_id_fk = Column(Integer, ForeignKey('organization.id'))
   child_org_id_fk = Column(Integer, ForeignKey('organization.id'))
   relationship_type = Column(String, comment="e.g., parent, subsidiary, department")
-  child_org = relationship('Organization', back_populates='organization_hierarchy')
-  parent_org = relationship('Organization', back_populates='organization_hierarchy')
+  child_org_id = relationship('Organization', back_populates='organization_hierarchy', lazy='joined')
+  parent_org_id = relationship('Organization', back_populates='organization_hierarchy', lazy='joined')
+  organization_hierarchy = relationship('OrganizationHierarchy', back_populates='child_org_id', lazy='joined')
+
+  organization_hierarchy = relationship('OrganizationHierarchy', back_populates='parent_org_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.relationship_type}>'
@@ -989,7 +1029,9 @@ class OrganizationSdgs(Model):
     )
   organization_id_fk = Column(Integer, ForeignKey('organization.id'), nullable=False)
   sdg = Column(String, nullable=False)
-  organization = relationship('Organization', back_populates='organization_sdgs')
+  organization_id = relationship('Organization', back_populates='organization_sdgs', lazy='joined')
+  organization_sdgs = relationship('OrganizationSdgs', back_populates='organization_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__}(organization_id_fk={self.organization_id_fk}, sdg={self.sdg})>'
@@ -1002,7 +1044,9 @@ class OrganizationClimateCategories(Model):
     )
   organization_id_fk = Column(Integer, ForeignKey('organization.id'), nullable=False)
   climate_category = Column(String, nullable=False)
-  organization = relationship('Organization', back_populates='organization_climate_categories')
+  organization_id = relationship('Organization', back_populates='organization_climate_categories', lazy='joined')
+  organization_climate_categories = relationship('OrganizationClimateCategories', back_populates='organization_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__}(organization_id_fk={self.organization_id_fk}, climate_category={self.climate_category})>'
@@ -1026,7 +1070,9 @@ class OrganizationProfile(Model):
   num_volunteers = Column(Integer)
   last_year_revenue = Column(Numeric)
   last_year_expenditure = Column(Numeric)
-  organization = relationship('Organization', back_populates='organization_profile')
+  organization_id = relationship('Organization', back_populates='organization_profile', lazy='joined')
+  organization_profile = relationship('OrganizationProfile', back_populates='organization_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.funding_focus_areas}>'
@@ -1040,8 +1086,12 @@ class BoardMember(Model):
   position = Column(String)
   start_date = Column(Date)
   end_date = Column(Date)
-  organization = relationship('Organization', back_populates='board_member')
-  person = relationship('Person', back_populates='board_member')
+  organization_id = relationship('Organization', back_populates='board_member', lazy='joined')
+  person_id = relationship('Person', back_populates='board_member', lazy='joined')
+  board_member = relationship('BoardMember', back_populates='organization_id', lazy='joined')
+
+  board_member = relationship('BoardMember', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.position}>'
@@ -1055,8 +1105,12 @@ class ExecutivePosition(Model):
   title = Column(String, nullable=False)
   start_date = Column(Date)
   end_date = Column(Date)
-  organization = relationship('Organization', back_populates='executive_position')
-  person = relationship('Person', back_populates='executive_position')
+  organization_id = relationship('Organization', back_populates='executive_position', lazy='joined')
+  person_id = relationship('Person', back_populates='executive_position', lazy='joined')
+  executive_position = relationship('ExecutivePosition', back_populates='organization_id', lazy='joined')
+
+  executive_position = relationship('ExecutivePosition', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.title}>'
@@ -1072,8 +1126,12 @@ class Grant(Model):
   end_date = Column(Date)
   status = Column(String)
   description = Column(Text)
-  donor = relationship('Organization', back_populates='grant')
-  recipient = relationship('Organization', back_populates='grant')
+  donor_id = relationship('Organization', back_populates='grant', lazy='joined')
+  recipient_id = relationship('Organization', back_populates='grant', lazy='joined')
+  grant = relationship('Grant', back_populates='donor_id', lazy='joined')
+
+  grant = relationship('Grant', back_populates='recipient_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.description}>'
@@ -1090,7 +1148,9 @@ class Event(Model):
   location = Column(String)
   is_virtual = Column(Boolean, default=False)
   max_participants = Column(Integer)
-  organization = relationship('Organization', back_populates='event')
+  organization_id = relationship('Organization', back_populates='event', lazy='joined')
+  event = relationship('Event', back_populates='organization_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
@@ -1103,8 +1163,12 @@ class EventRegistration(Model):
   person_id_fk = Column(Integer, ForeignKey('person.id'), nullable=False)
   registration_date = Column(DateTime, default=func.now())
   attended = Column(Boolean, default=False)
-  event = relationship('Event', back_populates='event_registration')
-  person = relationship('Person', back_populates='event_registration')
+  event_id = relationship('Event', back_populates='event_registration', lazy='joined')
+  person_id = relationship('Person', back_populates='event_registration', lazy='joined')
+  event_registration = relationship('EventRegistration', back_populates='event_id', lazy='joined')
+
+  event_registration = relationship('EventRegistration', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.id}>'
@@ -1119,8 +1183,12 @@ class PersonTraining(Model):
   completion_date = Column(Date)
   completed = Column(Boolean)
   certificate_id = Column(String)
-  person = relationship('Person', back_populates='person_training')
-  training = relationship('Training', back_populates='person_training')
+  person_id = relationship('Person', back_populates='person_training', lazy='joined')
+  training_id = relationship('Training', back_populates='person_training', lazy='joined')
+  person_training = relationship('PersonTraining', back_populates='person_id', lazy='joined')
+
+  person_training = relationship('PersonTraining', back_populates='training_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.certificate_id}>'
@@ -1136,9 +1204,15 @@ class PjFeedback(Model):
   comments = Column(Text)
   notes = Column(Text)
   date = Column(Date)
-  organization = relationship('Organization', back_populates='pj_feedback')
-  person = relationship('Person', back_populates='pj_feedback')
-  project = relationship('Project', back_populates='pj_feedback')
+  organization_id = relationship('Organization', back_populates='pj_feedback', lazy='joined')
+  person_id = relationship('Person', back_populates='pj_feedback', lazy='joined')
+  project_id = relationship('Project', back_populates='pj_feedback', lazy='joined')
+  pj_feedback = relationship('PjFeedback', back_populates='organization_id', lazy='joined')
+
+  pj_feedback = relationship('PjFeedback', back_populates='person_id', lazy='joined')
+
+  pj_feedback = relationship('PjFeedback', back_populates='project_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.comments}>'
@@ -1153,8 +1227,12 @@ class Message(Model):
   body = Column(Text)
   sent_date = Column(DateTime, default=func.now())
   read_date = Column(DateTime)
-  recipient = relationship('Person', back_populates='message')
-  sender = relationship('Person', back_populates='message')
+  recipient_id = relationship('Person', back_populates='message', lazy='joined')
+  sender_id = relationship('Person', back_populates='message', lazy='joined')
+  message = relationship('Message', back_populates='recipient_id', lazy='joined')
+
+  message = relationship('Message', back_populates='sender_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.subject}>'
@@ -1172,7 +1250,9 @@ class Project(Model):
   status = Column(String)
   beneficiaries = Column(Integer)
   outcomes = Column(Text)
-  organization = relationship('Organization', back_populates='project')
+  organization_id = relationship('Organization', back_populates='project', lazy='joined')
+  project = relationship('Project', back_populates='organization_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
@@ -1184,8 +1264,12 @@ class ProjectLocations(Model):
   project_id_fk = Column(Integer, ForeignKey('project.id'), nullable=False)
   location_name = Column(String)
   location_coordinates_id_fk = Column(Integer, ForeignKey('geoname.id'), comment="PostGIS Point geometry for lat/long")
-  location_coordinates = relationship('Geoname', back_populates='project_locations')
-  project = relationship('Project', back_populates='project_locations')
+  location_coordinates_id = relationship('Geoname', back_populates='project_locations', lazy='joined')
+  project_id = relationship('Project', back_populates='project_locations', lazy='joined')
+  project_locations = relationship('ProjectLocations', back_populates='location_coordinates_id', lazy='joined')
+
+  project_locations = relationship('ProjectLocations', back_populates='project_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.location_name}>'
@@ -1201,8 +1285,12 @@ class VolunteerLog(Model):
   hours_contributed = Column(Integer)
   role = Column(String)
   skills_used = Column(Text)
-  organization = relationship('Organization', back_populates='volunteer_log')
-  person = relationship('Person', back_populates='volunteer_log')
+  organization_id = relationship('Organization', back_populates='volunteer_log', lazy='joined')
+  person_id = relationship('Person', back_populates='volunteer_log', lazy='joined')
+  volunteer_log = relationship('VolunteerLog', back_populates='organization_id', lazy='joined')
+
+  volunteer_log = relationship('VolunteerLog', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.role}>'
@@ -1217,7 +1305,9 @@ class Training(Model):
   start_date = Column(Date)
   end_date = Column(Date)
   is_certified = Column(Boolean, default=False)
-  offering_org = relationship('Organization', back_populates='training')
+  offering_org_id = relationship('Organization', back_populates='training', lazy='joined')
+  training = relationship('Training', back_populates='offering_org_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
@@ -1233,8 +1323,12 @@ class Impact(Model):
   unit = Column(String)
   date_measured = Column(Date)
   description = Column(Text)
-  organization = relationship('Organization', back_populates='impact')
-  project = relationship('Project', back_populates='impact')
+  organization_id = relationship('Organization', back_populates='impact', lazy='joined')
+  project_id = relationship('Project', back_populates='impact', lazy='joined')
+  impact = relationship('Impact', back_populates='organization_id', lazy='joined')
+
+  impact = relationship('Impact', back_populates='project_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.description}>'
@@ -1247,7 +1341,9 @@ class UserActivity(Model):
   activity_type = Column(String)
   timestamp = Column(DateTime, default=func.now())
   details = Column(Text)
-  person = relationship('Person', back_populates='user_activity')
+  person_id = relationship('Person', back_populates='user_activity', lazy='joined')
+  user_activity = relationship('UserActivity', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.activity_type}>'
@@ -1258,8 +1354,12 @@ class OrganizationTag(Model):
   id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
   organization_id_fk = Column(Integer, ForeignKey('organization.id'), nullable=False)
   tag_id_fk = Column(Integer, ForeignKey('tag.id'), nullable=False)
-  organization = relationship('Organization', back_populates='organization_tag')
-  tag = relationship('Tag', back_populates='organization_tag')
+  organization_id = relationship('Organization', back_populates='organization_tag', lazy='joined')
+  tag_id = relationship('Tag', back_populates='organization_tag', lazy='joined')
+  organization_tag = relationship('OrganizationTag', back_populates='organization_id', lazy='joined')
+
+  organization_tag = relationship('OrganizationTag', back_populates='tag_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.id}>'
@@ -1272,8 +1372,12 @@ class OnboardingProgress(Model):
   organization_id_fk = Column(Integer, ForeignKey('organization.id'))
   step = Column(Integer)
   completed_at = Column(DateTime)
-  organization = relationship('Organization', back_populates='onboarding_progress')
-  user = relationship('Person', back_populates='onboarding_progress')
+  organization_id = relationship('Organization', back_populates='onboarding_progress', lazy='joined')
+  user_id = relationship('Person', back_populates='onboarding_progress', lazy='joined')
+  onboarding_progress = relationship('OnboardingProgress', back_populates='organization_id', lazy='joined')
+
+  onboarding_progress = relationship('OnboardingProgress', back_populates='user_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.id}>'
@@ -1288,7 +1392,9 @@ class Report(Model):
   file_path = Column(String)
   created_date = Column(DateTime, default=func.now())
   report_type = Column(String)
-  organization = relationship('Organization', back_populates='report')
+  organization_id = relationship('Organization', back_populates='report', lazy='joined')
+  report = relationship('Report', back_populates='organization_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.title}>'
@@ -1311,8 +1417,12 @@ class ProjectTag(Model):
   id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
   project_id_fk = Column(Integer, ForeignKey('project.id'), nullable=False)
   tag_id_fk = Column(Integer, ForeignKey('tag.id'), nullable=False)
-  project = relationship('Project', back_populates='project_tag')
-  tag = relationship('Tag', back_populates='project_tag')
+  project_id = relationship('Project', back_populates='project_tag', lazy='joined')
+  tag_id = relationship('Tag', back_populates='project_tag', lazy='joined')
+  project_tag = relationship('ProjectTag', back_populates='project_id', lazy='joined')
+
+  project_tag = relationship('ProjectTag', back_populates='tag_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.id}>'
@@ -1324,8 +1434,12 @@ class OrganizationBadge(Model):
   organization_id_fk = Column(Integer, ForeignKey('organization.id'), nullable=False)
   badge_id_fk = Column(Integer, ForeignKey('badge.id'), nullable=False)
   date_earned = Column(DateTime, default=func.now())
-  badge = relationship('Badge', back_populates='organization_badge')
-  organization = relationship('Organization', back_populates='organization_badge')
+  badge_id = relationship('Badge', back_populates='organization_badge', lazy='joined')
+  organization_id = relationship('Organization', back_populates='organization_badge', lazy='joined')
+  organization_badge = relationship('OrganizationBadge', back_populates='badge_id', lazy='joined')
+
+  organization_badge = relationship('OrganizationBadge', back_populates='organization_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.id}>'
@@ -1341,7 +1455,7 @@ class Badge(Model):
   description = Column(String)
   criteria = Column(String)
   icon = Column(String)
-  badges = relationship('PersonBadge', secondary='person_badge', back_populates='badge')
+  person_badges = relationship('Person', secondary='person_badge', back_populates='badges')
 
 
   def __repr__(self):
@@ -1356,19 +1470,13 @@ class UserGamification(Model):
   level = Column(Integer)
   last_point_earned = Column(DateTime)
   points_to_next_level = Column(Integer)
-  user = relationship('Person', back_populates='user_gamification')
+  user_id = relationship('Person', back_populates='user_gamification', lazy='joined')
+  user_gamification = relationship('UserGamification', back_populates='user_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.id}>'
 
-
-class PersonBadge(Model):
-    __tablename__ = 'person_badge'
-    person_id_fk = Column(Integer, ForeignKey('person.id'), primary_key=True, nullable=False)
-    badge_id_fk = Column(Integer, ForeignKey('badge.id'), primary_key=True, nullable=False)
-    date_earned = Column(DateTime, default=func.now())
-    badge = relationship('Badge', back_populates='person_badges')
-    person = relationship('Person', back_populates='person_badges')
 
 class Leaderboard(Model):
   __tablename__ = "leaderboard"
@@ -1376,7 +1484,9 @@ class Leaderboard(Model):
   person_id_fk = Column(Integer, ForeignKey('person.id'), nullable=False)
   score = Column(Integer)
   last_updated = Column(DateTime, default=func.now())
-  person = relationship('Person', back_populates='leaderboard')
+  person_id = relationship('Person', back_populates='leaderboard', lazy='joined')
+  leaderboard = relationship('Leaderboard', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.id}>'
@@ -1389,8 +1499,12 @@ class UserChallenge(Model):
   challenge_id_fk = Column(Integer, ForeignKey('gamification_challenge.id'), nullable=False)
   completed = Column(Boolean, default=False)
   completion_date = Column(DateTime)
-  challenge = relationship('GamificationChallenge', back_populates='user_challenge')
-  person = relationship('Person', back_populates='user_challenge')
+  challenge_id = relationship('GamificationChallenge', back_populates='user_challenge', lazy='joined')
+  person_id = relationship('Person', back_populates='user_challenge', lazy='joined')
+  user_challenge = relationship('UserChallenge', back_populates='challenge_id', lazy='joined')
+
+  user_challenge = relationship('UserChallenge', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.id}>'
@@ -1403,8 +1517,12 @@ class PersonSkill(Model):
   skill_id_fk = Column(Integer, ForeignKey('skill.id'), nullable=False)
   proficiency_level = Column(Integer)
   endorsements = Column(Integer)
-  person = relationship('Person', back_populates='person_skill')
-  skill = relationship('Skill', back_populates='person_skill')
+  person_id = relationship('Person', back_populates='person_skill', lazy='joined')
+  skill_id = relationship('Skill', back_populates='person_skill', lazy='joined')
+  person_skill = relationship('PersonSkill', back_populates='person_id', lazy='joined')
+
+  person_skill = relationship('PersonSkill', back_populates='skill_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.id}>'
@@ -1421,7 +1539,9 @@ class PersonExperience(Model):
   end_date = Column(Date)
   description = Column(Text)
   awards = Column(Text)
-  person = relationship('Person', back_populates='person_experience')
+  person_id = relationship('Person', back_populates='person_experience', lazy='joined')
+  person_experience = relationship('PersonExperience', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.description}>'
@@ -1437,7 +1557,9 @@ class PersonEducation(Model):
   start_date = Column(Date, nullable=False)
   end_date = Column(Date)
   description = Column(Text)
-  person = relationship('Person', back_populates='person_education')
+  person_id = relationship('Person', back_populates='person_education', lazy='joined')
+  person_education = relationship('PersonEducation', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.description}>'
@@ -1453,7 +1575,9 @@ class PersonCertification(Model):
   expiration_date = Column(Date)
   credential_id = Column(String)
   credential_url = Column(String)
-  person = relationship('Person', back_populates='person_certification')
+  person_id = relationship('Person', back_populates='person_certification', lazy='joined')
+  person_certification = relationship('PersonCertification', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
@@ -1468,7 +1592,9 @@ class GamificationChallenge(Model):
   badge_reward_id_fk = Column(Integer, ForeignKey('badge.id'))
   start_date = Column(DateTime)
   end_date = Column(DateTime)
-  badge_reward = relationship('Badge', back_populates='gamification_challenge')
+  badge_reward_id = relationship('Badge', back_populates='gamification_challenge', lazy='joined')
+  gamification_challenge = relationship('GamificationChallenge', back_populates='badge_reward_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
@@ -1481,7 +1607,9 @@ class ProfileUpdateReminder(Model):
   last_reminder_date = Column(DateTime, default=func.now())
   reminder_count = Column(Integer)
   next_reminder_date = Column(DateTime)
-  person = relationship('Person', back_populates='profile_update_reminder')
+  person_id = relationship('Person', back_populates='profile_update_reminder', lazy='joined')
+  profile_update_reminder = relationship('ProfileUpdateReminder', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.id}>'
@@ -1494,7 +1622,9 @@ class PointEarningActivity(Model):
   activity_type = Column(String, nullable=False)
   points_earned = Column(Integer)
   timestamp = Column(DateTime, default=func.now())
-  person = relationship('Person', back_populates='point_earning_activity')
+  person_id = relationship('Person', back_populates='point_earning_activity', lazy='joined')
+  point_earning_activity = relationship('PointEarningActivity', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.activity_type}>'
@@ -1522,7 +1652,9 @@ class PersonPublication(Model):
   date = Column(Date, nullable=False)
   url = Column(String)
   description = Column(Text)
-  person = relationship('Person', back_populates='person_publication')
+  person_id = relationship('Person', back_populates='person_publication', lazy='joined')
+  person_publication = relationship('PersonPublication', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.title}>'
@@ -1538,7 +1670,9 @@ class PersonVolunteerExperience(Model):
   start_date = Column(Date, nullable=False)
   end_date = Column(Date)
   description = Column(Text)
-  person = relationship('Person', back_populates='person_volunteer_experience')
+  person_id = relationship('Person', back_populates='person_volunteer_experience', lazy='joined')
+  person_volunteer_experience = relationship('PersonVolunteerExperience', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.description}>'
@@ -1553,7 +1687,9 @@ class PersonPatent(Model):
   patent_number = Column(String, nullable=False)
   issue_date = Column(Date, nullable=False)
   description = Column(Text)
-  person = relationship('Person', back_populates='person_patent')
+  person_id = relationship('Person', back_populates='person_patent', lazy='joined')
+  person_patent = relationship('PersonPatent', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.title}>'
@@ -1567,7 +1703,9 @@ class PersonCourse(Model):
   institution = Column(String, nullable=False)
   completion_date = Column(Date, nullable=False)
   description = Column(Text)
-  person = relationship('Person', back_populates='person_course')
+  person_id = relationship('Person', back_populates='person_course', lazy='joined')
+  person_course = relationship('PersonCourse', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
@@ -1582,7 +1720,9 @@ class PersonOrganizationMembership(Model):
   start_date = Column(Date, nullable=False)
   end_date = Column(Date)
   description = Column(Text)
-  person = relationship('Person', back_populates='person_organization_membership')
+  person_id = relationship('Person', back_populates='person_organization_membership', lazy='joined')
+  person_organization_membership = relationship('PersonOrganizationMembership', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.description}>'
@@ -1594,7 +1734,9 @@ class PersonLanguage(Model):
   person_id_fk = Column(Integer, ForeignKey('person.id'), nullable=False)
   name = Column(String, nullable=False)
   proficiency = Column(String, nullable=False)
-  person = relationship('Person', back_populates='person_language')
+  person_id = relationship('Person', back_populates='person_language', lazy='joined')
+  person_language = relationship('PersonLanguage', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
@@ -1608,7 +1750,9 @@ class PersonHonorAward(Model):
   issuer = Column(String, nullable=False)
   date_received = Column(Date, nullable=False)
   description = Column(Text)
-  person = relationship('Person', back_populates='person_honor_award')
+  person_id = relationship('Person', back_populates='person_honor_award', lazy='joined')
+  person_honor_award = relationship('PersonHonorAward', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.title}>'
@@ -1620,6 +1764,7 @@ class Geoname(Model):
   name = Column(String, comment="Local name of the place or location")
   asciiname = Column(String, comment="ASCII version of the name, suitable for URL or systems that dont support unicode")
   alt_names = Column(Text, comment="Alternative names or variations of the location name, possibly in different languages or scripts")
+  alternatenames_id_fk = Column(Integer, ForeignKey('alternatename.id'))
   latitude = Column(Float, comment="Latitude coordinate of the location")
   longitude = Column(Float, comment="Longitude coordinate of the location")
   fclass = Column(String, comment="Feature class, represents general type/category of the location e.g. P for populated place, A for administrative division")
@@ -1636,7 +1781,12 @@ class Geoname(Model):
   gtopo30 = Column(Integer, comment="Digital elevation model, indicates the average elevation of 30x30 area in meters")
   timezone = Column(String, comment="The timezone in which the location lies, based on the IANA Time Zone Database")
   moddate = Column(Date, comment="The last date when the record was modified or updated")
-  country = relationship('Country', back_populates='geoname')
+  alternatenames_id = relationship('Alternatename', back_populates='geoname', lazy='joined')
+  country_id = relationship('Country', back_populates='geoname', lazy='joined')
+  geoname = relationship('Geoname', back_populates='alternatenames_id', lazy='joined')
+
+  geoname = relationship('Geoname', back_populates='country_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
@@ -1665,8 +1815,12 @@ class Contact(Model):
   is_blocked = Column(Boolean, default=False, comment="Indicates if this contact is blocked, maybe due to spam or other reasons.")
   is_verified = Column(Boolean, default=False, comment="Indicates if this contact has been verified, e.g., via OTP or email confirmation.")
   notes = Column(Text, comment="Additional notes or context about the contact.")
-  contact_type = relationship('ContactType', back_populates='contact')
-  person = relationship('Person', back_populates='contact')
+  contact_type_id = relationship('ContactType', back_populates='contact', lazy='joined')
+  person_id = relationship('Person', back_populates='contact', lazy='joined')
+  contact = relationship('Contact', back_populates='contact_type_id', lazy='joined')
+
+  contact = relationship('Contact', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.contact_value}>'
@@ -1684,7 +1838,9 @@ class DocumentSubmission(Model):
   next_status = Column(String)
   review_notes = Column(Text)
   review_date = Column(DateTime)
-  organization = relationship('Organization', back_populates='document_submission')
+  organization_id = relationship('Organization', back_populates='document_submission', lazy='joined')
+  document_submission = relationship('DocumentSubmission', back_populates='organization_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.document_name}>'
@@ -1698,7 +1854,9 @@ class OrganizationAward(Model):
   awarding_body = Column(String)
   date_received = Column(Date)
   description = Column(Text)
-  organization = relationship('Organization', back_populates='organization_award')
+  organization_id = relationship('Organization', back_populates='organization_award', lazy='joined')
+  organization_award = relationship('OrganizationAward', back_populates='organization_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
@@ -1712,7 +1870,9 @@ class Notification(Model):
   notification_type = Column(String)
   created_date = Column(DateTime, default=func.now())
   read_date = Column(DateTime)
-  person = relationship('Person', back_populates='notification')
+  person_id = relationship('Person', back_populates='notification', lazy='joined')
+  notification = relationship('Notification', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.message}>'
@@ -1727,7 +1887,9 @@ class Skill(Model):
   name = Column(String, nullable=False)
   skill_category_id_fk = Column(Integer, ForeignKey('skill_category.id'), nullable=False)
   description = Column(Text)
-  skill_category = relationship('SkillCategory', back_populates='skill')
+  skill_category_id = relationship('SkillCategory', back_populates='skill', lazy='joined')
+  skill = relationship('Skill', back_populates='skill_category_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
@@ -1742,8 +1904,18 @@ class PersonProject(Model):
   start_date = Column(Date, nullable=False)
   end_date = Column(Date)
   project_url = Column(String)
-  person = relationship('Person', back_populates='person_project')
+  person_id = relationship('Person', back_populates='person_project', lazy='joined')
+  person_project = relationship('PersonProject', back_populates='person_id', lazy='joined')
+
 
   def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
 
+
+class PersonBadge(Model):
+  __tablename__ = 'person_badge'
+  person_id_fk = Column(Integer, ForeignKey('person.id'), primary_key=True, nullable=False)
+  badge_id_fk = Column(Integer, ForeignKey('badge.id'), primary_key=True, nullable=False)
+  date_earned = Column(DateTime, default=func.now())
+  badge = relationship('Badge', back_populates='person_badges')
+  person = relationship('Person', back_populates='person_badges')

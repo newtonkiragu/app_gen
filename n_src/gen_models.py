@@ -56,52 +56,48 @@ Base = declarative_base()
 def gen_models(metadata, inspector):
     """Main function to generate model code."""
     model_code = []
+
+    # Generate header, domains, and enums
     model_code.extend(gen_model_header())
     model_code.extend(gen_domains(inspector))
     model_code.extend(gen_enums(inspector))
 
+    # Prepare relationship information
     relationship_info = prepare_relationship_info(metadata, inspector)
 
-    # Generate all tables
+    # Generate regular tables and collect reverse relationships
+    reverse_relationships = {}
     for table_name in inspector.get_table_names():
-        table = metadata.tables[table_name]
+        if not is_association_table(table_name, inspector):
+            table = metadata.tables[table_name]
+            table_code, reverse_rels = gen_table(table, inspector, relationship_info)
+            model_code.extend(table_code)
+            reverse_relationships[table_name] = reverse_rels
+
+    # Add reverse relationships to the appropriate tables
+    for table_name, relationships in reverse_relationships.items():
+        table_index = next(i for i, line in enumerate(model_code) if line.startswith(f"class {snake_to_pascal(table_name)}("))
+        for rel in relationships:
+            insert_index = next((i for i, line in enumerate(model_code[table_index:]) if line.strip().startswith("def __repr__")), None)
+            if insert_index is not None:
+                insert_index += table_index
+            else:
+                insert_index = len(model_code)
+            model_code.insert(insert_index, rel)
+            model_code.insert(insert_index + 1, "")  # Add a blank line for readability
+
+    # Generate association tables
+    for table_name in inspector.get_table_names():
         if is_association_table(table_name, inspector):
             model_code.extend(gen_association_table(table_name, metadata, inspector))
-        else:
-            model_code.extend(gen_table(table, inspector, relationship_info))
 
     # Update related tables for associations
     for table_name in inspector.get_table_names():
         if is_association_table(table_name, inspector):
-            update_related_tables_for_association(table_name, metadata, inspector, model_code)
+            model_code = update_related_tables_for_association(table_name, metadata, inspector, model_code)
 
     return model_code
 
-# def gen_models(metadata, inspector):
-#     """Main function to generate model code."""
-#     model_code = []
-#     model_code.extend(gen_model_header())
-#     model_code.extend(gen_domains(inspector))
-#     model_code.extend(gen_enums(inspector))
-
-#     relationship_info = prepare_relationship_info(metadata, inspector)
-
-#     # Generate association tables first
-#     model_code.append("\n# Association Tables")
-#     association_tables = []
-#     for table_name in inspector.get_table_names():
-#         if is_association_table(table_name, inspector):
-#             association_tables.append(table_name)
-#             model_code.extend(gen_association_table(table_name, metadata, inspector))
-
-#     # Generate regular tables
-#     model_code.extend(gen_tables(metadata, inspector, relationship_info, association_tables))
-
-#     # Update related tables for associations
-#     for assoc_table in association_tables:
-#         update_related_tables_for_association(assoc_table, metadata, inspector, model_code)
-
-#     return model_code
 
 
 def gen_domains(inspector):
@@ -165,7 +161,7 @@ def gen_association_table(table_name, metadata, inspector):
 
     table_class = snake_to_pascal(table_name)
     table_code.append(f"class {table_class}(Model):")
-    table_code.append(f"    __tablename__ = '{table_name}'")
+    table_code.append(f"  __tablename__ = '{table_name}'")
 
     for column in columns:
         col_name = column['name']
@@ -195,7 +191,7 @@ def gen_association_table(table_name, metadata, inspector):
             attributes.append(f"comment=\"{column['comment']}\"")
 
         attributes_str = ", ".join(attributes)
-        table_code.append(f"    {col_name} = Column({col_type}, {attributes_str})")
+        table_code.append(f"  {col_name} = Column({col_type}, {attributes_str})")
 
     # Generate relationships for the association table
     for fk in fks:
@@ -203,20 +199,21 @@ def gen_association_table(table_name, metadata, inspector):
         backref_name = p.plural(table_name)
         relationship_str = f"relationship('{referred_table}', back_populates='{backref_name}')"
         rel_name = fk['constrained_columns'][0].replace('_id_fk', '').replace('_id', '')
-        table_code.append(f"    {rel_name} = {relationship_str}")
+        table_code.append(f"  {rel_name} = {relationship_str}")
 
     if table_comment['text']:
-        table_code.append(f"    __table_args__ = {{'comment': \"{table_comment['text']}\"}}")
+        table_code.append(f"  __table_args__ = {{'comment': \"{table_comment['text']}\"}}")
 
     table_code.append("")
     return table_code
 
-
-
 def update_related_tables_for_association(table_name, metadata, inspector, model_code):
-    """Update related tables to include the association relationship."""
+    """Update related tables to include the association relationship for many-to-many relationships."""
     fks = inspector.get_foreign_keys(table_name)
     table = metadata.tables[table_name]
+
+    if len(fks) != 2:
+        return  # Only handle tables with exactly two foreign keys (typical for many-to-many)
 
     for fk in fks:
         referred_table = fk['referred_table']
@@ -224,62 +221,116 @@ def update_related_tables_for_association(table_name, metadata, inspector, model
         local_cols = fk['constrained_columns']
         remote_cols = fk['referred_columns']
 
-        # Determine if it's a many-to-many relationship
-        is_many_to_many = len(fks) > 1
-
-        if is_many_to_many:
-            association_name = p.plural(table_name)
-            relationship_name = p.plural(referred_table)
-        else:
-            association_name = table_name
-            relationship_name = p.singular(table_name)
+        # Determine the relationship name
+        relationship_name = p.plural(table_name)
 
         # Find the index of the related table in the model_code
-        table_start_index = next(i for i, line in enumerate(model_code) if line.startswith(f"class {referred_table_class}("))
+        table_start_index = next((i for i, line in enumerate(model_code)
+                                  if line.startswith(f"class {referred_table_class}(")), None)
 
-        # Find the index of __repr__ method or the end of the class
-        repr_index = next((i for i, line in enumerate(model_code[table_start_index:]) if line.strip().startswith("def __repr__")), None)
-        if repr_index is not None:
-            insert_index = table_start_index + repr_index
+        if table_start_index is None:
+            continue  # Skip if the related table is not found
+
+        # Find the index to insert the new relationship
+        insert_index = next((i for i, line in enumerate(model_code[table_start_index:])
+                             if line.strip().startswith("def __repr__")), None)
+
+        if insert_index is not None:
+            insert_index += table_start_index
         else:
-            # If __repr__ is not found, find the next class or the end of the file
-            next_class_index = next((i for i, line in enumerate(model_code[table_start_index + 1:]) if line.startswith("class ")), None)
-            insert_index = table_start_index + next_class_index if next_class_index is not None else len(model_code)
+            insert_index = next((i for i, line in enumerate(model_code[table_start_index:])
+                                 if line.startswith("class ")), None)
+            if insert_index is not None:
+                insert_index += table_start_index
+            else:
+                insert_index = len(model_code)
 
         # Check if the relationship already exists
-        existing_relationship = next((i for i in range(table_start_index, insert_index)
-                                      if f"{relationship_name} = relationship(" in model_code[i]), None)
+        existing_relationship = any(f"{relationship_name} = relationship(" in line
+                                    for line in model_code[table_start_index:insert_index])
 
-        if existing_relationship is None:
+        if not existing_relationship:
             # Add the relationship to the related table
-            if is_many_to_many:
-                relationship_str = f"  {relationship_name} = relationship('{snake_to_pascal(table_name)}', secondary='{table_name}', back_populates='{referred_table}')"
-            else:
-                relationship_str = f"    {relationship_name} = relationship('{snake_to_pascal(table_name)}', back_populates='{referred_table}')"
+            other_fk = next(f for f in fks if f != fk)
+            other_table = other_fk['referred_table']
+            other_table_class = snake_to_pascal(other_table)
+
+            relationship_str = (f"  {relationship_name} = relationship('{other_table_class}', "
+                                f"secondary='{table_name}', "
+                                f"back_populates='{p.plural(referred_table)}')")
             print(relationship_str)
             model_code.insert(insert_index, relationship_str)
+            model_code.insert(insert_index + 1, "")  # Add a blank line for readability
 
-            # Add a blank line for better readability if it's not the end of the file
-            if insert_index < len(model_code):
-                model_code.insert(insert_index + 1, "")
+    return model_code
 
-        # Update the association table's relationship
-        assoc_table_index = next(i for i, line in enumerate(model_code) if line.startswith(f"class {snake_to_pascal(table_name)}("))
-        assoc_repr_index = next((i for i, line in enumerate(model_code[assoc_table_index:]) if line.strip().startswith("def __repr__")), None)
-        if assoc_repr_index is not None:
-            assoc_insert_index = assoc_table_index + assoc_repr_index
-        else:
-            assoc_insert_index = len(model_code)
+# def update_related_tables_for_association(table_name, metadata, inspector, model_code):
+#     """Update related tables to include the association relationship."""
+#     fks = inspector.get_foreign_keys(table_name)
+#     table = metadata.tables[table_name]
 
-        existing_assoc_relationship = next((i for i in range(assoc_table_index, assoc_insert_index)
-                                            if f"{referred_table} = relationship(" in model_code[i]), None)
+#     for fk in fks:
+#         referred_table = fk['referred_table']
+#         referred_table_class = snake_to_pascal(referred_table)
+#         local_cols = fk['constrained_columns']
+#         remote_cols = fk['referred_columns']
 
-        if existing_assoc_relationship is None:
-            assoc_relationship_str = f"    {referred_table} = relationship('{referred_table_class}', back_populates='{relationship_name}')"
-            model_code.insert(assoc_insert_index, assoc_relationship_str)
+#         # Determine if it's a many-to-many relationship
+#         is_many_to_many = len(fks) > 1
 
-            if assoc_insert_index < len(model_code):
-                model_code.insert(assoc_insert_index + 1, "")
+#         if is_many_to_many:
+#             association_name = p.plural(table_name)
+#             relationship_name = p.plural(referred_table)
+#         else:
+#             association_name = table_name
+#             relationship_name = p.singular(table_name)
+
+#         # Find the index of the related table in the model_code
+#         table_start_index = next(i for i, line in enumerate(model_code) if line.startswith(f"class {referred_table_class}("))
+
+#         # Find the index of __repr__ method or the end of the class
+#         repr_index = next((i for i, line in enumerate(model_code[table_start_index:]) if line.strip().startswith("def __repr__")), None)
+#         if repr_index is not None:
+#             insert_index = table_start_index + repr_index
+#         else:
+#             # If __repr__ is not found, find the next class or the end of the file
+#             next_class_index = next((i for i, line in enumerate(model_code[table_start_index + 1:]) if line.startswith("class ")), None)
+#             insert_index = table_start_index + next_class_index if next_class_index is not None else len(model_code)
+
+#         # Check if the relationship already exists
+#         existing_relationship = next((i for i in range(table_start_index, insert_index)
+#                                       if f"{relationship_name} = relationship(" in model_code[i]), None)
+
+#         if existing_relationship is None:
+#             # Add the relationship to the related table
+#             if is_many_to_many:
+#                 relationship_str = f"  {relationship_name} = relationship('{snake_to_pascal(table_name)}', secondary='{table_name}', back_populates='{referred_table}')"
+#             else:
+#                 relationship_str = f"  {relationship_name} = relationship('{snake_to_pascal(table_name)}', back_populates='{referred_table}')"
+#             print(relationship_str)
+#             model_code.insert(insert_index, relationship_str)
+
+#             # Add a blank line for better readability if it's not the end of the file
+#             if insert_index < len(model_code):
+#                 model_code.insert(insert_index + 1, "")
+
+#         # Update the association table's relationship
+#         assoc_table_index = next(i for i, line in enumerate(model_code) if line.startswith(f"class {snake_to_pascal(table_name)}("))
+#         assoc_repr_index = next((i for i, line in enumerate(model_code[assoc_table_index:]) if line.strip().startswith("def __repr__")), None)
+#         if assoc_repr_index is not None:
+#             assoc_insert_index = assoc_table_index + assoc_repr_index
+#         else:
+#             assoc_insert_index = len(model_code)
+
+#         existing_assoc_relationship = next((i for i in range(assoc_table_index, assoc_insert_index)
+#                                             if f"{referred_table} = relationship(" in model_code[i]), None)
+
+#         if existing_assoc_relationship is None:
+#             assoc_relationship_str = f"  {referred_table} = relationship('{referred_table_class}', back_populates='{relationship_name}')"
+#             model_code.insert(assoc_insert_index, assoc_relationship_str)
+
+#             if assoc_insert_index < len(model_code):
+#                 model_code.insert(assoc_insert_index + 1, "")
 
 
 
@@ -310,12 +361,18 @@ def gen_table(table, inspector, relationship_info):
     table_code.extend(gen_table_args(pk_constraint, uqs, indexes, table_comment))
 
     table_code.extend(gen_columns(columns, pk_constraint, fks, uqs, table_class))
-    table_code.extend(gen_relationships(fks, table_name, table_class, inspector, relationship_info))
+
+    reverse_relationships = []
+    for fk in fks:
+        local_rel, reverse_rel = gen_relationship(fk, table_name, table_class, inspector, relationship_info)
+        table_code.extend(local_rel)
+        reverse_relationships.extend(reverse_rel)
+
     table_code.extend(gen_check_constraints(inspector, table_name))
     table_code.extend(gen_repr_method(columns, pk_constraint))
 
     table_code.append("\n")
-    return table_code
+    return table_code, reverse_relationships
 
 def gen_columns(columns, pk_constraint, fks, uqs, table_class):
     """Generate code for table columns, including identities, constraints, and comments."""
@@ -381,7 +438,7 @@ def gen_column(column, pk_columns, fks, uqs, table_class):
     elif column_name.endswith('_file') or column_name.endswith('_doc'):
         column_code.append(gen_file_column(column_name, table_class))
     else:
-        # column_code.append(f"    {column_name} = Column({column_type}, {attributes_str})")
+        # column_code.append(f"  {column_name} = Column({column_type}, {attributes_str})")
         if attributes_str:
             column_code.append(f"  {column_name} = Column({column_type}, {attributes_str})")
         else:
@@ -397,48 +454,60 @@ def gen_relationships(fks, table_name, table_class, inspector, relationship_info
     return relationship_code
 
 def gen_relationship(fk, table_name, table_class, inspector, relationship_info):
-    """Generate code for a single relationship, handling association tables."""
+    """Generate code for relationships, handling both sides of the relationship."""
     relationship_code = []
     fk_cols = fk["constrained_columns"]
-    fk_name = "_".join(fk_cols) if len(fk_cols) > 1 else fk_cols[0]
-
-    if fk_name.endswith('_id'):
-        fk_name = fk_name[:-3]
-    if fk_name.endswith('_id_fk'):
-        fk_name = fk_name[:-6]
-
-    referred_table = snake_to_pascal(fk["referred_table"])
+    referred_table = fk["referred_table"]
     referred_columns = fk["referred_columns"]
+    referred_class = snake_to_pascal(referred_table)
 
-    cardinality = relationship_info[table_name].get(fk["referred_table"], 'many-to-one')
+    # Determine relationship type
+    cardinality = relationship_info[table_name].get(referred_table, 'many-to-one')
 
-    backref_name = p.plural(table_name) if cardinality in ['one-to-many', 'many-to-many'] else table_name
+    # Generate relationship for the current table
+    local_relationship_name = '_'.join(fk_cols) if len(fk_cols) > 1 else fk_cols[0]
+    if local_relationship_name.endswith('_id'):
+        local_relationship_name = local_relationship_name[:-3]
+    if local_relationship_name.endswith('_fk'):
+        local_relationship_name = local_relationship_name[:-3]
 
-    rel_args = [f"'{referred_table}'", f"back_populates='{backref_name}'"]
+    remote_relationship_name = p.plural(table_name) if cardinality in ['one-to-many', 'many-to-many'] else table_name
 
-    if cardinality in ['one-to-many', 'many-to-many']:
-        rel_args.append("lazy='selectin'")
-
-    if table_class == referred_table:  # self-referential
-        rel_args.append(f"remote_side=[{', '.join([f'{referred_table}.{col}' for col in referred_columns])}]")
-
-    if len(fk_cols) > 1:
-        joins = [f"{table_class}.{local} == {referred_table}.{remote}"
-                 for local, remote in zip(fk_cols, referred_columns)]
-        primaryjoin = " and ".join(joins)
-        rel_args.append(f"primaryjoin='{primaryjoin}'")
-
+    # Handle many-to-many relationships
     if cardinality == 'many-to-many':
-        association_table = find_association_table(table_name, fk["referred_table"], inspector)
+        association_table = find_association_table(table_name, referred_table, inspector)
         if association_table:
-            assoc_class = snake_to_pascal(association_table)
-            rel_args.append(f"secondary='{association_table}'")
-            rel_args.append(f"viewonly=True")
+            relationship_code.append(f"  {p.plural(referred_table)} = relationship('{referred_class}', secondary='{association_table}', back_populates='{remote_relationship_name}')")
+            # We'll handle the other side of the relationship in update_related_tables_for_association
+            return relationship_code
 
-    relationship_str = ", ".join(rel_args)
-    relationship_code.append(f"  {fk_name} = relationship({relationship_str})")
+    # Generate relationship for the current table
+    relationship_args = [f"'{referred_class}'", f"back_populates='{remote_relationship_name}'"]
 
-    return relationship_code
+    if cardinality == 'many-to-one':
+        relationship_args.append("lazy='joined'")
+    elif cardinality == 'one-to-many':
+        relationship_args.append("lazy='selectin'")
+
+    if table_class == referred_class:  # self-referential
+        relationship_args.append(f"remote_side=[{', '.join([f'{referred_class}.{col}' for col in referred_columns])}]")
+
+    relationship_str = ', '.join(relationship_args)
+    relationship_code.append(f"  {local_relationship_name} = relationship({relationship_str})")
+
+    # Generate the reverse relationship (to be added to the referred table)
+    reverse_relationship_code = []
+    reverse_relationship_args = [f"'{table_class}'", f"back_populates='{local_relationship_name}'"]
+
+    if cardinality == 'one-to-many':
+        reverse_relationship_args.append("lazy='selectin'")
+    elif cardinality == 'many-to-one':
+        reverse_relationship_args.append("lazy='joined'")
+
+    reverse_relationship_str = ', '.join(reverse_relationship_args)
+    reverse_relationship_code.append(f"  {remote_relationship_name} = relationship({reverse_relationship_str})")
+
+    return relationship_code, reverse_relationship_code
 
 
 def gen_table_args(pk_constraint, uqs, indexes, table_comment):
