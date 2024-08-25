@@ -79,7 +79,7 @@ class PlaceMixin:
         return cls.__name__.lower()
 
     if SQLALCHEMY_2:
-        id:Mapped[int] = mapped_column(Integer, primary_key=True)
+        id: Mapped[int] = mapped_column(Integer, primary_key=True)
         place_name = mapped_column(String(100))
         place_description = mapped_column(String(500))
         latitude = mapped_column(Float)

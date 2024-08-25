@@ -1,4 +1,4 @@
-import re, string
+import re
 from marshmallow import fields
 from sqlalchemy import create_engine, inspect, MetaData, FetchedValue
 # from sqlalchemy.orm import relationship, DeclarativeBase, mapped_column, Mapped, sessionmaker
@@ -11,17 +11,23 @@ from sqlalchemy import (
     NUMERIC, BOOLEAN, Time, DECIMAL, Column
 )
 from sqlalchemy.sql import sqltypes
-# from sqlalchemy.dialects.postgresql import (
-#     ARRAY, BIGINT, BIT, BOOLEAN, BYTEA, CHAR, CIDR, CITEXT, DATE, DATEMULTIRANGE,
-#     DATERANGE, DOMAIN, DOUBLE_PRECISION, ENUM, FLOAT, HSTORE, INET, INT4MULTIRANGE,
-#     INT4RANGE, INT8MULTIRANGE, INT8RANGE, INTEGER, INTERVAL, JSON, JSONB, JSONPATH,
-#     MACADDR, MACADDR8, MONEY, NUMERIC, NUMMULTIRANGE, NUMRANGE, OID, REAL, REGCLASS,
-#     REGCONFIG, SMALLINT, TEXT, TIME, TIMESTAMP, TSMULTIRANGE, TSQUERY, TSRANGE,
-#     TSTZMULTIRANGE, TSTZRANGE, TSVECTOR, UUID, VARCHAR,
-# )
+from sqlalchemy.dialects.postgresql import (
+    ARRAY, BIGINT, BIT, BOOLEAN, BYTEA, CHAR, CIDR, CITEXT, DATE, DATEMULTIRANGE,
+    DATERANGE, DOMAIN, DOUBLE_PRECISION, ENUM, FLOAT, HSTORE, INET, INT4MULTIRANGE,
+    INT4RANGE, INT8MULTIRANGE, INT8RANGE, INTEGER, INTERVAL, JSON, JSONB, JSONPATH,
+    MACADDR, MACADDR8, MONEY, NUMERIC, NUMMULTIRANGE, NUMRANGE, OID, REAL, REGCLASS,
+    REGCONFIG, SMALLINT, TEXT, TIME, TIMESTAMP, TSMULTIRANGE, TSQUERY, TSRANGE,
+    TSTZMULTIRANGE, TSTZRANGE, TSVECTOR, UUID, VARCHAR,
+)
 
 
 def map_dbml_datatypes(datatype: str):
+    """
+       Maps DBML datatypes to SQLAlchemy types.
+
+       :param datatype: The DBML datatype as a string.
+       :return: The corresponding SQLAlchemy type as a string.
+       """
     mapping = {
         'int': 'Integer',
         'tinyint': 'Integer',
@@ -47,10 +53,20 @@ def map_dbml_datatypes(datatype: str):
     return mapping.get(datatype.lower(), datatype.title())
 
 
-def map_pgsql_datatypes(pg_type: str):
+def map_pgsql_datatypes(pg_type: str) -> str:
+    """
+        Maps PostgreSQL-specific datatypes to SQLAlchemy types.
+
+        :param pg_type: The PostgreSQL datatype as a string.
+        :return: The corresponding SQLAlchemy type as a string.
+        """
     pg_type = pg_type.lower()
     if pg_type.startswith('interval'):
         return 'Interval'
+    if pg_type == 'character varying' or pg_type == 'varchar':
+        return 'String'
+    if pg_type == 'json' or pg_type == 'jsonb':
+        return 'JSON'
     elif pg_type.startswith('int'):
         return 'Integer'
     elif pg_type.startswith('smallint'):
@@ -312,80 +328,6 @@ def get_marshmallow_field_type(column_type):
     return type_mapping.get(type(column_type))
 
 
-def get_table_schema(metadata):
-    schema = {}
-    for table in metadata.tables.values():
-        columns = []
-        for col in table.columns:
-            field_type = get_field_type(col['type'])
-
-            # Handle the case where field_type is None
-            if field_type is None:
-                print(f"Unsupported column type: {col['type']} in table {table.name}")
-                continue
-
-            if col.default is not None:
-                default = col.default
-                if isinstance(col.default, FetchedValue):
-                    default = "=" + repr(col.default)
-                field_type.default = default
-
-            if col.server_default is not None:
-                field_type.server_default = col.server_default
-
-            if col.unique:
-                field_type.unique = True
-
-            if col.nullable == False:
-                field_type.required = True
-
-            if col.primary_key:
-                field_type.primary_key = True
-
-            # Handle computed columns.
-            if col.info.get("computed"):
-                field_type = fields.Func(col['name'], as_string=True)
-
-            # Handle foreign keys and relationships.
-            if isinstance(col['type'], ForeignKey):
-                ref_table = col.foreign_keys[0].referred_table
-                ref_col = [
-                    x
-                    for x in ref_table.columns
-                    if x.name == col.foreign_keys[0].column.name
-                ][0]
-                field_type = relationship(ref_table.name, backref=table.name)
-
-            # Handle enum types.
-            elif isinstance(col['type'], Enum):
-                field_type = fields.Str()
-                col_enum_values = str(col['type']).split("(")[1].strip().replace("'", "")
-                enum_values = [x.strip() for x in col_enum_values.split(",")]
-                field_choices = [(x, x) for x in enum_values]
-                setattr(field_type, "choices", field_choices)
-
-            # Handle column comments.
-            if table.comment is not None:
-                comment = col.comment or ""
-                field_type.metadata["description"] = comment
-
-            # Add every property of the ReflectedColumn to the schema.
-            # for prop in dir(col):
-            #     print(f'{table.name}\t col: {col['name']}\t' + prop)
-            # if not callable(getattr(col, prop)) and prop != 'metadata' and prop != '__weakref__':
-            #     setattr(field_type, prop, getattr(col, prop))
-
-        # Add every property of the Table to the schema.
-        # for prop in dir(table):
-        #     print(prop)
-        # if not callable(getattr(table, prop)) and prop != 'metadata':
-        #     setattr(schema[table.name], prop, getattr(table, prop))
-
-        columns.append(field_type)
-        schema[table.name] = {"columns": columns}
-
-    return schema
-
 
 # Remove columns that end in _id
 def remove_id_columns(column_names):
@@ -404,34 +346,6 @@ def remove_id_columns(column_names):
     return cleaned_names
 
 
-# This checks if a table is an association table
-# As Assoc table should only have two FKs
-# if we have named to table 'assoc', 'link' or 'map'
-# We can have more than those two columns, so blanking out the test for other columns
-def is_association_table(table_name):
-    # Get the foreign keys for the table
-    foreign_keys = inspector.get_foreign_keys(table_name)
-
-    columns = inspector.get_columns(table_name)
-    if len(columns) <= 2:
-        # Check for a naming convention
-        if "assoc" in table_name.lower() or \
-                "link" in table_name.lower() or \
-                "map" in table_name.lower():
-            return True
-
-    # Check the number of foreign keys
-    if len(foreign_keys) == 2:
-        # Check if the foreign keys reference different tables
-        referred_tables = {fk['referred_table'] for fk in foreign_keys}
-        if len(referred_tables) == 2:
-            return True
-            # Check for additional columns
-            # columns = inspector.get_columns(table_name)
-            # if len(columns) == 2:  # Only the foreign keys
-            #     return True
-
-    return False
 
 
 from sqlalchemy import String, Text
@@ -491,106 +405,25 @@ def get_display_column(columns):
 
     return columns[0]['name'], False
 
-
-
-#     Select an appropriate column or expression for display in __repr__ method.
-
-#     Args:
-#     columns (list): List of column objects with 'name' and 'type' attributes.
-
-#     Returns:
-#     tuple: (display_expr, is_expression)
-#         display_expr (str): Name of the selected display column or a custom expression.
-#         is_expression (bool): True if display_expr is a custom expression, False if it's a column name.
+# def topological_sort(graph):
 #     """
-#     column_names = [col['name'] for col in columns]
-
-#     # Check for first_name and last_name combination
-#     if 'first_name' in column_names and 'last_name' in column_names:
-#         return "f'{self.first_name} {self.last_name}'", True
-
-#     priority_names = [
-#         'name', 'full_name', 'username', 'email', 'title', 'label', 'code', 'slug',
-#         'description', 'display_name'
-#     ]
-
-#     # Check for priority names
-#     for name in priority_names:
-#         if name in column_names:
-#             return name, False
-
-#     # Check for custom naming patterns
-#     custom_patterns = [
-#         lambda x: x.endswith('_name'),
-#         lambda x: x.endswith('_title'),
-#         lambda x: x.endswith('_label'),
-#         lambda x: x.startswith('name_'),
-#         lambda x: x.startswith('title_'),
-#         lambda x: x.startswith('label_')
-#     ]
-
-#     for pattern in custom_patterns:
-#         matching_columns = [col['name'] for col in columns if pattern(col['name'])]
-#         if matching_columns:
-#             return matching_columns[0], False
-
-#     # Prefer string-based columns
-#     string_columns = [col['name'] for col in columns if isinstance(col['type'], (sqltypes.String, sqltypes.Text))]
-#     if string_columns:
-#         return string_columns[0], False
-
-#     # Fall back to the primary key or the first column
-#     primary_keys = [col['name'] for col in columns if col.primary_key]
-#     if primary_keys:
-#         return primary_keys[0], False
-
-#     return columns[0].name, False
-
-# Selects the best display name given a list of column names
-def old_get_display_column(column_names):
-    priorities = ['name', 'alias', 'title', 'label', 'display_name', 'code']
-
-    for name in priorities:
-        if name in column_names:
-            return name
-
-    for name in column_names:
-        if 'name' in name.lower() or 'model' in name.lower():
-            return name
-
-    return column_names[0]
-
-
-# In order to generate tables in topological sort order
-# -  get table dependencies
-# - do a Depth First search to get topological order
-# def get_table_dependencies():
-#     # Get the table dependencies using SQLAlchemy reflection
-#     table_dependencies = {}
+#     superceded by:
+#     for table in metadata.sorted_tables:
+#     :param graph:
+#     :return:
+#     """
+#     sorted_list = []
+#     visited = set()
 #
-#     for table_name in inspector.get_table_names():
-#         table_dependencies[table_name] = set()
-#         foreign_keys = inspector.get_foreign_keys(table_name)
-#         for fk in foreign_keys:
-#             ref_table = fk['referred_table']
-#             table_dependencies[table_name].add(ref_table)
+#     def dfs(node):
+#         visited.add(node)
+#         for neighbor in graph.get(node, []):
+#             if neighbor not in visited:
+#                 dfs(neighbor)
+#         sorted_list.append(node)
 #
-#     return table_dependencies
-
-
-def topological_sort(graph):
-    sorted_list = []
-    visited = set()
-
-    def dfs(node):
-        visited.add(node)
-        for neighbor in graph.get(node, []):
-            if neighbor not in visited:
-                dfs(neighbor)
-        sorted_list.append(node)
-
-    for node in graph:
-        if node not in visited:
-            dfs(node)
-
-    return sorted_list
+#     for node in graph:
+#         if node not in visited:
+#             dfs(node)
+#
+#     return sorted_list

@@ -259,7 +259,7 @@ class ProjectMixin(BaseModelMixin):
     @classmethod
     def create_tables(cls):
         class ProjectModel(Model):
-            __tablename__ = f"{cls.__tablename__}_project"
+            __tablename__ = f"nx_pj_{cls.__tablename__}_project"
 
             pj_id = Column(Integer, primary_key=True)
             project_name = Column(String(50), nullable=False)

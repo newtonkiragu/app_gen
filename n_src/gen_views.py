@@ -1,3 +1,6 @@
+"""
+TODO: Add generation of specialist views
+"""
 import inflect
 import argparse
 from typing import Any, Dict, List
@@ -64,6 +67,12 @@ def generate_views(database_uri):
     # Generate MultipleViews
     multiple_views = generate_multiple_views(metadata)
     views.extend(multiple_views)
+
+    chart_views = generate_charts(metadata, inspector)
+    views.extend(chart_views)
+
+    api_views = generate_api_views(metadata, inspector)
+    views.extend(api_views)
 
     # Add view registration functions
     views.extend(generate_view_registration_functions())
@@ -392,7 +401,7 @@ def generate_view_registration_functions():
 
 
 
-
+# TODO: Explore hiding fieldsets
 def generate_multistep_view(table: Table, model_name: str, view_class: str, inspector: Any, metadata: Any) -> str:
     """Generate a multi-step view for models with many fields."""
     columns = get_columns(table, 'add')
