@@ -1,22 +1,17 @@
 import inflect
 import argparse
 from typing import Any, Dict, List
+import math
+from flask_appbuilder.forms import DynamicForm
+from wtforms import HiddenField
 from sqlalchemy import (Boolean, Date, DateTime, Enum, Float,
                         Integer, Numeric, String, Text, Time,
                         ForeignKey, Table, ForeignKeyConstraint,
                         PrimaryKeyConstraint, MetaData, create_engine, inspect)
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.sql import sqltypes
-# from flask_appbuilder.fields import AJAXSelectField, QuerySelectField, QuerySelectMultipleField
-# from flask_appbuilder.fieldwidgets import Select2Widget, Select2ManyWidget
-# from wtforms import StringField, TextAreaField, BooleanField, IntegerField, FloatField, DecimalField, DateField, DateTimeField, TimeField, SelectField
-# from flask_appbuilder.fieldwidgets import BS3TextFieldWidget, BS3PasswordFieldWidget, DatePickerWidget, DateTimePickerWidget, Select2Widget
-from flask import g, flash, redirect, url_for
+from flask import g, flash, redirect, url_for, session
 # from flask_appbuilder.models.sqla.interface import SQLAInterface
-import math
-from flask_appbuilder.forms import DynamicForm
-from wtforms import HiddenField
-from flask import session
 from utils import snake_to_pascal, snake_to_words, pascal_to_words
 
 p = inflect.engine()
@@ -39,17 +34,21 @@ def generate_views(database_uri):
     views.extend([
         "from flask_appbuilder import ModelView, MasterDetailView, MultipleView",
         "from flask_appbuilder.models.sqla.interface import SQLAInterface",
-        "from flask_appbuilder.fields import AJAXSelectField",
+        "from flask_appbuilder.fields import AJAXSelectField, QuerySelectField",
         "from flask_appbuilder.fieldwidgets import Select2AJAXWidget, Select2SlaveAJAXWidget",
         "from flask_appbuilder.actions import action",
         "from flask_appbuilder.security.decorators import has_access",
         "from flask_appbuilder.forms import DynamicForm",
-        "from flask_appbuilder.models.mixins import ImageColumn"
+        "from flask_appbuilder import AppBuilder, BaseView, expose, has_access",
+        "from flask_appbuilder.models.mixins import ImageColumn, FileColumn",
         "from flask_appbuilder.api import ModelRestApi",
         "from flask import g, flash, redirect, url_for",
-        "from flask_appbuilder.actions import action"
+        "from flask_appbuilder.actions import action",
+        "from sqlalchemy.orm import session",
+        "from wtforms import StringField, BooleanField, IntegerField, DateField, DateTimeField, HiddenField, validators",
+        "from flask_appbuilder.models.sqla.filters import SearchWidget, FilterStartsWith",
         "from flask_appbuilder.fieldwidgets import BS3TextFieldWidget, BS3PasswordFieldWidget, DatePickerWidget, DateTimePickerWidget, Select2Widget",
-        "from wtforms import StringField",
+        "from wtforms import StringField, BooleanField, DecimalField",
         "from . import appbuilder, db",
         "from .models import *\n\n"
     ])
@@ -91,19 +90,7 @@ def generate_model_views(metadata, inspector):
 
     return model_views
 
-# def generate_model_views(metadata, inspector):
-#     model_views = []
-#     for table in metadata.sorted_tables:
-#         model_name = snake_to_pascal(table.name)
-#         view_class = f"{model_name}View"
 
-#         # Skip Flask-AppBuilder system tables
-#         if table.name.lower().startswith('ab_'):
-#             continue
-
-#         model_views.append(generate_model_view(table, model_name, view_class, inspector, metadata))
-
-#     return model_views
 
 def generate_model_view(table: Table, model_name: str, view_class: str, inspector: Any, metadata: Any) -> str:
     """Generate a comprehensive ModelView for a table."""
@@ -158,7 +145,7 @@ def generate_model_view(table: Table, model_name: str, view_class: str, inspecto
         "",
         "    # Form fields",
         "    form_extra_fields = {",
-        generate_form_fields(table),
+        generate_form_fields(table, metadata),
         generate_relationship_fields(table, metadata),
         "    }",
         "",
@@ -206,6 +193,8 @@ def generate_master_detail_views(metadata, inspector):
     master_detail_views = []
 
     for table in metadata.sorted_tables:
+        if table.name.lower().startswith('ab_'):
+            continue
         for fk in table.foreign_keys:
             parent_table = fk.column.table
             parent_model_name = snake_to_pascal(parent_table.name)
@@ -260,18 +249,69 @@ def generate_master_detail_views(metadata, inspector):
 
     return master_detail_views
 
+# def generate_multiple_views(metadata):
+#     """Generate MultipleViews for tables with multiple related tables."""
+#     multiple_views = []
+#
+#     for table in metadata.sorted_tables:
+#         related_tables = set()
+#         for fk in table.foreign_keys:
+#             related_tables.add(fk.column.table)
+#         # for fk in metadata.tables.values():
+#         #     if table in [fk.column.table for fk in fk.foreign_keys]:
+#         #         related_tables.add(fk)
+#         for other_table in metadata.sorted_tables:
+#             for fk in other_table.foreign_keys:
+#                 if fk.column.table == table:
+#                     related_tables.add(other_table)
+#
+#         if len(related_tables) > 1:
+#             model_name = snake_to_pascal(table.name)
+#             view_class = f"{model_name}MultipleView"
+#             related_views = [f"{snake_to_pascal(t.name)}View" for t in related_tables]
+#
+#             view_code = [
+#                 f"class {view_class}(MultipleView):",
+#                 f"    datamodel = SQLAInterface('{model_name}')",
+#                 f"    views = [{', '.join(related_views)}]",
+#                 "",
+#                 "    # Base Order",
+#                 "    # base_order = ('name', 'asc')",
+#                 "",
+#                 "    # List Widgets",
+#                 "    # list_template = 'appbuilder/general/model/list.html'",
+#                 "    # list_widget = ListWidget",
+#                 "",
+#                 "    # Pagination",
+#                 "    # page_size = 10",
+#                 "",
+#                 "    # Custom Templates",
+#                 "    # list_template = 'my_list_template.html'",
+#                 "",
+#             ]
+#             multiple_views.extend(view_code)
+#
+#     return multiple_views
 def generate_multiple_views(metadata):
     """Generate MultipleViews for tables with multiple related tables."""
     multiple_views = []
 
     for table in metadata.sorted_tables:
+        if table.name.lower().startswith('ab_'):
+            continue
         related_tables = set()
+
+        # Identify tables that this table references
         for fk in table.foreign_keys:
             related_tables.add(fk.column.table)
-        for fk in metadata.tables.values():
-            if table in [fk.column.table for fk in fk.foreign_keys]:
-                related_tables.add(fk)
 
+        # Identify tables that reference this table
+        for other_table in metadata.sorted_tables:
+            for fk in other_table.foreign_keys:
+                if fk.column.table == table:
+                    related_tables.add(other_table)
+
+        # Only generate MultipleView if there are more than one related tables
         if len(related_tables) > 1:
             model_name = snake_to_pascal(table.name)
             view_class = f"{model_name}MultipleView"
@@ -351,10 +391,7 @@ def generate_view_registration_functions():
     return registration_functions
 
 
-import math
-from flask_appbuilder.forms import DynamicForm
-from wtforms import HiddenField
-from flask import session
+
 
 def generate_multistep_view(table: Table, model_name: str, view_class: str, inspector: Any, metadata: Any) -> str:
     """Generate a multi-step view for models with many fields."""
@@ -403,49 +440,102 @@ def generate_multistep_view(table: Table, model_name: str, view_class: str, insp
         "        step = int(form.step.data)",
         f"        if step < {num_steps}:",
         "            session['form_step'] = step + 1",
-        "            return None",
+        "            return self.update_redirect(), False  # Keep user on the same form",
         "        else:",
         "            session.pop('form_step', None)",
         "            return super().form_post(form)",
         "",
     ]
 
+    fieldsets_code = []
     for i in range(num_steps):
         start = i * step_size
         end = (i + 1) * step_size
         step_columns = columns[start:end]
-        view_code.extend([
-            f"    add_fieldsets = [",
-            f"        ('Step {i+1}', {{'fields': ['step'] + {step_columns}, 'expanded': True}}),",
-            "    ]" if i == num_steps - 1 else "    ]",
-            "",
-        ])
+        fieldset_code = f"    ('Step {i+1}', {{'fields': ['step'] + {step_columns}, 'expanded': True}})"
+        fieldsets_code.append(fieldset_code)
 
-    view_code.extend([
-        "    edit_fieldsets = add_fieldsets",
-        "",
-        generate_repr_method(table),
-        ""
-    ])
+    view_code.append(f"    add_fieldsets = [{', '.join(fieldsets_code)}]")
+    view_code.append(f"    edit_fieldsets = add_fieldsets")
+    view_code.append("")
+    view_code.append(generate_repr_method(table))
+    view_code.append("")
 
     return "\n".join(view_code)
 
-def generate_model_views(metadata, inspector):
-    model_views = []
-    for table in metadata.sorted_tables:
-        model_name = snake_to_pascal(table.name)
-        view_class = f"{model_name}View"
-
-        # Skip Flask-AppBuilder system tables
-        if table.name.lower().startswith('ab_'):
-            continue
-
-        if len(get_columns(table, 'add')) > 10:  # Threshold for multi-step form
-            model_views.append(generate_multistep_view(table, model_name, view_class, inspector, metadata))
-        else:
-            model_views.append(generate_model_view(table, model_name, view_class, inspector, metadata))
-
-    return model_views
+# def generate_multistep_view(table: Table, model_name: str, view_class: str, inspector: Any, metadata: Any) -> str:
+#     """Generate a multi-step view for models with many fields."""
+#     columns = get_columns(table, 'add')
+#     step_size = 5  # Number of fields per step
+#     num_steps = math.ceil(len(columns) / step_size)
+#
+#     view_code = [
+#         f"class {view_class}(ModelView):",
+#         f"    datamodel = SQLAInterface('{model_name}')",
+#         f"    list_title = '{snake_to_words(table.name)} List'",
+#         f"    add_title = 'Add {snake_to_words(table.name)}'",
+#         f"    edit_title = 'Edit {snake_to_words(table.name)}'",
+#         f"    list_columns = {get_columns(table, 'list')}",
+#         f"    show_columns = {get_columns(table, 'show')}",
+#         f"    search_columns = {get_search_columns(table)}",
+#         f"    label_columns = {get_label_columns(table)}",
+#         generate_description_columns(table, inspector),
+#         "",
+#         "    class AddForm(DynamicForm):",
+#         "        step = HiddenField('step')",
+#         "",
+#         "    add_form = AddForm",
+#         "",
+#         "    def add_form_get(self, form):",
+#         "        form.step.data = session.get('form_step', 1)",
+#         "        return form",
+#         "",
+#         "    def add_form_post(self, form):",
+#         "        if form.step.data:",
+#         "            session['form_step'] = int(form.step.data)",
+#         "        return form",
+#         "",
+#         "    def form_get(self, form):",
+#         "        form = super().form_get(form)",
+#         "        step = int(session.get('form_step', 1))",
+#         "        start = (step - 1) * 5",
+#         "        end = step * 5",
+#         f"        visible_fields = {columns}[start:end]",
+#         "        for field in form._fields:",
+#         "            if field not in visible_fields and field != 'step':",
+#         "                form._fields[field].render_kw = {'style': 'display:none;'}",
+#         "        return form",
+#         "",
+#         "    def form_post(self, form):",
+#         "        step = int(form.step.data)",
+#         f"        if step < {num_steps}:",
+#         "            session['form_step'] = step + 1",
+#         "            return None",
+#         "        else:",
+#         "            session.pop('form_step', None)",
+#         "            return super().form_post(form)",
+#         "",
+#     ]
+#
+#     for i in range(num_steps):
+#         start = i * step_size
+#         end = (i + 1) * step_size
+#         step_columns = columns[start:end]
+#         view_code.extend([
+#             f"    add_fieldsets = [",
+#             f"        ('Step {i+1}', {{'fields': ['step'] + {step_columns}, 'expanded': True}}),",
+#             "    ]" if i == num_steps - 1 else "    ]",
+#             "",
+#         ])
+#
+#     view_code.extend([
+#         "    edit_fieldsets = add_fieldsets",
+#         "",
+#         generate_repr_method(table),
+#         ""
+#     ])
+#
+#     return "\n".join(view_code)
 
 
 def get_columns(table: Any, purpose: str = 'list') -> List[str]:
@@ -653,40 +743,118 @@ def generate_search_widget() -> str:
     )
     """
 
-def generate_form_fields(table: Any) -> str:
-    """Generate form fields with appropriate widgets based on column types."""
+
+def generate_form_fields(table: Any, metadata: Any) -> str:
+    """Generate form fields with appropriate widgets and validations based on column types."""
     form_fields = []
     for column in table.columns:
-        if column.name == 'id':
-            continue
+        if column.name in ['id', 'created_at', 'updated_at', 'created_by', 'updated_by']:
+            continue  # Skip special fields
+
         if isinstance(column.type, String):
             if 'password' in column.name:
-                form_fields.append(f"    '{column.name}': StringField('{column.name.capitalize()}', widget=BS3PasswordFieldWidget())")
+                form_fields.append(
+                    f"    '{column.name}': StringField('{column.name.capitalize()}', widget=BS3PasswordFieldWidget(), validators=[validators.DataRequired(), validators.Length(max={column.type.length})]),"
+                )
             else:
-                form_fields.append(f"    '{column.name}':  StringField('{column.name.capitalize()}', widget=BS3TextFieldWidget())")
+                form_fields.append(
+                    f"    '{column.name}': StringField('{column.name.capitalize()}', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max={column.type.length})]),"
+                )
         elif isinstance(column.type, Text):
-            form_fields.append(f"    '{column.name}' : TextAreaField('{column.name.capitalize()}', widget=BS3TextFieldWidget())")
+            form_fields.append(
+                f"    '{column.name}' : TextAreaField('{column.name.capitalize()}', widget=BS3TextFieldWidget(), validators=[validators.DataRequired()]),"
+            )
         elif isinstance(column.type, Boolean):
-            form_fields.append(f"    '{column.name}' : BooleanField('{column.name.capitalize()}')")
+            form_fields.append(
+                f"    '{column.name}' : BooleanField('{column.name.capitalize()}'),"
+            )
         elif isinstance(column.type, Integer):
-            form_fields.append(f"    '{column.name}' : IntegerField('{column.name.capitalize()}')")
+            form_fields.append(
+                f"    '{column.name}' : IntegerField('{column.name.capitalize()}', validators=[validators.DataRequired()]),"
+            )
         elif isinstance(column.type, Float):
-            form_fields.append(f"    '{column.name}' : FloatField('{column.name.capitalize()}')")
+            form_fields.append(
+                f"    '{column.name}' : FloatField('{column.name.capitalize()}', validators=[validators.DataRequired()]),"
+            )
         elif isinstance(column.type, Numeric):
-            form_fields.append(f"    '{column.name}' : DecimalField('{column.name.capitalize()}')")
+            form_fields.append(
+                f"    '{column.name}' : DecimalField('{column.name.capitalize()}', validators=[validators.DataRequired()]),"
+            )
         elif isinstance(column.type, Date):
-            form_fields.append(f"    '{column.name}' : DateField('{column.name.capitalize()}', widget=DatePickerWidget())")
+            form_fields.append(
+                f"    '{column.name}' : DateField('{column.name.capitalize()}', widget=DatePickerWidget(), validators=[validators.DataRequired()]),"
+            )
         elif isinstance(column.type, DateTime):
-            form_fields.append(f"    '{column.name}' : DateTimeField('{column.name.capitalize()}', widget=DateTimePickerWidget())")
+            form_fields.append(
+                f"    '{column.name}' : DateTimeField('{column.name.capitalize()}', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),"
+            )
         elif isinstance(column.type, Time):
-            form_fields.append(f"    '{column.name}' : TimeField('{column.name.capitalize()}')")
+            form_fields.append(
+                f"    '{column.name}' : TimeField('{column.name.capitalize()}'),"
+            )
         elif isinstance(column.type, Enum):
             enum_choices = [(choice, choice) for choice in column.type.enums]
-            form_fields.append(f"    '{column.name}' : SelectField('{column.name.capitalize()}', choices={enum_choices})")
+            form_fields.append(
+                f"    '{column.name}' : SelectField('{column.name.capitalize()}', choices={enum_choices}, validators=[validators.DataRequired()]),"
+            )
         elif isinstance(column.type, ForeignKey):
-            related_model = column.foreign_keys[0].column.table.name
-            form_fields.append(f"    {column.name.replace('_id', '')} : QuerySelectField('{column.name.capitalize()}', query_factory=lambda: db.session.query({related_model.capitalize()}), widget=Select2Widget())")
+            related_model = column.foreign_keys[0].column.table.name.capitalize()
+            relationship_field = column.name.replace('_id', '')
+            form_fields.append(
+                f"    '{relationship_field}': QuerySelectField('{relationship_field.capitalize()}', query_factory=lambda: db.session.query({related_model}), widget=Select2Widget(), allow_blank=True),"
+            )
+
+    # Handle many-to-many relationships
+    for related_table_name, related_table in metadata.tables.items():
+        if is_association_table(related_table) and table.name in [
+            fk.column.table.name for fk in related_table.foreign_keys
+        ]:
+            related_model = related_table_name.capitalize()
+            form_fields.append(
+                f"    '{related_table_name}s': QuerySelectMultipleField('{related_model}s', query_factory=lambda: db.session.query({related_model}), widget=Select2ManyWidget()),"
+            )
+
+    if not form_fields:
+        return "    # No fields to generate"
+
     return "\n".join(form_fields)
+
+
+# def generate_form_fields(table: Any) -> str:
+#     """Generate form fields with appropriate widgets based on column types."""
+#     form_fields = []
+#     for column in table.columns:
+#         if column.name == 'id':
+#             continue
+#         if isinstance(column.type, String):
+#             if 'password' in column.name:
+#                 form_fields.append(f"    '{column.name}': StringField('{column.name.capitalize()}', widget=BS3PasswordFieldWidget()),")
+#             else:
+#                 form_fields.append(f"    '{column.name}':  StringField('{column.name.capitalize()}', widget=BS3TextFieldWidget()),")
+#         elif isinstance(column.type, Text):
+#             form_fields.append(f"    '{column.name}' : TextAreaField('{column.name.capitalize()}', widget=BS3TextFieldWidget()),")
+#         elif isinstance(column.type, Boolean):
+#             form_fields.append(f"    '{column.name}' : BooleanField('{column.name.capitalize()}'),")
+#         elif isinstance(column.type, Integer):
+#             form_fields.append(f"    '{column.name}' : IntegerField('{column.name.capitalize()}'),")
+#         elif isinstance(column.type, Float):
+#             form_fields.append(f"    '{column.name}' : FloatField('{column.name.capitalize()}'),")
+#         elif isinstance(column.type, Numeric):
+#             form_fields.append(f"    '{column.name}' : DecimalField('{column.name.capitalize()}'),")
+#         elif isinstance(column.type, Date):
+#             form_fields.append(f"    '{column.name}' : DateField('{column.name.capitalize()}', widget=DatePickerWidget()),")
+#         elif isinstance(column.type, DateTime):
+#             form_fields.append(f"    '{column.name}' : DateTimeField('{column.name.capitalize()}', widget=DateTimePickerWidget()),")
+#         elif isinstance(column.type, Time):
+#             form_fields.append(f"    '{column.name}' : TimeField('{column.name.capitalize()}'),")
+#         elif isinstance(column.type, Enum):
+#             enum_choices = [(choice, choice) for choice in column.type.enums]
+#             form_fields.append(f"    '{column.name}' : SelectField('{column.name.capitalize()}', choices={enum_choices}),")
+#         elif isinstance(column.type, ForeignKey):
+#             related_model = column.foreign_keys[0].column.table.name
+#             form_fields.append(f"    {column.name.replace('_id', '')} : QuerySelectField('{column.name.capitalize()}', query_factory=lambda: db.session.query({related_model.capitalize()}), widget=Select2Widget())")
+#     return "\n".join(form_fields)
+
 
 def generate_relationship_fields(table: Table, metadata: Any) -> str:
     """
@@ -698,36 +866,82 @@ def generate_relationship_fields(table: Table, metadata: Any) -> str:
     """
     relationship_fields = []
 
+    # Handle one-to-many and many-to-one relationships
     for fk in table.foreign_keys:
         related_table = fk.column.table
-        related_model = related_table.name.capitalize()
+        related_model = snake_to_pascal(related_table.name)  # Use consistent PascalCase conversion
         field_name = fk.parent.name.replace('_id', '')
 
         relationship_fields.append(
-            f"    {field_name} = QuerySelectField('{field_name.capitalize()}', "
+            f"    '{field_name}': QuerySelectField('{field_name.capitalize()}', "
             f"query_factory=lambda: db.session.query({related_model}), "
             f"widget=Select2Widget(), "
-            f"allow_blank=True)"
+            f"allow_blank=True),"
         )
 
     # Check for many-to-many relationships
-    for table_name, other_table in metadata.tables.items():
+    for other_table in metadata.tables.values():
         if is_association_table(other_table):
-            if table.name in [fk.column.table.name for fk in other_table.foreign_keys]:
-                other_table_name = [fk.column.table.name for fk in other_table.foreign_keys if fk.column.table.name != table.name][0]
-                related_model = other_table_name.capitalize()
-                field_name = f"{other_table_name.lower()}s"
+            # Check if this table is referenced in the association table
+            foreign_keys = [fk for fk in other_table.foreign_keys if fk.column.table == table]
+            if foreign_keys:
+                # Identify the other related table in the many-to-many relationship
+                other_related_table = [fk.column.table for fk in other_table.foreign_keys if fk.column.table != table][0]
+                related_model = snake_to_pascal(other_related_table.name)
+                field_name = f"{snake_to_pascal(other_related_table.name).lower()}s"  # Pluralize the relationship field name
 
                 relationship_fields.append(
-                    f"    {field_name} = QuerySelectMultipleField('{field_name.capitalize()}', "
+                    f"    '{field_name}': QuerySelectMultipleField('{field_name.capitalize()}', "
                     f"query_factory=lambda: db.session.query({related_model}), "
-                    f"widget=Select2ManyWidget())"
+                    f"widget=Select2ManyWidget()),"
                 )
 
     if not relationship_fields:
         return "    # No relationship fields found"
 
     return "\n".join(relationship_fields)
+
+
+# def generate_relationship_fields(table: Table, metadata: Any) -> str:
+#     """
+#     Generate relationship fields using Select2 widgets for foreign key fields.
+#
+#     :param table: SQLAlchemy Table object
+#     :param metadata: SQLAlchemy MetaData object
+#     :return: String containing the generated relationship fields
+#     """
+#     relationship_fields = []
+#
+#     for fk in table.foreign_keys:
+#         related_table = fk.column.table
+#         related_model = related_table.name.capitalize()
+#         field_name = fk.parent.name.replace('_id_fk', '')
+#
+#         relationship_fields.append(
+#             f"    {field_name} = QuerySelectField('{field_name.capitalize()}', "
+#             f"query_factory=lambda: db.session.query({related_model}), "
+#             f"widget=Select2Widget(), "
+#             f"allow_blank=True)"
+#         )
+#
+#     # Check for many-to-many relationships
+#     for table_name, other_table in metadata.tables.items():
+#         if is_association_table(other_table):
+#             if table.name in [fk.column.table.name for fk in other_table.foreign_keys]:
+#                 other_table_name = [fk.column.table.name for fk in other_table.foreign_keys if fk.column.table.name != table.name][0]
+#                 related_model = other_table_name.capitalize()
+#                 field_name = f"{other_table_name.lower()}s"
+#
+#                 relationship_fields.append(
+#                     f"    {field_name} = QuerySelectMultipleField('{field_name.capitalize()}', "
+#                     f"query_factory=lambda: db.session.query({related_model}), "
+#                     f"widget=Select2ManyWidget())"
+#                 )
+#
+#     if not relationship_fields:
+#         return "    # No relationship fields found"
+#
+#     return "\n,".join(relationship_fields)
 
 def is_association_table(table: Table) -> bool:
     """

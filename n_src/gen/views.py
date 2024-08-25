@@ -1,14 +1,20 @@
 from flask_appbuilder import ModelView, MasterDetailView, MultipleView
 from flask_appbuilder.models.sqla.interface import SQLAInterface
-from flask_appbuilder.fields import AJAXSelectField
+from flask_appbuilder.fields import AJAXSelectField, QuerySelectField
 from flask_appbuilder.fieldwidgets import Select2AJAXWidget, Select2SlaveAJAXWidget
 from flask_appbuilder.actions import action
 from flask_appbuilder.security.decorators import has_access
 from flask_appbuilder.forms import DynamicForm
-from flask_appbuilder.models.mixins import ImageColumnfrom flask_appbuilder.api import ModelRestApi
+from flask_appbuilder import AppBuilder, BaseView, expose, has_access
+from flask_appbuilder.models.mixins import ImageColumn, FileColumn
+from flask_appbuilder.api import ModelRestApi
 from flask import g, flash, redirect, url_for
-from flask_appbuilder.actions import actionfrom flask_appbuilder.fieldwidgets import BS3TextFieldWidget, BS3PasswordFieldWidget, DatePickerWidget, DateTimePickerWidget, Select2Widget
-from wtforms import StringField
+from flask_appbuilder.actions import action
+from sqlalchemy.orm import session
+from wtforms import StringField, BooleanField, IntegerField, DateField, DateTimeField, HiddenField, validators
+from flask_appbuilder.models.sqla.filters import SearchWidget, FilterStartsWith
+from flask_appbuilder.fieldwidgets import BS3TextFieldWidget, BS3PasswordFieldWidget, DatePickerWidget, DateTimePickerWidget, Select2Widget
+from wtforms import StringField, BooleanField, DecimalField
 from . import appbuilder, db
 from .models import *
 
@@ -125,14 +131,14 @@ class AlternatenameView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'isolanguage':  StringField('Isolanguage', widget=BS3TextFieldWidget())
-    'alternatename':  StringField('Alternatename', widget=BS3TextFieldWidget())
-    'ispreferredname' : BooleanField('Ispreferredname')
-    'isshortname' : BooleanField('Isshortname')
-    'iscolloquial' : BooleanField('Iscolloquial')
-    'ishistoric' : BooleanField('Ishistoric')
-    'name_from':  StringField('Name_from', widget=BS3TextFieldWidget())
-    'name_to':  StringField('Name_to', widget=BS3TextFieldWidget())
+    'isolanguage': StringField('Isolanguage', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'alternatename': StringField('Alternatename', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'ispreferredname' : BooleanField('Ispreferredname'),
+    'isshortname' : BooleanField('Isshortname'),
+    'iscolloquial' : BooleanField('Iscolloquial'),
+    'ishistoric' : BooleanField('Ishistoric'),
+    'name_from': StringField('Name_from', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'name_to': StringField('Name_to', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
     # No relationship fields found
     }
 
@@ -294,10 +300,10 @@ class BadgeView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    'criteria':  StringField('Criteria', widget=BS3TextFieldWidget())
-    'icon':  StringField('Icon', widget=BS3TextFieldWidget())
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'criteria': StringField('Criteria', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'icon': StringField('Icon', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
     # No relationship fields found
     }
 
@@ -459,14 +465,12 @@ class ContactTypeView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    'is_digital' : BooleanField('Is_digital')
-    'requires_verification' : BooleanField('Requires_verification')
-    'max_length' : IntegerField('Max_length')
-    'icon_url':  StringField('Icon_url', widget=BS3TextFieldWidget())
-    'created_at' : DateTimeField('Created_at', widget=DateTimePickerWidget())
-    'updated_at' : DateTimeField('Updated_at', widget=DateTimePickerWidget())
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'is_digital' : BooleanField('Is_digital'),
+    'requires_verification' : BooleanField('Requires_verification'),
+    'max_length' : IntegerField('Max_length', validators=[validators.DataRequired()]),
+    'icon_url': StringField('Icon_url', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
     # No relationship fields found
     }
 
@@ -556,27 +560,12 @@ class CountryView(ModelView):
         step = int(form.step.data)
         if step < 4:
             session['form_step'] = step + 1
-            return None
+            return self.update_redirect(), False  # Keep user on the same form
         else:
             session.pop('form_step', None)
             return super().form_post(form)
 
-    add_fieldsets = [
-        ('Step 1', {'fields': ['step'] + ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 2', {'fields': ['step'] + ['capital', 'areainsqkm', 'population', 'continent', 'tld'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 3', {'fields': ['step'] + ['currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 4', {'fields': ['step'] + ['languages', 'geo_id_fk', 'neighbors', 'equivfipscode', 'flag'], 'expanded': True}),
-    ]
-
+    add_fieldsets = [    ('Step 1', {'fields': ['step'] + ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name'], 'expanded': True}),     ('Step 2', {'fields': ['step'] + ['capital', 'areainsqkm', 'population', 'continent', 'tld'], 'expanded': True}),     ('Step 3', {'fields': ['step'] + ['currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex'], 'expanded': True}),     ('Step 4', {'fields': ['step'] + ['languages', 'geo_id_fk', 'neighbors', 'equivfipscode', 'flag'], 'expanded': True})]
     edit_fieldsets = add_fieldsets
 
 
@@ -696,10 +685,10 @@ class CurrencyView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
-    'symbol':  StringField('Symbol', widget=BS3TextFieldWidget())
-    'numeric_code':  StringField('Numeric_code', widget=BS3TextFieldWidget())
-    'full_name':  StringField('Full_name', widget=BS3TextFieldWidget())
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'symbol': StringField('Symbol', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'numeric_code': StringField('Numeric_code', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'full_name': StringField('Full_name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
     # No relationship fields found
     }
 
@@ -861,11 +850,11 @@ class FeaturecodesView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'code':  StringField('Code', widget=BS3TextFieldWidget())
-    'fclass':  StringField('Fclass', widget=BS3TextFieldWidget())
-    'fcode':  StringField('Fcode', widget=BS3TextFieldWidget())
-    'label':  StringField('Label', widget=BS3TextFieldWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
+    'code': StringField('Code', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'fclass': StringField('Fclass', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'fcode': StringField('Fcode', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'label': StringField('Label', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
     # No relationship fields found
     }
 
@@ -955,27 +944,12 @@ class GeonameView(ModelView):
         step = int(form.step.data)
         if step < 4:
             session['form_step'] = step + 1
-            return None
+            return self.update_redirect(), False  # Keep user on the same form
         else:
             session.pop('form_step', None)
             return super().form_post(form)
 
-    add_fieldsets = [
-        ('Step 1', {'fields': ['step'] + ['name', 'asciiname', 'alt_names', 'alternatenames_id_fk', 'latitude'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 2', {'fields': ['step'] + ['longitude', 'fclass', 'fcode', 'countrycode', 'country_id_fk'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 3', {'fields': ['step'] + ['cc2', 'admin1', 'admin2', 'admin3', 'admin4'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 4', {'fields': ['step'] + ['population', 'elevation', 'gtopo30', 'timezone', 'moddate'], 'expanded': True}),
-    ]
-
+    add_fieldsets = [    ('Step 1', {'fields': ['step'] + ['name', 'asciiname', 'alt_names', 'alternatenames_id_fk', 'latitude'], 'expanded': True}),     ('Step 2', {'fields': ['step'] + ['longitude', 'fclass', 'fcode', 'countrycode', 'country_id_fk'], 'expanded': True}),     ('Step 3', {'fields': ['step'] + ['cc2', 'admin1', 'admin2', 'admin3', 'admin4'], 'expanded': True}),     ('Step 4', {'fields': ['step'] + ['population', 'elevation', 'gtopo30', 'timezone', 'moddate'], 'expanded': True})]
     edit_fieldsets = add_fieldsets
 
 
@@ -1095,10 +1069,10 @@ class LanguagecodesView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'iso_639_3':  StringField('Iso_639_3', widget=BS3TextFieldWidget())
-    'iso_639_2':  StringField('Iso_639_2', widget=BS3TextFieldWidget())
-    'iso_639_1':  StringField('Iso_639_1', widget=BS3TextFieldWidget())
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
+    'iso_639_3': StringField('Iso_639_3', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'iso_639_2': StringField('Iso_639_2', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'iso_639_1': StringField('Iso_639_1', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
     # No relationship fields found
     }
 
@@ -1188,35 +1162,12 @@ class PersonView(ModelView):
         step = int(form.step.data)
         if step < 6:
             session['form_step'] = step + 1
-            return None
+            return self.update_redirect(), False  # Keep user on the same form
         else:
             session.pop('form_step', None)
             return super().form_post(form)
 
-    add_fieldsets = [
-        ('Step 1', {'fields': ['step'] + ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 2', {'fields': ['step'] + ['headline', 'location', 'summary', 'email', 'phone'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 3', {'fields': ['step'] + ['date_of_birth', 'city', 'state_province', 'postal_code', 'country'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 4', {'fields': ['step'] + ['bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 5', {'fields': ['step'] + ['onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 6', {'fields': ['step'] + ['social_media_imported'], 'expanded': True}),
-    ]
-
+    add_fieldsets = [    ('Step 1', {'fields': ['step'] + ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name'], 'expanded': True}),     ('Step 2', {'fields': ['step'] + ['headline', 'location', 'summary', 'email', 'phone'], 'expanded': True}),     ('Step 3', {'fields': ['step'] + ['date_of_birth', 'city', 'state_province', 'postal_code', 'country'], 'expanded': True}),     ('Step 4', {'fields': ['step'] + ['bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff'], 'expanded': True}),     ('Step 5', {'fields': ['step'] + ['onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level'], 'expanded': True}),     ('Step 6', {'fields': ['step'] + ['social_media_imported'], 'expanded': True})]
     edit_fieldsets = add_fieldsets
 
 
@@ -1336,18 +1287,16 @@ class ScrapingTargetsView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'url':  StringField('Url', widget=BS3TextFieldWidget())
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
-    'category':  StringField('Category', widget=BS3TextFieldWidget())
-    'frequency':  StringField('Frequency', widget=BS3TextFieldWidget())
-    'priority' : IntegerField('Priority')
-    'requires_auth' : BooleanField('Requires_auth')
-    'auth_username':  StringField('Auth_username', widget=BS3TextFieldWidget())
-    '_auth_password': StringField('_auth_password', widget=BS3PasswordFieldWidget())
-    'is_active' : BooleanField('Is_active')
-    'created_at' : DateTimeField('Created_at', widget=DateTimePickerWidget())
-    'updated_at' : DateTimeField('Updated_at', widget=DateTimePickerWidget())
-    'scraping_rule_version':  StringField('Scraping_rule_version', widget=BS3TextFieldWidget())
+    'url': StringField('Url', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=500)]),
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=100)]),
+    'category': StringField('Category', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=17)]),
+    'frequency': StringField('Frequency', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=7)]),
+    'priority' : IntegerField('Priority', validators=[validators.DataRequired()]),
+    'requires_auth' : BooleanField('Requires_auth'),
+    'auth_username': StringField('Auth_username', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=100)]),
+    '_auth_password': StringField('_auth_password', widget=BS3PasswordFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=255)]),
+    'is_active' : BooleanField('Is_active'),
+    'scraping_rule_version': StringField('Scraping_rule_version', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=50)]),
     # No relationship fields found
     }
 
@@ -1509,8 +1458,8 @@ class SkillCategoryView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
     # No relationship fields found
     }
 
@@ -1672,7 +1621,7 @@ class TagView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
     # No relationship fields found
     }
 
@@ -1834,14 +1783,14 @@ class Admin1codesView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'code':  StringField('Code', widget=BS3TextFieldWidget())
-    'country_id_fk' : IntegerField('Country_id_fk')
-    'admin1_code':  StringField('Admin1_code', widget=BS3TextFieldWidget())
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
-    'alt_name_english':  StringField('Alt_name_english', widget=BS3TextFieldWidget())
-    'geo_id_fk' : IntegerField('Geo_id_fk')
-    country_fk = QuerySelectField('Country_fk', query_factory=lambda: db.session.query(Country), widget=Select2Widget(), allow_blank=True)
-    geo_fk = QuerySelectField('Geo_fk', query_factory=lambda: db.session.query(Geoname), widget=Select2Widget(), allow_blank=True)
+    'code': StringField('Code', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'country_id_fk' : IntegerField('Country_id_fk', validators=[validators.DataRequired()]),
+    'admin1_code': StringField('Admin1_code', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'alt_name_english': StringField('Alt_name_english', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'geo_id_fk' : IntegerField('Geo_id_fk', validators=[validators.DataRequired()]),
+    'country_fk': QuerySelectField('Country_fk', query_factory=lambda: db.session.query(Country), widget=Select2Widget(), allow_blank=True),
+    'geo_fk': QuerySelectField('Geo_fk', query_factory=lambda: db.session.query(Geoname), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -2002,14 +1951,14 @@ class Admin2codesView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'code':  StringField('Code', widget=BS3TextFieldWidget())
-    'country_id_fk' : IntegerField('Country_id_fk')
-    'admin1_code':  StringField('Admin1_code', widget=BS3TextFieldWidget())
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
-    'alt_name_english':  StringField('Alt_name_english', widget=BS3TextFieldWidget())
-    'geo_id_fk' : IntegerField('Geo_id_fk')
-    geo_fk = QuerySelectField('Geo_fk', query_factory=lambda: db.session.query(Geoname), widget=Select2Widget(), allow_blank=True)
-    country_fk = QuerySelectField('Country_fk', query_factory=lambda: db.session.query(Country), widget=Select2Widget(), allow_blank=True)
+    'code': StringField('Code', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'country_id_fk' : IntegerField('Country_id_fk', validators=[validators.DataRequired()]),
+    'admin1_code': StringField('Admin1_code', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'alt_name_english': StringField('Alt_name_english', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'geo_id_fk' : IntegerField('Geo_id_fk', validators=[validators.DataRequired()]),
+    'geo_fk': QuerySelectField('Geo_fk', query_factory=lambda: db.session.query(Geoname), widget=Select2Widget(), allow_blank=True),
+    'country_fk': QuerySelectField('Country_fk', query_factory=lambda: db.session.query(Country), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -2098,23 +2047,12 @@ class ContactView(ModelView):
         step = int(form.step.data)
         if step < 3:
             session['form_step'] = step + 1
-            return None
+            return self.update_redirect(), False  # Keep user on the same form
         else:
             session.pop('form_step', None)
             return super().form_post(form)
 
-    add_fieldsets = [
-        ('Step 1', {'fields': ['step'] + ['person_id_fk', 'contact_type_id_fk', 'contact_value', 'priority', 'best_time_to_contact_start'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 2', {'fields': ['step'] + ['best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 3', {'fields': ['step'] + ['do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes'], 'expanded': True}),
-    ]
-
+    add_fieldsets = [    ('Step 1', {'fields': ['step'] + ['person_id_fk', 'contact_type_id_fk', 'contact_value', 'priority', 'best_time_to_contact_start'], 'expanded': True}),     ('Step 2', {'fields': ['step'] + ['best_time_to_contact_end', 'active_from_date', 'active_to_date', 'for_business_use', 'for_personal_use'], 'expanded': True}),     ('Step 3', {'fields': ['step'] + ['do_not_use', 'is_active', 'is_blocked', 'is_verified', 'notes'], 'expanded': True})]
     edit_fieldsets = add_fieldsets
 
 
@@ -2234,13 +2172,13 @@ class GamificationChallengeView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    'points_reward' : IntegerField('Points_reward')
-    'badge_reward_id_fk' : IntegerField('Badge_reward_id_fk')
-    'start_date' : DateTimeField('Start_date', widget=DateTimePickerWidget())
-    'end_date' : DateTimeField('End_date', widget=DateTimePickerWidget())
-    badge_reward_fk = QuerySelectField('Badge_reward_fk', query_factory=lambda: db.session.query(Badge), widget=Select2Widget(), allow_blank=True)
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'points_reward' : IntegerField('Points_reward', validators=[validators.DataRequired()]),
+    'badge_reward_id_fk' : IntegerField('Badge_reward_id_fk', validators=[validators.DataRequired()]),
+    'start_date' : DateTimeField('Start_date', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'end_date' : DateTimeField('End_date', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'badge_reward_fk': QuerySelectField('Badge_reward_fk', query_factory=lambda: db.session.query(Badge), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -2401,10 +2339,10 @@ class LeaderboardView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'score' : IntegerField('Score')
-    'last_updated' : DateTimeField('Last_updated', widget=DateTimePickerWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'score' : IntegerField('Score', validators=[validators.DataRequired()]),
+    'last_updated' : DateTimeField('Last_updated', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -2565,14 +2503,14 @@ class MessageView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'sender_id_fk' : IntegerField('Sender_id_fk')
-    'recipient_id_fk' : IntegerField('Recipient_id_fk')
-    'subject':  StringField('Subject', widget=BS3TextFieldWidget())
-    'body':  StringField('Body', widget=BS3TextFieldWidget())
-    'sent_date' : DateTimeField('Sent_date', widget=DateTimePickerWidget())
-    'read_date' : DateTimeField('Read_date', widget=DateTimePickerWidget())
-    recipient_fk = QuerySelectField('Recipient_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
-    sender_fk = QuerySelectField('Sender_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'sender_id_fk' : IntegerField('Sender_id_fk', validators=[validators.DataRequired()]),
+    'recipient_id_fk' : IntegerField('Recipient_id_fk', validators=[validators.DataRequired()]),
+    'subject': StringField('Subject', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'body': StringField('Body', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'sent_date' : DateTimeField('Sent_date', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'read_date' : DateTimeField('Read_date', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'recipient_fk': QuerySelectField('Recipient_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
+    'sender_fk': QuerySelectField('Sender_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -2733,12 +2671,12 @@ class NotificationView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'message':  StringField('Message', widget=BS3TextFieldWidget())
-    'notification_type':  StringField('Notification_type', widget=BS3TextFieldWidget())
-    'created_date' : DateTimeField('Created_date', widget=DateTimePickerWidget())
-    'read_date' : DateTimeField('Read_date', widget=DateTimePickerWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'message': StringField('Message', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'notification_type': StringField('Notification_type', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'created_date' : DateTimeField('Created_date', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'read_date' : DateTimeField('Read_date', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -2827,55 +2765,12 @@ class OrganizationView(ModelView):
         step = int(form.step.data)
         if step < 11:
             session['form_step'] = step + 1
-            return None
+            return self.update_redirect(), False  # Keep user on the same form
         else:
             session.pop('form_step', None)
             return super().form_post(form)
 
-    add_fieldsets = [
-        ('Step 1', {'fields': ['step'] + ['name', 'legal_name', 'org_type', 'org_cat', 'status'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 2', {'fields': ['step'] + ['industry', 'website', 'is_verified', 'description', 'mission_statement'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 3', {'fields': ['step'] + ['size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 4', {'fields': ['step'] + ['social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 5', {'fields': ['step'] + ['authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 6', {'fields': ['step'] + ['auditor_name', 'phone_number', 'email', 'address', 'city'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 7', {'fields': ['step'] + ['state', 'country', 'postal_code', 'board_members', 'governance_structure'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 8', {'fields': ['step'] + ['risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 9', {'fields': ['step'] + ['primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 10', {'fields': ['step'] + ['major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 11', {'fields': ['step'] + ['associated_people_id_fk'], 'expanded': True}),
-    ]
-
+    add_fieldsets = [    ('Step 1', {'fields': ['step'] + ['name', 'legal_name', 'org_type', 'org_cat', 'status'], 'expanded': True}),     ('Step 2', {'fields': ['step'] + ['industry', 'website', 'is_verified', 'description', 'mission_statement'], 'expanded': True}),     ('Step 3', {'fields': ['step'] + ['size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo'], 'expanded': True}),     ('Step 4', {'fields': ['step'] + ['social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding'], 'expanded': True}),     ('Step 5', {'fields': ['step'] + ['authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date'], 'expanded': True}),     ('Step 6', {'fields': ['step'] + ['auditor_name', 'phone_number', 'email', 'address', 'city'], 'expanded': True}),     ('Step 7', {'fields': ['step'] + ['state', 'country', 'postal_code', 'board_members', 'governance_structure'], 'expanded': True}),     ('Step 8', {'fields': ['step'] + ['risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy'], 'expanded': True}),     ('Step 9', {'fields': ['step'] + ['primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info'], 'expanded': True}),     ('Step 10', {'fields': ['step'] + ['major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update'], 'expanded': True}),     ('Step 11', {'fields': ['step'] + ['associated_people_id_fk'], 'expanded': True})]
     edit_fieldsets = add_fieldsets
 
 
@@ -2927,7 +2822,7 @@ class PersonBadgeView(ModelView):
     # Base Filters
     # base_filters = [['name', FilterStartsWith, 'A']]
 
-    form_query_rel_fields = {'person_id_fk': 'db.session.query(Person)', 'badge_id_fk': 'db.session.query(Badge)'}
+    form_query_rel_fields = {'badge_id_fk': 'db.session.query(Badge)', 'person_id_fk': 'db.session.query(Person)'}
     # Forms
     # add_form = None
     # edit_form = None
@@ -2995,11 +2890,11 @@ class PersonBadgeView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'badge_id_fk' : IntegerField('Badge_id_fk')
-    'date_earned' : DateTimeField('Date_earned', widget=DateTimePickerWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
-    badge_fk = QuerySelectField('Badge_fk', query_factory=lambda: db.session.query(Badge), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'badge_id_fk' : IntegerField('Badge_id_fk', validators=[validators.DataRequired()]),
+    'date_earned' : DateTimeField('Date_earned', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'badge_fk': QuerySelectField('Badge_fk', query_factory=lambda: db.session.query(Badge), widget=Select2Widget(), allow_blank=True),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -3160,14 +3055,14 @@ class PersonCertificationView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
-    'issuing_organization':  StringField('Issuing_organization', widget=BS3TextFieldWidget())
-    'issue_date' : DateField('Issue_date', widget=DatePickerWidget())
-    'expiration_date' : DateField('Expiration_date', widget=DatePickerWidget())
-    'credential_id':  StringField('Credential_id', widget=BS3TextFieldWidget())
-    'credential_url':  StringField('Credential_url', widget=BS3TextFieldWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'issuing_organization': StringField('Issuing_organization', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'issue_date' : DateField('Issue_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'expiration_date' : DateField('Expiration_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'credential_id': StringField('Credential_id', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'credential_url': StringField('Credential_url', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -3328,12 +3223,12 @@ class PersonCourseView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
-    'institution':  StringField('Institution', widget=BS3TextFieldWidget())
-    'completion_date' : DateField('Completion_date', widget=DatePickerWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'institution': StringField('Institution', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'completion_date' : DateField('Completion_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -3494,14 +3389,14 @@ class PersonEducationView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'school_name':  StringField('School_name', widget=BS3TextFieldWidget())
-    'degree':  StringField('Degree', widget=BS3TextFieldWidget())
-    'field_of_study':  StringField('Field_of_study', widget=BS3TextFieldWidget())
-    'start_date' : DateField('Start_date', widget=DatePickerWidget())
-    'end_date' : DateField('End_date', widget=DatePickerWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'school_name': StringField('School_name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'degree': StringField('Degree', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'field_of_study': StringField('Field_of_study', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'start_date' : DateField('Start_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'end_date' : DateField('End_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -3662,15 +3557,15 @@ class PersonExperienceView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'job_title':  StringField('Job_title', widget=BS3TextFieldWidget())
-    'company_name':  StringField('Company_name', widget=BS3TextFieldWidget())
-    'location':  StringField('Location', widget=BS3TextFieldWidget())
-    'start_date' : DateField('Start_date', widget=DatePickerWidget())
-    'end_date' : DateField('End_date', widget=DatePickerWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    'awards':  StringField('Awards', widget=BS3TextFieldWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'job_title': StringField('Job_title', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'company_name': StringField('Company_name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'location': StringField('Location', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'start_date' : DateField('Start_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'end_date' : DateField('End_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'awards': StringField('Awards', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -3831,12 +3726,12 @@ class PersonHonorAwardView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'title':  StringField('Title', widget=BS3TextFieldWidget())
-    'issuer':  StringField('Issuer', widget=BS3TextFieldWidget())
-    'date_received' : DateField('Date_received', widget=DatePickerWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'title': StringField('Title', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'issuer': StringField('Issuer', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'date_received' : DateField('Date_received', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -3997,10 +3892,10 @@ class PersonLanguageView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
-    'proficiency':  StringField('Proficiency', widget=BS3TextFieldWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'proficiency': StringField('Proficiency', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -4161,13 +4056,13 @@ class PersonOrganizationMembershipView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'organization_name':  StringField('Organization_name', widget=BS3TextFieldWidget())
-    'role':  StringField('Role', widget=BS3TextFieldWidget())
-    'start_date' : DateField('Start_date', widget=DatePickerWidget())
-    'end_date' : DateField('End_date', widget=DatePickerWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'organization_name': StringField('Organization_name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'role': StringField('Role', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'start_date' : DateField('Start_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'end_date' : DateField('End_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -4328,13 +4223,13 @@ class PersonPatentView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'title':  StringField('Title', widget=BS3TextFieldWidget())
-    'patent_office':  StringField('Patent_office', widget=BS3TextFieldWidget())
-    'patent_number':  StringField('Patent_number', widget=BS3TextFieldWidget())
-    'issue_date' : DateField('Issue_date', widget=DatePickerWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'title': StringField('Title', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'patent_office': StringField('Patent_office', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'patent_number': StringField('Patent_number', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'issue_date' : DateField('Issue_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -4495,13 +4390,13 @@ class PersonProjectView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    'start_date' : DateField('Start_date', widget=DatePickerWidget())
-    'end_date' : DateField('End_date', widget=DatePickerWidget())
-    'project_url':  StringField('Project_url', widget=BS3TextFieldWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'start_date' : DateField('Start_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'end_date' : DateField('End_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'project_url': StringField('Project_url', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -4662,13 +4557,13 @@ class PersonPublicationView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'title':  StringField('Title', widget=BS3TextFieldWidget())
-    'publisher':  StringField('Publisher', widget=BS3TextFieldWidget())
-    'date' : DateField('Date', widget=DatePickerWidget())
-    'url':  StringField('Url', widget=BS3TextFieldWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'title': StringField('Title', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'publisher': StringField('Publisher', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'date' : DateField('Date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'url': StringField('Url', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -4829,14 +4724,14 @@ class PersonVolunteerExperienceView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'role':  StringField('Role', widget=BS3TextFieldWidget())
-    'organization':  StringField('Organization', widget=BS3TextFieldWidget())
-    'cause':  StringField('Cause', widget=BS3TextFieldWidget())
-    'start_date' : DateField('Start_date', widget=DatePickerWidget())
-    'end_date' : DateField('End_date', widget=DatePickerWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'role': StringField('Role', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'organization': StringField('Organization', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'cause': StringField('Cause', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'start_date' : DateField('Start_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'end_date' : DateField('End_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -4997,11 +4892,11 @@ class PointEarningActivityView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'activity_type':  StringField('Activity_type', widget=BS3TextFieldWidget())
-    'points_earned' : IntegerField('Points_earned')
-    'timestamp' : DateTimeField('Timestamp', widget=DateTimePickerWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'activity_type': StringField('Activity_type', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'points_earned' : IntegerField('Points_earned', validators=[validators.DataRequired()]),
+    'timestamp' : DateTimeField('Timestamp', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -5162,11 +5057,11 @@ class ProfileUpdateReminderView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'last_reminder_date' : DateTimeField('Last_reminder_date', widget=DateTimePickerWidget())
-    'reminder_count' : IntegerField('Reminder_count')
-    'next_reminder_date' : DateTimeField('Next_reminder_date', widget=DateTimePickerWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'last_reminder_date' : DateTimeField('Last_reminder_date', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'reminder_count' : IntegerField('Reminder_count', validators=[validators.DataRequired()]),
+    'next_reminder_date' : DateTimeField('Next_reminder_date', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -5327,15 +5222,12 @@ class ScrapingRulesView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'target_id' : IntegerField('Target_id')
-    'version':  StringField('Version', widget=BS3TextFieldWidget())
-    'rule_data':  StringField('Rule_data', widget=BS3TextFieldWidget())
-    'created_at' : DateTimeField('Created_at', widget=DateTimePickerWidget())
-    'is_active' : BooleanField('Is_active')
-    'created_by' : IntegerField('Created_by')
-    'updated_at' : DateTimeField('Updated_at', widget=DateTimePickerWidget())
-    target = QuerySelectField('Target', query_factory=lambda: db.session.query(Scraping_targets), widget=Select2Widget(), allow_blank=True)
-    created_by = QuerySelectField('Created_by', query_factory=lambda: db.session.query(Ab_user), widget=Select2Widget(), allow_blank=True)
+    'target_id' : IntegerField('Target_id', validators=[validators.DataRequired()]),
+    'version': StringField('Version', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=50)]),
+    'rule_data': StringField('Rule_data', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'is_active' : BooleanField('Is_active'),
+    'target': QuerySelectField('Target', query_factory=lambda: db.session.query(ScrapingTargets), widget=Select2Widget(), allow_blank=True),
+    'created_by': QuerySelectField('Created_by', query_factory=lambda: db.session.query(AbUser), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -5496,14 +5388,14 @@ class ScrapingTasksView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'target_id' : IntegerField('Target_id')
-    'status':  StringField('Status', widget=BS3TextFieldWidget())
-    'scheduled_at' : DateTimeField('Scheduled_at', widget=DateTimePickerWidget())
-    'executed_at' : DateTimeField('Executed_at', widget=DateTimePickerWidget())
-    'completed_at' : DateTimeField('Completed_at', widget=DateTimePickerWidget())
-    'error_message':  StringField('Error_message', widget=BS3TextFieldWidget())
-    'performance_metrics':  StringField('Performance_metrics', widget=BS3TextFieldWidget())
-    target = QuerySelectField('Target', query_factory=lambda: db.session.query(Scraping_targets), widget=Select2Widget(), allow_blank=True)
+    'target_id' : IntegerField('Target_id', validators=[validators.DataRequired()]),
+    'status': StringField('Status', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=20)]),
+    'scheduled_at' : DateTimeField('Scheduled_at', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'executed_at' : DateTimeField('Executed_at', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'completed_at' : DateTimeField('Completed_at', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'error_message': StringField('Error_message', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'performance_metrics': StringField('Performance_metrics', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'target': QuerySelectField('Target', query_factory=lambda: db.session.query(ScrapingTargets), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -5664,10 +5556,10 @@ class SkillView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
-    'skill_category_id_fk' : IntegerField('Skill_category_id_fk')
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    skill_category_fk = QuerySelectField('Skill_category_fk', query_factory=lambda: db.session.query(Skill_category), widget=Select2Widget(), allow_blank=True)
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'skill_category_id_fk' : IntegerField('Skill_category_id_fk', validators=[validators.DataRequired()]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'skill_category_fk': QuerySelectField('Skill_category_fk', query_factory=lambda: db.session.query(SkillCategory), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -5828,10 +5720,10 @@ class TimezoneView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'country_id_fk' : IntegerField('Country_id_fk')
-    'timezonename':  StringField('Timezonename', widget=BS3TextFieldWidget())
-    'comments':  StringField('Comments', widget=BS3TextFieldWidget())
-    country_fk = QuerySelectField('Country_fk', query_factory=lambda: db.session.query(Country), widget=Select2Widget(), allow_blank=True)
+    'country_id_fk' : IntegerField('Country_id_fk', validators=[validators.DataRequired()]),
+    'timezonename': StringField('Timezonename', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'comments': StringField('Comments', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'country_fk': QuerySelectField('Country_fk', query_factory=lambda: db.session.query(Country), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -5992,11 +5884,11 @@ class UserActivityView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'activity_type':  StringField('Activity_type', widget=BS3TextFieldWidget())
-    'timestamp' : DateTimeField('Timestamp', widget=DateTimePickerWidget())
-    'details':  StringField('Details', widget=BS3TextFieldWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'activity_type': StringField('Activity_type', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'timestamp' : DateTimeField('Timestamp', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'details': StringField('Details', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -6157,12 +6049,12 @@ class UserGamificationView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'user_id_fk' : IntegerField('User_id_fk')
-    'points' : IntegerField('Points')
-    'level' : IntegerField('Level')
-    'last_point_earned' : DateTimeField('Last_point_earned', widget=DateTimePickerWidget())
-    'points_to_next_level' : IntegerField('Points_to_next_level')
-    user_fk = QuerySelectField('User_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'user_id_fk' : IntegerField('User_id_fk', validators=[validators.DataRequired()]),
+    'points' : IntegerField('Points', validators=[validators.DataRequired()]),
+    'level' : IntegerField('Level', validators=[validators.DataRequired()]),
+    'last_point_earned' : DateTimeField('Last_point_earned', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'points_to_next_level' : IntegerField('Points_to_next_level', validators=[validators.DataRequired()]),
+    'user_fk': QuerySelectField('User_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -6255,7 +6147,7 @@ class BoardMemberView(ModelView):
     # Base Filters
     # base_filters = [['name', FilterStartsWith, 'A']]
 
-    form_query_rel_fields = {'organization_id_fk': 'db.session.query(Organization)', 'person_id_fk': 'db.session.query(Person)'}
+    form_query_rel_fields = {'person_id_fk': 'db.session.query(Person)', 'organization_id_fk': 'db.session.query(Organization)'}
     # Forms
     # add_form = None
     # edit_form = None
@@ -6323,13 +6215,13 @@ class BoardMemberView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'organization_id_fk' : IntegerField('Organization_id_fk')
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'position':  StringField('Position', widget=BS3TextFieldWidget())
-    'start_date' : DateField('Start_date', widget=DatePickerWidget())
-    'end_date' : DateField('End_date', widget=DatePickerWidget())
-    organization_fk = QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'organization_id_fk' : IntegerField('Organization_id_fk', validators=[validators.DataRequired()]),
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'position': StringField('Position', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'start_date' : DateField('Start_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'end_date' : DateField('End_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
+    'organization_fk': QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -6490,16 +6382,16 @@ class ContactApplicationView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'organization_id_fk' : IntegerField('Organization_id_fk')
-    'position':  StringField('Position', widget=BS3TextFieldWidget())
-    'message':  StringField('Message', widget=BS3TextFieldWidget())
-    'application_date' : DateTimeField('Application_date', widget=DateTimePickerWidget())
-    'status':  StringField('Status', widget=BS3TextFieldWidget())
-    'review_date' : DateTimeField('Review_date', widget=DateTimePickerWidget())
-    'review_notes':  StringField('Review_notes', widget=BS3TextFieldWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
-    organization_fk = QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'organization_id_fk' : IntegerField('Organization_id_fk', validators=[validators.DataRequired()]),
+    'position': StringField('Position', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'message': StringField('Message', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'application_date' : DateTimeField('Application_date', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'status': StringField('Status', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'review_date' : DateTimeField('Review_date', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'review_notes': StringField('Review_notes', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
+    'organization_fk': QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -6660,16 +6552,16 @@ class DocumentSubmissionView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'organization_id_fk' : IntegerField('Organization_id_fk')
-    'document_type':  StringField('Document_type', widget=BS3TextFieldWidget())
-    'document_name':  StringField('Document_name', widget=BS3TextFieldWidget())
-    'file_path':  StringField('File_path', widget=BS3TextFieldWidget())
-    'upload_date' : DateTimeField('Upload_date', widget=DateTimePickerWidget())
-    'status':  StringField('Status', widget=BS3TextFieldWidget())
-    'next_status':  StringField('Next_status', widget=BS3TextFieldWidget())
-    'review_notes':  StringField('Review_notes', widget=BS3TextFieldWidget())
-    'review_date' : DateTimeField('Review_date', widget=DateTimePickerWidget())
-    organization_fk = QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
+    'organization_id_fk' : IntegerField('Organization_id_fk', validators=[validators.DataRequired()]),
+    'document_type': StringField('Document_type', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'document_name': StringField('Document_name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'file_path': StringField('File_path', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'upload_date' : DateTimeField('Upload_date', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'status': StringField('Status', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'next_status': StringField('Next_status', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'review_notes': StringField('Review_notes', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'review_date' : DateTimeField('Review_date', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'organization_fk': QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -6830,15 +6722,15 @@ class EventView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'organization_id_fk' : IntegerField('Organization_id_fk')
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    'start_datetime' : DateTimeField('Start_datetime', widget=DateTimePickerWidget())
-    'end_datetime' : DateTimeField('End_datetime', widget=DateTimePickerWidget())
-    'location':  StringField('Location', widget=BS3TextFieldWidget())
-    'is_virtual' : BooleanField('Is_virtual')
-    'max_participants' : IntegerField('Max_participants')
-    organization_fk = QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
+    'organization_id_fk' : IntegerField('Organization_id_fk', validators=[validators.DataRequired()]),
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'start_datetime' : DateTimeField('Start_datetime', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'end_datetime' : DateTimeField('End_datetime', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'location': StringField('Location', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'is_virtual' : BooleanField('Is_virtual'),
+    'max_participants' : IntegerField('Max_participants', validators=[validators.DataRequired()]),
+    'organization_fk': QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -6999,13 +6891,13 @@ class ExecutivePositionView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'organization_id_fk' : IntegerField('Organization_id_fk')
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'title':  StringField('Title', widget=BS3TextFieldWidget())
-    'start_date' : DateField('Start_date', widget=DatePickerWidget())
-    'end_date' : DateField('End_date', widget=DatePickerWidget())
-    organization_fk = QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'organization_id_fk' : IntegerField('Organization_id_fk', validators=[validators.DataRequired()]),
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'title': StringField('Title', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'start_date' : DateField('Start_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'end_date' : DateField('End_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'organization_fk': QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -7166,15 +7058,15 @@ class GrantView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'donor_id_fk' : IntegerField('Donor_id_fk')
-    'recipient_id_fk' : IntegerField('Recipient_id_fk')
-    'amount' : DecimalField('Amount')
-    'start_date' : DateField('Start_date', widget=DatePickerWidget())
-    'end_date' : DateField('End_date', widget=DatePickerWidget())
-    'status':  StringField('Status', widget=BS3TextFieldWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    donor_fk = QuerySelectField('Donor_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
-    recipient_fk = QuerySelectField('Recipient_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
+    'donor_id_fk' : IntegerField('Donor_id_fk', validators=[validators.DataRequired()]),
+    'recipient_id_fk' : IntegerField('Recipient_id_fk', validators=[validators.DataRequired()]),
+    'amount' : DecimalField('Amount', validators=[validators.DataRequired()]),
+    'start_date' : DateField('Start_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'end_date' : DateField('End_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'status': StringField('Status', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'donor_fk': QuerySelectField('Donor_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
+    'recipient_fk': QuerySelectField('Recipient_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -7335,12 +7227,12 @@ class OnboardingProgressView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'user_id_fk' : IntegerField('User_id_fk')
-    'organization_id_fk' : IntegerField('Organization_id_fk')
-    'step' : IntegerField('Step')
-    'completed_at' : DateTimeField('Completed_at', widget=DateTimePickerWidget())
-    user_fk = QuerySelectField('User_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
-    organization_fk = QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
+    'user_id_fk' : IntegerField('User_id_fk', validators=[validators.DataRequired()]),
+    'organization_id_fk' : IntegerField('Organization_id_fk', validators=[validators.DataRequired()]),
+    'step' : IntegerField('Step', validators=[validators.DataRequired()]),
+    'completed_at' : DateTimeField('Completed_at', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'user_fk': QuerySelectField('User_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
+    'organization_fk': QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -7501,12 +7393,12 @@ class OrganizationAwardView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'organization_id_fk' : IntegerField('Organization_id_fk')
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
-    'awarding_body':  StringField('Awarding_body', widget=BS3TextFieldWidget())
-    'date_received' : DateField('Date_received', widget=DatePickerWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    organization_fk = QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
+    'organization_id_fk' : IntegerField('Organization_id_fk', validators=[validators.DataRequired()]),
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'awarding_body': StringField('Awarding_body', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'date_received' : DateField('Date_received', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'organization_fk': QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -7667,11 +7559,11 @@ class OrganizationBadgeView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'organization_id_fk' : IntegerField('Organization_id_fk')
-    'badge_id_fk' : IntegerField('Badge_id_fk')
-    'date_earned' : DateTimeField('Date_earned', widget=DateTimePickerWidget())
-    organization_fk = QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
-    badge_fk = QuerySelectField('Badge_fk', query_factory=lambda: db.session.query(Badge), widget=Select2Widget(), allow_blank=True)
+    'organization_id_fk' : IntegerField('Organization_id_fk', validators=[validators.DataRequired()]),
+    'badge_id_fk' : IntegerField('Badge_id_fk', validators=[validators.DataRequired()]),
+    'date_earned' : DateTimeField('Date_earned', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'organization_fk': QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
+    'badge_fk': QuerySelectField('Badge_fk', query_factory=lambda: db.session.query(Badge), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -7832,9 +7724,9 @@ class OrganizationClimateCategoriesView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'organization_id_fk' : IntegerField('Organization_id_fk')
-    'climate_category':  StringField('Climate_category', widget=BS3TextFieldWidget())
-    organization_fk = QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
+    'organization_id_fk' : IntegerField('Organization_id_fk', validators=[validators.DataRequired()]),
+    'climate_category': StringField('Climate_category', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'organization_fk': QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -7923,23 +7815,12 @@ class OrganizationContactView(ModelView):
         step = int(form.step.data)
         if step < 3:
             session['form_step'] = step + 1
-            return None
+            return self.update_redirect(), False  # Keep user on the same form
         else:
             session.pop('form_step', None)
             return super().form_post(form)
 
-    add_fieldsets = [
-        ('Step 1', {'fields': ['step'] + ['organization_id_fk', 'person_id_fk', 'org_email', 'org_phone', 'position'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 2', {'fields': ['step'] + ['department', 'start_date', 'end_date', 'is_primary', 'status'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 3', {'fields': ['step'] + ['notes'], 'expanded': True}),
-    ]
-
+    add_fieldsets = [    ('Step 1', {'fields': ['step'] + ['organization_id_fk', 'person_id_fk', 'org_email', 'org_phone', 'position'], 'expanded': True}),     ('Step 2', {'fields': ['step'] + ['department', 'start_date', 'end_date', 'is_primary', 'status'], 'expanded': True}),     ('Step 3', {'fields': ['step'] + ['notes'], 'expanded': True})]
     edit_fieldsets = add_fieldsets
 
 
@@ -8059,13 +7940,13 @@ class OrganizationDocumentsView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'organization_id' : IntegerField('Organization_id')
-    'document_type':  StringField('Document_type', widget=BS3TextFieldWidget())
-    'document_name':  StringField('Document_name', widget=BS3TextFieldWidget())
-    'document_path':  StringField('Document_path', widget=BS3TextFieldWidget())
-    'upload_date' : DateTimeField('Upload_date', widget=DateTimePickerWidget())
-    'document_summary':  StringField('Document_summary', widget=BS3TextFieldWidget())
-    organization = QuerySelectField('Organization', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
+    'organization_id' : IntegerField('Organization_id', validators=[validators.DataRequired()]),
+    'document_type': StringField('Document_type', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'document_name': StringField('Document_name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'document_path': StringField('Document_path', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'upload_date' : DateTimeField('Upload_date', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'document_summary': StringField('Document_summary', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'organization': QuerySelectField('Organization', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -8226,11 +8107,11 @@ class OrganizationHierarchyView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'parent_org_id_fk' : IntegerField('Parent_org_id_fk')
-    'child_org_id_fk' : IntegerField('Child_org_id_fk')
-    'relationship_type':  StringField('Relationship_type', widget=BS3TextFieldWidget())
-    child_org_fk = QuerySelectField('Child_org_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
-    parent_org_fk = QuerySelectField('Parent_org_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
+    'parent_org_id_fk' : IntegerField('Parent_org_id_fk', validators=[validators.DataRequired()]),
+    'child_org_id_fk' : IntegerField('Child_org_id_fk', validators=[validators.DataRequired()]),
+    'relationship_type': StringField('Relationship_type', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'child_org_fk': QuerySelectField('Child_org_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
+    'parent_org_fk': QuerySelectField('Parent_org_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -8319,23 +8200,12 @@ class OrganizationProfileView(ModelView):
         step = int(form.step.data)
         if step < 3:
             session['form_step'] = step + 1
-            return None
+            return self.update_redirect(), False  # Keep user on the same form
         else:
             session.pop('form_step', None)
             return super().form_post(form)
 
-    add_fieldsets = [
-        ('Step 1', {'fields': ['step'] + ['organization_id_fk', 'funding_focus_areas', 'average_grant_size', 'grant_making_process', 'funding_restrictions'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 2', {'fields': ['step'] + ['focus_areas', 'target_beneficiaries', 'geographic_reach', 'years_of_operation', 'total_beneficiaries_last_year'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 3', {'fields': ['step'] + ['annual_budget', 'num_employees', 'num_volunteers', 'last_year_revenue', 'last_year_expenditure'], 'expanded': True}),
-    ]
-
+    add_fieldsets = [    ('Step 1', {'fields': ['step'] + ['organization_id_fk', 'funding_focus_areas', 'average_grant_size', 'grant_making_process', 'funding_restrictions'], 'expanded': True}),     ('Step 2', {'fields': ['step'] + ['focus_areas', 'target_beneficiaries', 'geographic_reach', 'years_of_operation', 'total_beneficiaries_last_year'], 'expanded': True}),     ('Step 3', {'fields': ['step'] + ['annual_budget', 'num_employees', 'num_volunteers', 'last_year_revenue', 'last_year_expenditure'], 'expanded': True})]
     edit_fieldsets = add_fieldsets
 
 
@@ -8455,14 +8325,14 @@ class OrganizationProgramsView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'organization_id' : IntegerField('Organization_id')
-    'program_name':  StringField('Program_name', widget=BS3TextFieldWidget())
-    'program_description':  StringField('Program_description', widget=BS3TextFieldWidget())
-    'start_date' : DateField('Start_date', widget=DatePickerWidget())
-    'end_date' : DateField('End_date', widget=DatePickerWidget())
-    'budget' : DecimalField('Budget')
-    'impact_assessment':  StringField('Impact_assessment', widget=BS3TextFieldWidget())
-    organization = QuerySelectField('Organization', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
+    'organization_id' : IntegerField('Organization_id', validators=[validators.DataRequired()]),
+    'program_name': StringField('Program_name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'program_description': StringField('Program_description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'start_date' : DateField('Start_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'end_date' : DateField('End_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'budget' : DecimalField('Budget', validators=[validators.DataRequired()]),
+    'impact_assessment': StringField('Impact_assessment', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'organization': QuerySelectField('Organization', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -8623,9 +8493,9 @@ class OrganizationSdgsView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'organization_id_fk' : IntegerField('Organization_id_fk')
-    'sdg':  StringField('Sdg', widget=BS3TextFieldWidget())
-    organization_fk = QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
+    'organization_id_fk' : IntegerField('Organization_id_fk', validators=[validators.DataRequired()]),
+    'sdg': StringField('Sdg', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'organization_fk': QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -8718,7 +8588,7 @@ class OrganizationTagView(ModelView):
     # Base Filters
     # base_filters = [['name', FilterStartsWith, 'A']]
 
-    form_query_rel_fields = {'tag_id_fk': 'db.session.query(Tag)', 'organization_id_fk': 'db.session.query(Organization)'}
+    form_query_rel_fields = {'organization_id_fk': 'db.session.query(Organization)', 'tag_id_fk': 'db.session.query(Tag)'}
     # Forms
     # add_form = None
     # edit_form = None
@@ -8786,10 +8656,10 @@ class OrganizationTagView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'organization_id_fk' : IntegerField('Organization_id_fk')
-    'tag_id_fk' : IntegerField('Tag_id_fk')
-    tag_fk = QuerySelectField('Tag_fk', query_factory=lambda: db.session.query(Tag), widget=Select2Widget(), allow_blank=True)
-    organization_fk = QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
+    'organization_id_fk' : IntegerField('Organization_id_fk', validators=[validators.DataRequired()]),
+    'tag_id_fk' : IntegerField('Tag_id_fk', validators=[validators.DataRequired()]),
+    'organization_fk': QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
+    'tag_fk': QuerySelectField('Tag_fk', query_factory=lambda: db.session.query(Tag), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -8950,15 +8820,15 @@ class OrganizationVerificationView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'organization_id_fk' : IntegerField('Organization_id_fk')
-    'registration_number':  StringField('Registration_number', widget=BS3TextFieldWidget())
-    'registration_date' : DateField('Registration_date', widget=DatePickerWidget())
-    'registering_authority':  StringField('Registering_authority', widget=BS3TextFieldWidget())
-    'registration_expiry' : DateField('Registration_expiry', widget=DatePickerWidget())
-    'last_verification_date' : DateField('Last_verification_date', widget=DatePickerWidget())
-    'verification_status':  StringField('Verification_status', widget=BS3TextFieldWidget())
-    'verification_notes':  StringField('Verification_notes', widget=BS3TextFieldWidget())
-    organization_fk = QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
+    'organization_id_fk' : IntegerField('Organization_id_fk', validators=[validators.DataRequired()]),
+    'registration_number': StringField('Registration_number', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'registration_date' : DateField('Registration_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'registering_authority': StringField('Registering_authority', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'registration_expiry' : DateField('Registration_expiry', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'last_verification_date' : DateField('Last_verification_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'verification_status': StringField('Verification_status', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'verification_notes': StringField('Verification_notes', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'organization_fk': QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -9051,7 +8921,7 @@ class PersonOrganizationClaimView(ModelView):
     # Base Filters
     # base_filters = [['name', FilterStartsWith, 'A']]
 
-    form_query_rel_fields = {'person_id': 'db.session.query(Person)', 'organization_id': 'db.session.query(Organization)'}
+    form_query_rel_fields = {'organization_id': 'db.session.query(Organization)', 'person_id': 'db.session.query(Person)'}
     # Forms
     # add_form = None
     # edit_form = None
@@ -9119,14 +8989,14 @@ class PersonOrganizationClaimView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id' : IntegerField('Person_id')
-    'organization_id' : IntegerField('Organization_id')
-    'claim_type':  StringField('Claim_type', widget=BS3TextFieldWidget())
-    'status':  StringField('Status', widget=BS3TextFieldWidget())
-    'claim_date' : DateTimeField('Claim_date', widget=DateTimePickerWidget())
-    'review_date' : DateTimeField('Review_date', widget=DateTimePickerWidget())
-    person = QuerySelectField('Person', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
-    organization = QuerySelectField('Organization', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
+    'person_id' : IntegerField('Person_id', validators=[validators.DataRequired()]),
+    'organization_id' : IntegerField('Organization_id', validators=[validators.DataRequired()]),
+    'claim_type': StringField('Claim_type', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'status': StringField('Status', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'claim_date' : DateTimeField('Claim_date', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'review_date' : DateTimeField('Review_date', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'organization': QuerySelectField('Organization', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
+    'person': QuerySelectField('Person', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -9287,12 +9157,12 @@ class PersonSkillView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'skill_id_fk' : IntegerField('Skill_id_fk')
-    'proficiency_level' : IntegerField('Proficiency_level')
-    'endorsements' : IntegerField('Endorsements')
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
-    skill_fk = QuerySelectField('Skill_fk', query_factory=lambda: db.session.query(Skill), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'skill_id_fk' : IntegerField('Skill_id_fk', validators=[validators.DataRequired()]),
+    'proficiency_level' : IntegerField('Proficiency_level', validators=[validators.DataRequired()]),
+    'endorsements' : IntegerField('Endorsements', validators=[validators.DataRequired()]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
+    'skill_fk': QuerySelectField('Skill_fk', query_factory=lambda: db.session.query(Skill), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -9453,16 +9323,16 @@ class ProjectView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'organization_id_fk' : IntegerField('Organization_id_fk')
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    'start_date' : DateField('Start_date', widget=DatePickerWidget())
-    'end_date' : DateField('End_date', widget=DatePickerWidget())
-    'budget' : DecimalField('Budget')
-    'status':  StringField('Status', widget=BS3TextFieldWidget())
-    'beneficiaries' : IntegerField('Beneficiaries')
-    'outcomes':  StringField('Outcomes', widget=BS3TextFieldWidget())
-    organization_fk = QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
+    'organization_id_fk' : IntegerField('Organization_id_fk', validators=[validators.DataRequired()]),
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'start_date' : DateField('Start_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'end_date' : DateField('End_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'budget' : DecimalField('Budget', validators=[validators.DataRequired()]),
+    'status': StringField('Status', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'beneficiaries' : IntegerField('Beneficiaries', validators=[validators.DataRequired()]),
+    'outcomes': StringField('Outcomes', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'organization_fk': QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -9623,11 +9493,10 @@ class RawScrapedDataView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'task_id' : IntegerField('Task_id')
-    'content':  StringField('Content', widget=BS3TextFieldWidget())
-    'created_at' : DateTimeField('Created_at', widget=DateTimePickerWidget())
-    'is_archived' : BooleanField('Is_archived')
-    task = QuerySelectField('Task', query_factory=lambda: db.session.query(Scraping_tasks), widget=Select2Widget(), allow_blank=True)
+    'task_id' : IntegerField('Task_id', validators=[validators.DataRequired()]),
+    'content': StringField('Content', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'is_archived' : BooleanField('Is_archived'),
+    'task': QuerySelectField('Task', query_factory=lambda: db.session.query(ScrapingTasks), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -9788,13 +9657,13 @@ class ReportView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'organization_id_fk' : IntegerField('Organization_id_fk')
-    'title':  StringField('Title', widget=BS3TextFieldWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    'file_path':  StringField('File_path', widget=BS3TextFieldWidget())
-    'created_date' : DateTimeField('Created_date', widget=DateTimePickerWidget())
-    'report_type':  StringField('Report_type', widget=BS3TextFieldWidget())
-    organization_fk = QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
+    'organization_id_fk' : IntegerField('Organization_id_fk', validators=[validators.DataRequired()]),
+    'title': StringField('Title', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'file_path': StringField('File_path', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'created_date' : DateTimeField('Created_date', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'report_type': StringField('Report_type', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'organization_fk': QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -9887,7 +9756,7 @@ class SocialMediaProfileView(ModelView):
     # Base Filters
     # base_filters = [['name', FilterStartsWith, 'A']]
 
-    form_query_rel_fields = {'org_id_fk': 'db.session.query(Organization)', 'person_id_fk': 'db.session.query(Person)'}
+    form_query_rel_fields = {'person_id_fk': 'db.session.query(Person)', 'org_id_fk': 'db.session.query(Organization)'}
     # Forms
     # add_form = None
     # edit_form = None
@@ -9955,15 +9824,15 @@ class SocialMediaProfileView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'org_id_fk' : IntegerField('Org_id_fk')
-    'platform':  StringField('Platform', widget=BS3TextFieldWidget())
-    'profile_id':  StringField('Profile_id', widget=BS3TextFieldWidget())
-    'access_token':  StringField('Access_token', widget=BS3TextFieldWidget())
-    'refresh_token':  StringField('Refresh_token', widget=BS3TextFieldWidget())
-    'token_expiry' : DateTimeField('Token_expiry', widget=DateTimePickerWidget())
-    org_fk = QuerySelectField('Org_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'org_id_fk' : IntegerField('Org_id_fk', validators=[validators.DataRequired()]),
+    'platform': StringField('Platform', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'profile_id': StringField('Profile_id', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'access_token': StringField('Access_token', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'refresh_token': StringField('Refresh_token', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'token_expiry' : DateTimeField('Token_expiry', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
+    'org_fk': QuerySelectField('Org_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -10124,13 +9993,13 @@ class TrainingView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'offering_org_id_fk' : IntegerField('Offering_org_id_fk')
-    'name':  StringField('Name', widget=BS3TextFieldWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    'start_date' : DateField('Start_date', widget=DatePickerWidget())
-    'end_date' : DateField('End_date', widget=DatePickerWidget())
-    'is_certified' : BooleanField('Is_certified')
-    offering_org_fk = QuerySelectField('Offering_org_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
+    'offering_org_id_fk' : IntegerField('Offering_org_id_fk', validators=[validators.DataRequired()]),
+    'name': StringField('Name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'start_date' : DateField('Start_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'end_date' : DateField('End_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'is_certified' : BooleanField('Is_certified'),
+    'offering_org_fk': QuerySelectField('Offering_org_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -10223,7 +10092,7 @@ class UserChallengeView(ModelView):
     # Base Filters
     # base_filters = [['name', FilterStartsWith, 'A']]
 
-    form_query_rel_fields = {'person_id_fk': 'db.session.query(Person)', 'challenge_id_fk': 'db.session.query(GamificationChallenge)'}
+    form_query_rel_fields = {'challenge_id_fk': 'db.session.query(GamificationChallenge)', 'person_id_fk': 'db.session.query(Person)'}
     # Forms
     # add_form = None
     # edit_form = None
@@ -10291,12 +10160,12 @@ class UserChallengeView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'challenge_id_fk' : IntegerField('Challenge_id_fk')
-    'completed' : BooleanField('Completed')
-    'completion_date' : DateTimeField('Completion_date', widget=DateTimePickerWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
-    challenge_fk = QuerySelectField('Challenge_fk', query_factory=lambda: db.session.query(Gamification_challenge), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'challenge_id_fk' : IntegerField('Challenge_id_fk', validators=[validators.DataRequired()]),
+    'completed' : BooleanField('Completed'),
+    'completion_date' : DateTimeField('Completion_date', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'challenge_fk': QuerySelectField('Challenge_fk', query_factory=lambda: db.session.query(GamificationChallenge), widget=Select2Widget(), allow_blank=True),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -10389,7 +10258,7 @@ class VolunteerLogView(ModelView):
     # Base Filters
     # base_filters = [['name', FilterStartsWith, 'A']]
 
-    form_query_rel_fields = {'person_id_fk': 'db.session.query(Person)', 'organization_id_fk': 'db.session.query(Organization)'}
+    form_query_rel_fields = {'organization_id_fk': 'db.session.query(Organization)', 'person_id_fk': 'db.session.query(Person)'}
     # Forms
     # add_form = None
     # edit_form = None
@@ -10457,15 +10326,15 @@ class VolunteerLogView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'organization_id_fk' : IntegerField('Organization_id_fk')
-    'start_date' : DateField('Start_date', widget=DatePickerWidget())
-    'end_date' : DateField('End_date', widget=DatePickerWidget())
-    'hours_contributed' : IntegerField('Hours_contributed')
-    'role':  StringField('Role', widget=BS3TextFieldWidget())
-    'skills_used':  StringField('Skills_used', widget=BS3TextFieldWidget())
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
-    organization_fk = QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'organization_id_fk' : IntegerField('Organization_id_fk', validators=[validators.DataRequired()]),
+    'start_date' : DateField('Start_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'end_date' : DateField('End_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'hours_contributed' : IntegerField('Hours_contributed', validators=[validators.DataRequired()]),
+    'role': StringField('Role', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'skills_used': StringField('Skills_used', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'organization_fk': QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -10558,7 +10427,7 @@ class EventRegistrationView(ModelView):
     # Base Filters
     # base_filters = [['name', FilterStartsWith, 'A']]
 
-    form_query_rel_fields = {'event_id_fk': 'db.session.query(Event)', 'person_id_fk': 'db.session.query(Person)'}
+    form_query_rel_fields = {'person_id_fk': 'db.session.query(Person)', 'event_id_fk': 'db.session.query(Event)'}
     # Forms
     # add_form = None
     # edit_form = None
@@ -10626,12 +10495,12 @@ class EventRegistrationView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'event_id_fk' : IntegerField('Event_id_fk')
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'registration_date' : DateTimeField('Registration_date', widget=DateTimePickerWidget())
-    'attended' : BooleanField('Attended')
-    event_fk = QuerySelectField('Event_fk', query_factory=lambda: db.session.query(Event), widget=Select2Widget(), allow_blank=True)
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'event_id_fk' : IntegerField('Event_id_fk', validators=[validators.DataRequired()]),
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'registration_date' : DateTimeField('Registration_date', widget=DateTimePickerWidget(), validators=[validators.DataRequired()]),
+    'attended' : BooleanField('Attended'),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
+    'event_fk': QuerySelectField('Event_fk', query_factory=lambda: db.session.query(Event), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -10792,15 +10661,15 @@ class ImpactView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'organization_id_fk' : IntegerField('Organization_id_fk')
-    'project_id_fk' : IntegerField('Project_id_fk')
-    'metric_name':  StringField('Metric_name', widget=BS3TextFieldWidget())
-    'value' : DecimalField('Value')
-    'unit':  StringField('Unit', widget=BS3TextFieldWidget())
-    'date_measured' : DateField('Date_measured', widget=DatePickerWidget())
-    'description':  StringField('Description', widget=BS3TextFieldWidget())
-    organization_fk = QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
-    project_fk = QuerySelectField('Project_fk', query_factory=lambda: db.session.query(Project), widget=Select2Widget(), allow_blank=True)
+    'organization_id_fk' : IntegerField('Organization_id_fk', validators=[validators.DataRequired()]),
+    'project_id_fk' : IntegerField('Project_id_fk', validators=[validators.DataRequired()]),
+    'metric_name': StringField('Metric_name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'value' : DecimalField('Value', validators=[validators.DataRequired()]),
+    'unit': StringField('Unit', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'date_measured' : DateField('Date_measured', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'description': StringField('Description', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'organization_fk': QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
+    'project_fk': QuerySelectField('Project_fk', query_factory=lambda: db.session.query(Project), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -10961,14 +10830,14 @@ class PersonTrainingView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'training_id_fk' : IntegerField('Training_id_fk')
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'start_date' : DateField('Start_date', widget=DatePickerWidget())
-    'completion_date' : DateField('Completion_date', widget=DatePickerWidget())
-    'completed' : BooleanField('Completed')
-    'certificate_id':  StringField('Certificate_id', widget=BS3TextFieldWidget())
-    training_fk = QuerySelectField('Training_fk', query_factory=lambda: db.session.query(Training), widget=Select2Widget(), allow_blank=True)
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'training_id_fk' : IntegerField('Training_id_fk', validators=[validators.DataRequired()]),
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'start_date' : DateField('Start_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'completion_date' : DateField('Completion_date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'completed' : BooleanField('Completed'),
+    'certificate_id': StringField('Certificate_id', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'training_fk': QuerySelectField('Training_fk', query_factory=lambda: db.session.query(Training), widget=Select2Widget(), allow_blank=True),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -11129,16 +10998,16 @@ class PjFeedbackView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'person_id_fk' : IntegerField('Person_id_fk')
-    'organization_id_fk' : IntegerField('Organization_id_fk')
-    'project_id_fk' : IntegerField('Project_id_fk')
-    'rating' : IntegerField('Rating')
-    'comments':  StringField('Comments', widget=BS3TextFieldWidget())
-    'notes':  StringField('Notes', widget=BS3TextFieldWidget())
-    'date' : DateField('Date', widget=DatePickerWidget())
-    organization_fk = QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True)
-    project_fk = QuerySelectField('Project_fk', query_factory=lambda: db.session.query(Project), widget=Select2Widget(), allow_blank=True)
-    person_fk = QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True)
+    'person_id_fk' : IntegerField('Person_id_fk', validators=[validators.DataRequired()]),
+    'organization_id_fk' : IntegerField('Organization_id_fk', validators=[validators.DataRequired()]),
+    'project_id_fk' : IntegerField('Project_id_fk', validators=[validators.DataRequired()]),
+    'rating' : IntegerField('Rating', validators=[validators.DataRequired()]),
+    'comments': StringField('Comments', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'notes': StringField('Notes', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'date' : DateField('Date', widget=DatePickerWidget(), validators=[validators.DataRequired()]),
+    'organization_fk': QuerySelectField('Organization_fk', query_factory=lambda: db.session.query(Organization), widget=Select2Widget(), allow_blank=True),
+    'project_fk': QuerySelectField('Project_fk', query_factory=lambda: db.session.query(Project), widget=Select2Widget(), allow_blank=True),
+    'person_fk': QuerySelectField('Person_fk', query_factory=lambda: db.session.query(Person), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -11299,11 +11168,11 @@ class ProjectLocationsView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'project_id_fk' : IntegerField('Project_id_fk')
-    'location_name':  StringField('Location_name', widget=BS3TextFieldWidget())
-    'location_coordinates_id_fk' : IntegerField('Location_coordinates_id_fk')
-    project_fk = QuerySelectField('Project_fk', query_factory=lambda: db.session.query(Project), widget=Select2Widget(), allow_blank=True)
-    location_coordinates_fk = QuerySelectField('Location_coordinates_fk', query_factory=lambda: db.session.query(Geoname), widget=Select2Widget(), allow_blank=True)
+    'project_id_fk' : IntegerField('Project_id_fk', validators=[validators.DataRequired()]),
+    'location_name': StringField('Location_name', widget=BS3TextFieldWidget(), validators=[validators.DataRequired(), validators.Length(max=None)]),
+    'location_coordinates_id_fk' : IntegerField('Location_coordinates_id_fk', validators=[validators.DataRequired()]),
+    'project_fk': QuerySelectField('Project_fk', query_factory=lambda: db.session.query(Project), widget=Select2Widget(), allow_blank=True),
+    'location_coordinates_fk': QuerySelectField('Location_coordinates_fk', query_factory=lambda: db.session.query(Geoname), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -11396,7 +11265,7 @@ class ProjectTagView(ModelView):
     # Base Filters
     # base_filters = [['name', FilterStartsWith, 'A']]
 
-    form_query_rel_fields = {'tag_id_fk': 'db.session.query(Tag)', 'project_id_fk': 'db.session.query(Project)'}
+    form_query_rel_fields = {'project_id_fk': 'db.session.query(Project)', 'tag_id_fk': 'db.session.query(Tag)'}
     # Forms
     # add_form = None
     # edit_form = None
@@ -11464,10 +11333,10 @@ class ProjectTagView(ModelView):
 
     # Form fields
     form_extra_fields = {
-    'project_id_fk' : IntegerField('Project_id_fk')
-    'tag_id_fk' : IntegerField('Tag_id_fk')
-    tag_fk = QuerySelectField('Tag_fk', query_factory=lambda: db.session.query(Tag), widget=Select2Widget(), allow_blank=True)
-    project_fk = QuerySelectField('Project_fk', query_factory=lambda: db.session.query(Project), widget=Select2Widget(), allow_blank=True)
+    'project_id_fk' : IntegerField('Project_id_fk', validators=[validators.DataRequired()]),
+    'tag_id_fk' : IntegerField('Tag_id_fk', validators=[validators.DataRequired()]),
+    'project_fk': QuerySelectField('Project_fk', query_factory=lambda: db.session.query(Project), widget=Select2Widget(), allow_blank=True),
+    'tag_fk': QuerySelectField('Tag_fk', query_factory=lambda: db.session.query(Tag), widget=Select2Widget(), allow_blank=True),
     }
 
 
@@ -11556,145 +11425,18 @@ class ScrapedRfpsView(ModelView):
         step = int(form.step.data)
         if step < 3:
             session['form_step'] = step + 1
-            return None
+            return self.update_redirect(), False  # Keep user on the same form
         else:
             session.pop('form_step', None)
             return super().form_post(form)
 
-    add_fieldsets = [
-        ('Step 1', {'fields': ['step'] + ['task_id', 'raw_data_id', 'title', 'description', 'source_url'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 2', {'fields': ['step'] + ['published_date', 'deadline', 'organization', 'industry', 'is_duplicate'], 'expanded': True}),
-    ]
-
-    add_fieldsets = [
-        ('Step 3', {'fields': ['step'] + ['relevance_score', 'sentiment_score', 'content_hash'], 'expanded': True}),
-    ]
-
+    add_fieldsets = [    ('Step 1', {'fields': ['step'] + ['task_id', 'raw_data_id', 'title', 'description', 'source_url'], 'expanded': True}),     ('Step 2', {'fields': ['step'] + ['published_date', 'deadline', 'organization', 'industry', 'is_duplicate'], 'expanded': True}),     ('Step 3', {'fields': ['step'] + ['relevance_score', 'sentiment_score', 'content_hash'], 'expanded': True})]
     edit_fieldsets = add_fieldsets
 
 
     def __repr__(self):
         return self.title
     
-
-class AbUserAbUserMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('AbUser')
-    related_views = [AbUserView]
-    list_title = 'Ab User with Ab User'
-    show_title = 'Ab User Detail'
-    add_title = 'Add Ab User'
-    edit_title = 'Edit Ab User'
-    description_columns = {}
-
-    list_fieldsets = [
-        ('Summary', {'fields': ['id', 'first_name', 'last_name', 'username', 'password', 'active', 'email', 'last_login', 'login_count', 'fail_login_count', 'created_on', 'changed_on', 'created_by_fk', 'changed_by_fk']})
-    ]
-    
-
-    show_fieldsets = [
-        ('Summary', {'fields': ['id', 'first_name', 'last_name', 'username', 'password', 'active', 'email', 'last_login', 'login_count', 'fail_login_count', 'created_on', 'changed_on', 'created_by_fk', 'changed_by_fk']})
-    ]
-    
-
-    add_fieldsets = [
-        ('Add Ab User', {'fields': ['first_name', 'last_name', 'username', 'password', 'active', 'email', 'last_login', 'login_count', 'fail_login_count', 'created_on', 'changed_on', 'created_by_fk', 'changed_by_fk']})
-    ]
-    
-
-    edit_fieldsets = [
-        ('Edit Ab User', {'fields': ['first_name', 'last_name', 'username', 'password', 'active', 'email', 'last_login', 'login_count', 'fail_login_count', 'created_on', 'changed_on', 'created_by_fk', 'changed_by_fk']})
-    ]
-    
-
-    # Base Order
-    # base_order = ('name', 'asc')
-
-    # Base Filters
-    # base_filters = [['name', FilterStartsWith, 'A']]
-
-    # Forms
-    # add_form = None
-    # edit_form = None
-
-    # Widgets
-    # show_widget = None
-    # add_widget = None
-    # edit_widget = None
-    # list_widget = None
-
-    # List Widgets
-    # list_template = 'appbuilder/general/model/list.html'
-    # list_widget = ListWidget
-
-    # Pagination
-    # page_size = 10
-
-    # Custom Templates
-    # list_template = 'my_list_template.html'
-    # show_template = 'my_show_template.html'
-    # add_template = 'my_add_template.html'
-    # edit_template = 'my_edit_template.html'
-
-class AbUserAbUserMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('AbUser')
-    related_views = [AbUserView]
-    list_title = 'Ab User with Ab User'
-    show_title = 'Ab User Detail'
-    add_title = 'Add Ab User'
-    edit_title = 'Edit Ab User'
-    description_columns = {}
-
-    list_fieldsets = [
-        ('Summary', {'fields': ['id', 'first_name', 'last_name', 'username', 'password', 'active', 'email', 'last_login', 'login_count', 'fail_login_count', 'created_on', 'changed_on', 'created_by_fk', 'changed_by_fk']})
-    ]
-    
-
-    show_fieldsets = [
-        ('Summary', {'fields': ['id', 'first_name', 'last_name', 'username', 'password', 'active', 'email', 'last_login', 'login_count', 'fail_login_count', 'created_on', 'changed_on', 'created_by_fk', 'changed_by_fk']})
-    ]
-    
-
-    add_fieldsets = [
-        ('Add Ab User', {'fields': ['first_name', 'last_name', 'username', 'password', 'active', 'email', 'last_login', 'login_count', 'fail_login_count', 'created_on', 'changed_on', 'created_by_fk', 'changed_by_fk']})
-    ]
-    
-
-    edit_fieldsets = [
-        ('Edit Ab User', {'fields': ['first_name', 'last_name', 'username', 'password', 'active', 'email', 'last_login', 'login_count', 'fail_login_count', 'created_on', 'changed_on', 'created_by_fk', 'changed_by_fk']})
-    ]
-    
-
-    # Base Order
-    # base_order = ('name', 'asc')
-
-    # Base Filters
-    # base_filters = [['name', FilterStartsWith, 'A']]
-
-    # Forms
-    # add_form = None
-    # edit_form = None
-
-    # Widgets
-    # show_widget = None
-    # add_widget = None
-    # edit_widget = None
-    # list_widget = None
-
-    # List Widgets
-    # list_template = 'appbuilder/general/model/list.html'
-    # list_widget = ListWidget
-
-    # Pagination
-    # page_size = 10
-
-    # Custom Templates
-    # list_template = 'my_list_template.html'
-    # show_template = 'my_show_template.html'
-    # add_template = 'my_add_template.html'
-    # edit_template = 'my_edit_template.html'
 
 class GeonameCountryMasterDetailView(MasterDetailView):
     datamodel = SQLAInterface('Geoname')
@@ -11722,64 +11464,6 @@ class GeonameCountryMasterDetailView(MasterDetailView):
 
     edit_fieldsets = [
         ('Edit Geoname', {'fields': ['name', 'asciiname', 'alt_names', 'alternatenames_id_fk', 'latitude', 'longitude', 'fclass', 'fcode', 'countrycode', 'country_id_fk', 'cc2', 'admin1', 'admin2', 'admin3', 'admin4', 'population', 'elevation', 'gtopo30', 'timezone', 'moddate']})
-    ]
-    
-
-    # Base Order
-    # base_order = ('name', 'asc')
-
-    # Base Filters
-    # base_filters = [['name', FilterStartsWith, 'A']]
-
-    # Forms
-    # add_form = None
-    # edit_form = None
-
-    # Widgets
-    # show_widget = None
-    # add_widget = None
-    # edit_widget = None
-    # list_widget = None
-
-    # List Widgets
-    # list_template = 'appbuilder/general/model/list.html'
-    # list_widget = ListWidget
-
-    # Pagination
-    # page_size = 10
-
-    # Custom Templates
-    # list_template = 'my_list_template.html'
-    # show_template = 'my_show_template.html'
-    # add_template = 'my_add_template.html'
-    # edit_template = 'my_edit_template.html'
-
-class CountryGeonameMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('Country')
-    related_views = [GeonameView]
-    list_title = 'Country with Geoname'
-    show_title = 'Country Detail'
-    add_title = 'Add Country'
-    edit_title = 'Edit Country'
-    description_columns = {'iso_alpha2': '2-letter ISO 3166-1 alpha code e.g., US for the United States', 'iso_alpha3': '3-letter ISO 3166-1 alpha code e.g., USA for the United States', 'iso_numeric': 'ISO 3166-1 numeric code e.g., 840 for the United States', 'fips_code': 'Federal Information Processing Standard code, used by the US government', 'name': 'Full name of the country', 'capital': 'Capital city of the country', 'areainsqkm': 'Total area of the country in square kilometers', 'population': 'Estimated population of the country', 'continent': 'Abbreviation of the continent the country is located in', 'tld': 'Top Level Domain for the country e.g., .us for the United States', 'currencycode': 'ISO code of the country’s currency e.g., USD for US Dollar', 'currencyname': 'Full name of the country’s currency e.g., Dollar for US Dollar', 'phone': 'Country dialing code e.g., +1 for the United States', 'postalcode': 'Template or format of postal codes in the country', 'postalcoderegex': 'Regular expression pattern to validate postal codes', 'languages': 'Commonly spoken languages in the country, represented as ISO codes', 'geo_id_fk': 'Reference to geoname table; linking country data with geographical name data', 'neighbors': 'Neighboring countries, usually represented as ISO codes', 'equivfipscode': 'Equivalent FIPS code in cases where it might differ from the primary FIPS code', 'flag': 'Field to store a link or representation of the country’s flag'}
-
-    list_fieldsets = [
-        ('Summary', {'fields': ['id', 'iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo_id_fk', 'neighbors', 'equivfipscode', 'flag']})
-    ]
-    
-
-    show_fieldsets = [
-        ('Summary', {'fields': ['id', 'iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo_id_fk', 'neighbors', 'equivfipscode', 'flag']})
-    ]
-    
-
-    add_fieldsets = [
-        ('Add Country', {'fields': ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo_id_fk', 'neighbors', 'equivfipscode', 'flag']})
-    ]
-    
-
-    edit_fieldsets = [
-        ('Edit Country', {'fields': ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo_id_fk', 'neighbors', 'equivfipscode', 'flag']})
     ]
     
 
@@ -11870,206 +11554,32 @@ class AlternatenameGeonameMasterDetailView(MasterDetailView):
     # add_template = 'my_add_template.html'
     # edit_template = 'my_edit_template.html'
 
-class AbViewMenuAbPermissionViewMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('AbViewMenu')
-    related_views = [AbPermissionViewView]
-    list_title = 'Ab View Menu with Ab Permission View'
-    show_title = 'Ab View Menu Detail'
-    add_title = 'Add Ab View Menu'
-    edit_title = 'Edit Ab View Menu'
-    description_columns = {}
+class CountryGeonameMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface('Country')
+    related_views = [GeonameView]
+    list_title = 'Country with Geoname'
+    show_title = 'Country Detail'
+    add_title = 'Add Country'
+    edit_title = 'Edit Country'
+    description_columns = {'iso_alpha2': '2-letter ISO 3166-1 alpha code e.g., US for the United States', 'iso_alpha3': '3-letter ISO 3166-1 alpha code e.g., USA for the United States', 'iso_numeric': 'ISO 3166-1 numeric code e.g., 840 for the United States', 'fips_code': 'Federal Information Processing Standard code, used by the US government', 'name': 'Full name of the country', 'capital': 'Capital city of the country', 'areainsqkm': 'Total area of the country in square kilometers', 'population': 'Estimated population of the country', 'continent': 'Abbreviation of the continent the country is located in', 'tld': 'Top Level Domain for the country e.g., .us for the United States', 'currencycode': 'ISO code of the country’s currency e.g., USD for US Dollar', 'currencyname': 'Full name of the country’s currency e.g., Dollar for US Dollar', 'phone': 'Country dialing code e.g., +1 for the United States', 'postalcode': 'Template or format of postal codes in the country', 'postalcoderegex': 'Regular expression pattern to validate postal codes', 'languages': 'Commonly spoken languages in the country, represented as ISO codes', 'geo_id_fk': 'Reference to geoname table; linking country data with geographical name data', 'neighbors': 'Neighboring countries, usually represented as ISO codes', 'equivfipscode': 'Equivalent FIPS code in cases where it might differ from the primary FIPS code', 'flag': 'Field to store a link or representation of the country’s flag'}
 
     list_fieldsets = [
-        ('Summary', {'fields': ['id', 'name']})
+        ('Summary', {'fields': ['id', 'iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo_id_fk', 'neighbors', 'equivfipscode', 'flag']})
     ]
     
 
     show_fieldsets = [
-        ('Summary', {'fields': ['id', 'name']})
+        ('Summary', {'fields': ['id', 'iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo_id_fk', 'neighbors', 'equivfipscode', 'flag']})
     ]
     
 
     add_fieldsets = [
-        ('Add Ab View Menu', {'fields': ['name']})
+        ('Add Country', {'fields': ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo_id_fk', 'neighbors', 'equivfipscode', 'flag']})
     ]
     
 
     edit_fieldsets = [
-        ('Edit Ab View Menu', {'fields': ['name']})
-    ]
-    
-
-    # Base Order
-    # base_order = ('name', 'asc')
-
-    # Base Filters
-    # base_filters = [['name', FilterStartsWith, 'A']]
-
-    # Forms
-    # add_form = None
-    # edit_form = None
-
-    # Widgets
-    # show_widget = None
-    # add_widget = None
-    # edit_widget = None
-    # list_widget = None
-
-    # List Widgets
-    # list_template = 'appbuilder/general/model/list.html'
-    # list_widget = ListWidget
-
-    # Pagination
-    # page_size = 10
-
-    # Custom Templates
-    # list_template = 'my_list_template.html'
-    # show_template = 'my_show_template.html'
-    # add_template = 'my_add_template.html'
-    # edit_template = 'my_edit_template.html'
-
-class AbPermissionAbPermissionViewMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('AbPermission')
-    related_views = [AbPermissionViewView]
-    list_title = 'Ab Permission with Ab Permission View'
-    show_title = 'Ab Permission Detail'
-    add_title = 'Add Ab Permission'
-    edit_title = 'Edit Ab Permission'
-    description_columns = {}
-
-    list_fieldsets = [
-        ('Summary', {'fields': ['id', 'name']})
-    ]
-    
-
-    show_fieldsets = [
-        ('Summary', {'fields': ['id', 'name']})
-    ]
-    
-
-    add_fieldsets = [
-        ('Add Ab Permission', {'fields': ['name']})
-    ]
-    
-
-    edit_fieldsets = [
-        ('Edit Ab Permission', {'fields': ['name']})
-    ]
-    
-
-    # Base Order
-    # base_order = ('name', 'asc')
-
-    # Base Filters
-    # base_filters = [['name', FilterStartsWith, 'A']]
-
-    # Forms
-    # add_form = None
-    # edit_form = None
-
-    # Widgets
-    # show_widget = None
-    # add_widget = None
-    # edit_widget = None
-    # list_widget = None
-
-    # List Widgets
-    # list_template = 'appbuilder/general/model/list.html'
-    # list_widget = ListWidget
-
-    # Pagination
-    # page_size = 10
-
-    # Custom Templates
-    # list_template = 'my_list_template.html'
-    # show_template = 'my_show_template.html'
-    # add_template = 'my_add_template.html'
-    # edit_template = 'my_edit_template.html'
-
-class AbUserAbUserRoleMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('AbUser')
-    related_views = [AbUserRoleView]
-    list_title = 'Ab User with Ab User Role'
-    show_title = 'Ab User Detail'
-    add_title = 'Add Ab User'
-    edit_title = 'Edit Ab User'
-    description_columns = {}
-
-    list_fieldsets = [
-        ('Summary', {'fields': ['id', 'first_name', 'last_name', 'username', 'password', 'active', 'email', 'last_login', 'login_count', 'fail_login_count', 'created_on', 'changed_on', 'created_by_fk', 'changed_by_fk']})
-    ]
-    
-
-    show_fieldsets = [
-        ('Summary', {'fields': ['id', 'first_name', 'last_name', 'username', 'password', 'active', 'email', 'last_login', 'login_count', 'fail_login_count', 'created_on', 'changed_on', 'created_by_fk', 'changed_by_fk']})
-    ]
-    
-
-    add_fieldsets = [
-        ('Add Ab User', {'fields': ['first_name', 'last_name', 'username', 'password', 'active', 'email', 'last_login', 'login_count', 'fail_login_count', 'created_on', 'changed_on', 'created_by_fk', 'changed_by_fk']})
-    ]
-    
-
-    edit_fieldsets = [
-        ('Edit Ab User', {'fields': ['first_name', 'last_name', 'username', 'password', 'active', 'email', 'last_login', 'login_count', 'fail_login_count', 'created_on', 'changed_on', 'created_by_fk', 'changed_by_fk']})
-    ]
-    
-
-    # Base Order
-    # base_order = ('name', 'asc')
-
-    # Base Filters
-    # base_filters = [['name', FilterStartsWith, 'A']]
-
-    # Forms
-    # add_form = None
-    # edit_form = None
-
-    # Widgets
-    # show_widget = None
-    # add_widget = None
-    # edit_widget = None
-    # list_widget = None
-
-    # List Widgets
-    # list_template = 'appbuilder/general/model/list.html'
-    # list_widget = ListWidget
-
-    # Pagination
-    # page_size = 10
-
-    # Custom Templates
-    # list_template = 'my_list_template.html'
-    # show_template = 'my_show_template.html'
-    # add_template = 'my_add_template.html'
-    # edit_template = 'my_edit_template.html'
-
-class AbRoleAbUserRoleMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('AbRole')
-    related_views = [AbUserRoleView]
-    list_title = 'Ab Role with Ab User Role'
-    show_title = 'Ab Role Detail'
-    add_title = 'Add Ab Role'
-    edit_title = 'Edit Ab Role'
-    description_columns = {}
-
-    list_fieldsets = [
-        ('Summary', {'fields': ['id', 'name']})
-    ]
-    
-
-    show_fieldsets = [
-        ('Summary', {'fields': ['id', 'name']})
-    ]
-    
-
-    add_fieldsets = [
-        ('Add Ab Role', {'fields': ['name']})
-    ]
-    
-
-    edit_fieldsets = [
-        ('Edit Ab Role', {'fields': ['name']})
+        ('Edit Country', {'fields': ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo_id_fk', 'neighbors', 'equivfipscode', 'flag']})
     ]
     
 
@@ -12334,32 +11844,32 @@ class CountryAdmin2codesMasterDetailView(MasterDetailView):
     # add_template = 'my_add_template.html'
     # edit_template = 'my_edit_template.html'
 
-class PersonContactMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('Person')
+class ContactTypeContactMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface('ContactType')
     related_views = [ContactView]
-    list_title = 'Person with Contact'
-    show_title = 'Person Detail'
-    add_title = 'Add Person'
-    edit_title = 'Edit Person'
-    description_columns = {}
+    list_title = 'Contact Type with Contact'
+    show_title = 'Contact Type Detail'
+    add_title = 'Add Contact Type'
+    edit_title = 'Edit Contact Type'
+    description_columns = {'id': 'Unique identifier for the address type.', 'name': 'Name or type of contact method, e.g., Mobile, Email, WhatsApp.', 'description': 'Brief description about the address type, providing context or usage scenarios.', 'is_digital': 'Indicates if the contact method is digital or physical.', 'requires_verification': 'Indicates if the address type typically requires a verification process, e.g., email confirmation.', 'max_length': 'If applicable, the maximum character length of a value of this address type. Useful for validation.', 'icon_url': 'URL or link to an icon or image representing this address type. Useful for UI/UX purposes.', 'created_at': 'Timestamp when the address type was added to the system.', 'updated_at': 'Timestamp when the address type was last updated.'}
 
     list_fieldsets = [
-        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+        ('Summary', {'fields': ['id', 'name', 'description', 'is_digital', 'requires_verification', 'max_length', 'icon_url', 'created_at', 'updated_at']})
     ]
     
 
     show_fieldsets = [
-        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+        ('Summary', {'fields': ['id', 'name', 'description', 'is_digital', 'requires_verification', 'max_length', 'icon_url', 'created_at', 'updated_at']})
     ]
     
 
     add_fieldsets = [
-        ('Add Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+        ('Add Contact Type', {'fields': ['name', 'description', 'is_digital', 'requires_verification', 'max_length', 'icon_url', 'created_at', 'updated_at']})
     ]
     
 
     edit_fieldsets = [
-        ('Edit Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+        ('Edit Contact Type', {'fields': ['name', 'description', 'is_digital', 'requires_verification', 'max_length', 'icon_url', 'created_at', 'updated_at']})
     ]
     
 
@@ -12392,32 +11902,32 @@ class PersonContactMasterDetailView(MasterDetailView):
     # add_template = 'my_add_template.html'
     # edit_template = 'my_edit_template.html'
 
-class ContactTypeContactMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('ContactType')
+class PersonContactMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface('Person')
     related_views = [ContactView]
-    list_title = 'Contact Type with Contact'
-    show_title = 'Contact Type Detail'
-    add_title = 'Add Contact Type'
-    edit_title = 'Edit Contact Type'
-    description_columns = {'id': 'Unique identifier for the address type.', 'name': 'Name or type of contact method, e.g., Mobile, Email, WhatsApp.', 'description': 'Brief description about the address type, providing context or usage scenarios.', 'is_digital': 'Indicates if the contact method is digital or physical.', 'requires_verification': 'Indicates if the address type typically requires a verification process, e.g., email confirmation.', 'max_length': 'If applicable, the maximum character length of a value of this address type. Useful for validation.', 'icon_url': 'URL or link to an icon or image representing this address type. Useful for UI/UX purposes.', 'created_at': 'Timestamp when the address type was added to the system.', 'updated_at': 'Timestamp when the address type was last updated.'}
+    list_title = 'Person with Contact'
+    show_title = 'Person Detail'
+    add_title = 'Add Person'
+    edit_title = 'Edit Person'
+    description_columns = {}
 
     list_fieldsets = [
-        ('Summary', {'fields': ['id', 'name', 'description', 'is_digital', 'requires_verification', 'max_length', 'icon_url', 'created_at', 'updated_at']})
+        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
     show_fieldsets = [
-        ('Summary', {'fields': ['id', 'name', 'description', 'is_digital', 'requires_verification', 'max_length', 'icon_url', 'created_at', 'updated_at']})
+        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
     add_fieldsets = [
-        ('Add Contact Type', {'fields': ['name', 'description', 'is_digital', 'requires_verification', 'max_length', 'icon_url', 'created_at', 'updated_at']})
+        ('Add Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
     edit_fieldsets = [
-        ('Edit Contact Type', {'fields': ['name', 'description', 'is_digital', 'requires_verification', 'max_length', 'icon_url', 'created_at', 'updated_at']})
+        ('Edit Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
@@ -12740,64 +12250,6 @@ class PersonNotificationMasterDetailView(MasterDetailView):
     # add_template = 'my_add_template.html'
     # edit_template = 'my_edit_template.html'
 
-class CountryOrganizationMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('Country')
-    related_views = [OrganizationView]
-    list_title = 'Country with Organization'
-    show_title = 'Country Detail'
-    add_title = 'Add Country'
-    edit_title = 'Edit Country'
-    description_columns = {'iso_alpha2': '2-letter ISO 3166-1 alpha code e.g., US for the United States', 'iso_alpha3': '3-letter ISO 3166-1 alpha code e.g., USA for the United States', 'iso_numeric': 'ISO 3166-1 numeric code e.g., 840 for the United States', 'fips_code': 'Federal Information Processing Standard code, used by the US government', 'name': 'Full name of the country', 'capital': 'Capital city of the country', 'areainsqkm': 'Total area of the country in square kilometers', 'population': 'Estimated population of the country', 'continent': 'Abbreviation of the continent the country is located in', 'tld': 'Top Level Domain for the country e.g., .us for the United States', 'currencycode': 'ISO code of the country’s currency e.g., USD for US Dollar', 'currencyname': 'Full name of the country’s currency e.g., Dollar for US Dollar', 'phone': 'Country dialing code e.g., +1 for the United States', 'postalcode': 'Template or format of postal codes in the country', 'postalcoderegex': 'Regular expression pattern to validate postal codes', 'languages': 'Commonly spoken languages in the country, represented as ISO codes', 'geo_id_fk': 'Reference to geoname table; linking country data with geographical name data', 'neighbors': 'Neighboring countries, usually represented as ISO codes', 'equivfipscode': 'Equivalent FIPS code in cases where it might differ from the primary FIPS code', 'flag': 'Field to store a link or representation of the country’s flag'}
-
-    list_fieldsets = [
-        ('Summary', {'fields': ['id', 'iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo_id_fk', 'neighbors', 'equivfipscode', 'flag']})
-    ]
-    
-
-    show_fieldsets = [
-        ('Summary', {'fields': ['id', 'iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo_id_fk', 'neighbors', 'equivfipscode', 'flag']})
-    ]
-    
-
-    add_fieldsets = [
-        ('Add Country', {'fields': ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo_id_fk', 'neighbors', 'equivfipscode', 'flag']})
-    ]
-    
-
-    edit_fieldsets = [
-        ('Edit Country', {'fields': ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo_id_fk', 'neighbors', 'equivfipscode', 'flag']})
-    ]
-    
-
-    # Base Order
-    # base_order = ('name', 'asc')
-
-    # Base Filters
-    # base_filters = [['name', FilterStartsWith, 'A']]
-
-    # Forms
-    # add_form = None
-    # edit_form = None
-
-    # Widgets
-    # show_widget = None
-    # add_widget = None
-    # edit_widget = None
-    # list_widget = None
-
-    # List Widgets
-    # list_template = 'appbuilder/general/model/list.html'
-    # list_widget = ListWidget
-
-    # Pagination
-    # page_size = 10
-
-    # Custom Templates
-    # list_template = 'my_list_template.html'
-    # show_template = 'my_show_template.html'
-    # add_template = 'my_add_template.html'
-    # edit_template = 'my_edit_template.html'
-
 class PersonOrganizationMasterDetailView(MasterDetailView):
     datamodel = SQLAInterface('Person')
     related_views = [OrganizationView]
@@ -12856,32 +12308,32 @@ class PersonOrganizationMasterDetailView(MasterDetailView):
     # add_template = 'my_add_template.html'
     # edit_template = 'my_edit_template.html'
 
-class PersonPersonBadgeMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('Person')
-    related_views = [PersonBadgeView]
-    list_title = 'Person with Person Badge'
-    show_title = 'Person Detail'
-    add_title = 'Add Person'
-    edit_title = 'Edit Person'
-    description_columns = {}
+class CountryOrganizationMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface('Country')
+    related_views = [OrganizationView]
+    list_title = 'Country with Organization'
+    show_title = 'Country Detail'
+    add_title = 'Add Country'
+    edit_title = 'Edit Country'
+    description_columns = {'iso_alpha2': '2-letter ISO 3166-1 alpha code e.g., US for the United States', 'iso_alpha3': '3-letter ISO 3166-1 alpha code e.g., USA for the United States', 'iso_numeric': 'ISO 3166-1 numeric code e.g., 840 for the United States', 'fips_code': 'Federal Information Processing Standard code, used by the US government', 'name': 'Full name of the country', 'capital': 'Capital city of the country', 'areainsqkm': 'Total area of the country in square kilometers', 'population': 'Estimated population of the country', 'continent': 'Abbreviation of the continent the country is located in', 'tld': 'Top Level Domain for the country e.g., .us for the United States', 'currencycode': 'ISO code of the country’s currency e.g., USD for US Dollar', 'currencyname': 'Full name of the country’s currency e.g., Dollar for US Dollar', 'phone': 'Country dialing code e.g., +1 for the United States', 'postalcode': 'Template or format of postal codes in the country', 'postalcoderegex': 'Regular expression pattern to validate postal codes', 'languages': 'Commonly spoken languages in the country, represented as ISO codes', 'geo_id_fk': 'Reference to geoname table; linking country data with geographical name data', 'neighbors': 'Neighboring countries, usually represented as ISO codes', 'equivfipscode': 'Equivalent FIPS code in cases where it might differ from the primary FIPS code', 'flag': 'Field to store a link or representation of the country’s flag'}
 
     list_fieldsets = [
-        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+        ('Summary', {'fields': ['id', 'iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo_id_fk', 'neighbors', 'equivfipscode', 'flag']})
     ]
     
 
     show_fieldsets = [
-        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+        ('Summary', {'fields': ['id', 'iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo_id_fk', 'neighbors', 'equivfipscode', 'flag']})
     ]
     
 
     add_fieldsets = [
-        ('Add Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+        ('Add Country', {'fields': ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo_id_fk', 'neighbors', 'equivfipscode', 'flag']})
     ]
     
 
     edit_fieldsets = [
-        ('Edit Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+        ('Edit Country', {'fields': ['iso_alpha2', 'iso_alpha3', 'iso_numeric', 'fips_code', 'name', 'capital', 'areainsqkm', 'population', 'continent', 'tld', 'currencycode', 'currencyname', 'phone', 'postalcode', 'postalcoderegex', 'languages', 'geo_id_fk', 'neighbors', 'equivfipscode', 'flag']})
     ]
     
 
@@ -12940,6 +12392,64 @@ class BadgePersonBadgeMasterDetailView(MasterDetailView):
 
     edit_fieldsets = [
         ('Edit Badge', {'fields': ['name', 'description', 'criteria', 'icon']})
+    ]
+    
+
+    # Base Order
+    # base_order = ('name', 'asc')
+
+    # Base Filters
+    # base_filters = [['name', FilterStartsWith, 'A']]
+
+    # Forms
+    # add_form = None
+    # edit_form = None
+
+    # Widgets
+    # show_widget = None
+    # add_widget = None
+    # edit_widget = None
+    # list_widget = None
+
+    # List Widgets
+    # list_template = 'appbuilder/general/model/list.html'
+    # list_widget = ListWidget
+
+    # Pagination
+    # page_size = 10
+
+    # Custom Templates
+    # list_template = 'my_list_template.html'
+    # show_template = 'my_show_template.html'
+    # add_template = 'my_add_template.html'
+    # edit_template = 'my_edit_template.html'
+
+class PersonPersonBadgeMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface('Person')
+    related_views = [PersonBadgeView]
+    list_title = 'Person with Person Badge'
+    show_title = 'Person Detail'
+    add_title = 'Add Person'
+    edit_title = 'Edit Person'
+    description_columns = {}
+
+    list_fieldsets = [
+        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+    ]
+    
+
+    show_fieldsets = [
+        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+    ]
+    
+
+    add_fieldsets = [
+        ('Add Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+    ]
+    
+
+    edit_fieldsets = [
+        ('Edit Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
@@ -14132,90 +13642,32 @@ class PersonUserGamificationMasterDetailView(MasterDetailView):
     # add_template = 'my_add_template.html'
     # edit_template = 'my_edit_template.html'
 
-class AbRoleAbPermissionViewRoleMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('AbRole')
-    related_views = [AbPermissionViewRoleView]
-    list_title = 'Ab Role with Ab Permission View Role'
-    show_title = 'Ab Role Detail'
-    add_title = 'Add Ab Role'
-    edit_title = 'Edit Ab Role'
+class PersonBoardMemberMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface('Person')
+    related_views = [BoardMemberView]
+    list_title = 'Person with Board Member'
+    show_title = 'Person Detail'
+    add_title = 'Add Person'
+    edit_title = 'Edit Person'
     description_columns = {}
 
     list_fieldsets = [
-        ('Summary', {'fields': ['id', 'name']})
+        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
     show_fieldsets = [
-        ('Summary', {'fields': ['id', 'name']})
+        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
     add_fieldsets = [
-        ('Add Ab Role', {'fields': ['name']})
+        ('Add Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
     edit_fieldsets = [
-        ('Edit Ab Role', {'fields': ['name']})
-    ]
-    
-
-    # Base Order
-    # base_order = ('name', 'asc')
-
-    # Base Filters
-    # base_filters = [['name', FilterStartsWith, 'A']]
-
-    # Forms
-    # add_form = None
-    # edit_form = None
-
-    # Widgets
-    # show_widget = None
-    # add_widget = None
-    # edit_widget = None
-    # list_widget = None
-
-    # List Widgets
-    # list_template = 'appbuilder/general/model/list.html'
-    # list_widget = ListWidget
-
-    # Pagination
-    # page_size = 10
-
-    # Custom Templates
-    # list_template = 'my_list_template.html'
-    # show_template = 'my_show_template.html'
-    # add_template = 'my_add_template.html'
-    # edit_template = 'my_edit_template.html'
-
-class AbPermissionViewAbPermissionViewRoleMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('AbPermissionView')
-    related_views = [AbPermissionViewRoleView]
-    list_title = 'Ab Permission View with Ab Permission View Role'
-    show_title = 'Ab Permission View Detail'
-    add_title = 'Add Ab Permission View'
-    edit_title = 'Edit Ab Permission View'
-    description_columns = {}
-
-    list_fieldsets = [
-        ('Summary', {'fields': ['id', 'permission_id', 'view_menu_id']})
-    ]
-    
-
-    show_fieldsets = [
-        ('Summary', {'fields': ['id', 'permission_id', 'view_menu_id']})
-    ]
-    
-
-    add_fieldsets = [
-        ('Add Ab Permission View', {'fields': ['permission_id', 'view_menu_id']})
-    ]
-    
-
-    edit_fieldsets = [
-        ('Edit Ab Permission View', {'fields': ['permission_id', 'view_menu_id']})
+        ('Edit Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
@@ -14274,64 +13726,6 @@ class OrganizationBoardMemberMasterDetailView(MasterDetailView):
 
     edit_fieldsets = [
         ('Edit Organization', {'fields': ['name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
-    ]
-    
-
-    # Base Order
-    # base_order = ('name', 'asc')
-
-    # Base Filters
-    # base_filters = [['name', FilterStartsWith, 'A']]
-
-    # Forms
-    # add_form = None
-    # edit_form = None
-
-    # Widgets
-    # show_widget = None
-    # add_widget = None
-    # edit_widget = None
-    # list_widget = None
-
-    # List Widgets
-    # list_template = 'appbuilder/general/model/list.html'
-    # list_widget = ListWidget
-
-    # Pagination
-    # page_size = 10
-
-    # Custom Templates
-    # list_template = 'my_list_template.html'
-    # show_template = 'my_show_template.html'
-    # add_template = 'my_add_template.html'
-    # edit_template = 'my_edit_template.html'
-
-class PersonBoardMemberMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('Person')
-    related_views = [BoardMemberView]
-    list_title = 'Person with Board Member'
-    show_title = 'Person Detail'
-    add_title = 'Add Person'
-    edit_title = 'Edit Person'
-    description_columns = {}
-
-    list_fieldsets = [
-        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
-    ]
-    
-
-    show_fieldsets = [
-        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
-    ]
-    
-
-    add_fieldsets = [
-        ('Add Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
-    ]
-    
-
-    edit_fieldsets = [
-        ('Edit Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
@@ -15640,32 +15034,32 @@ class OrganizationOrganizationSdgsMasterDetailView(MasterDetailView):
     # add_template = 'my_add_template.html'
     # edit_template = 'my_edit_template.html'
 
-class TagOrganizationTagMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('Tag')
+class OrganizationOrganizationTagMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface('Organization')
     related_views = [OrganizationTagView]
-    list_title = 'Tag with Organization Tag'
-    show_title = 'Tag Detail'
-    add_title = 'Add Tag'
-    edit_title = 'Edit Tag'
+    list_title = 'Organization with Organization Tag'
+    show_title = 'Organization Detail'
+    add_title = 'Add Organization'
+    edit_title = 'Edit Organization'
     description_columns = {}
 
     list_fieldsets = [
-        ('Summary', {'fields': ['id', 'name']})
+        ('Summary', {'fields': ['id', 'name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
     ]
     
 
     show_fieldsets = [
-        ('Summary', {'fields': ['id', 'name']})
+        ('Summary', {'fields': ['id', 'name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
     ]
     
 
     add_fieldsets = [
-        ('Add Tag', {'fields': ['name']})
+        ('Add Organization', {'fields': ['name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
     ]
     
 
     edit_fieldsets = [
-        ('Edit Tag', {'fields': ['name']})
+        ('Edit Organization', {'fields': ['name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
     ]
     
 
@@ -15698,32 +15092,32 @@ class TagOrganizationTagMasterDetailView(MasterDetailView):
     # add_template = 'my_add_template.html'
     # edit_template = 'my_edit_template.html'
 
-class OrganizationOrganizationTagMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('Organization')
+class TagOrganizationTagMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface('Tag')
     related_views = [OrganizationTagView]
-    list_title = 'Organization with Organization Tag'
-    show_title = 'Organization Detail'
-    add_title = 'Add Organization'
-    edit_title = 'Edit Organization'
+    list_title = 'Tag with Organization Tag'
+    show_title = 'Tag Detail'
+    add_title = 'Add Tag'
+    edit_title = 'Edit Tag'
     description_columns = {}
 
     list_fieldsets = [
-        ('Summary', {'fields': ['id', 'name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
+        ('Summary', {'fields': ['id', 'name']})
     ]
     
 
     show_fieldsets = [
-        ('Summary', {'fields': ['id', 'name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
+        ('Summary', {'fields': ['id', 'name']})
     ]
     
 
     add_fieldsets = [
-        ('Add Organization', {'fields': ['name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
+        ('Add Tag', {'fields': ['name']})
     ]
     
 
     edit_fieldsets = [
-        ('Edit Organization', {'fields': ['name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
+        ('Edit Tag', {'fields': ['name']})
     ]
     
 
@@ -15814,32 +15208,32 @@ class OrganizationOrganizationVerificationMasterDetailView(MasterDetailView):
     # add_template = 'my_add_template.html'
     # edit_template = 'my_edit_template.html'
 
-class PersonPersonOrganizationClaimMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('Person')
+class OrganizationPersonOrganizationClaimMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface('Organization')
     related_views = [PersonOrganizationClaimView]
-    list_title = 'Person with Person Organization Claim'
-    show_title = 'Person Detail'
-    add_title = 'Add Person'
-    edit_title = 'Edit Person'
+    list_title = 'Organization with Person Organization Claim'
+    show_title = 'Organization Detail'
+    add_title = 'Add Organization'
+    edit_title = 'Edit Organization'
     description_columns = {}
 
     list_fieldsets = [
-        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+        ('Summary', {'fields': ['id', 'name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
     ]
     
 
     show_fieldsets = [
-        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+        ('Summary', {'fields': ['id', 'name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
     ]
     
 
     add_fieldsets = [
-        ('Add Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+        ('Add Organization', {'fields': ['name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
     ]
     
 
     edit_fieldsets = [
-        ('Edit Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+        ('Edit Organization', {'fields': ['name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
     ]
     
 
@@ -15872,32 +15266,32 @@ class PersonPersonOrganizationClaimMasterDetailView(MasterDetailView):
     # add_template = 'my_add_template.html'
     # edit_template = 'my_edit_template.html'
 
-class OrganizationPersonOrganizationClaimMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('Organization')
+class PersonPersonOrganizationClaimMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface('Person')
     related_views = [PersonOrganizationClaimView]
-    list_title = 'Organization with Person Organization Claim'
-    show_title = 'Organization Detail'
-    add_title = 'Add Organization'
-    edit_title = 'Edit Organization'
+    list_title = 'Person with Person Organization Claim'
+    show_title = 'Person Detail'
+    add_title = 'Add Person'
+    edit_title = 'Edit Person'
     description_columns = {}
 
     list_fieldsets = [
-        ('Summary', {'fields': ['id', 'name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
+        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
     show_fieldsets = [
-        ('Summary', {'fields': ['id', 'name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
+        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
     add_fieldsets = [
-        ('Add Organization', {'fields': ['name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
+        ('Add Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
     edit_fieldsets = [
-        ('Edit Organization', {'fields': ['name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
+        ('Edit Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
@@ -16220,32 +15614,32 @@ class OrganizationReportMasterDetailView(MasterDetailView):
     # add_template = 'my_add_template.html'
     # edit_template = 'my_edit_template.html'
 
-class OrganizationSocialMediaProfileMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('Organization')
+class PersonSocialMediaProfileMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface('Person')
     related_views = [SocialMediaProfileView]
-    list_title = 'Organization with Social Media Profile'
-    show_title = 'Organization Detail'
-    add_title = 'Add Organization'
-    edit_title = 'Edit Organization'
+    list_title = 'Person with Social Media Profile'
+    show_title = 'Person Detail'
+    add_title = 'Add Person'
+    edit_title = 'Edit Person'
     description_columns = {}
 
     list_fieldsets = [
-        ('Summary', {'fields': ['id', 'name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
+        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
     show_fieldsets = [
-        ('Summary', {'fields': ['id', 'name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
+        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
     add_fieldsets = [
-        ('Add Organization', {'fields': ['name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
+        ('Add Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
     edit_fieldsets = [
-        ('Edit Organization', {'fields': ['name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
+        ('Edit Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
@@ -16278,32 +15672,32 @@ class OrganizationSocialMediaProfileMasterDetailView(MasterDetailView):
     # add_template = 'my_add_template.html'
     # edit_template = 'my_edit_template.html'
 
-class PersonSocialMediaProfileMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('Person')
+class OrganizationSocialMediaProfileMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface('Organization')
     related_views = [SocialMediaProfileView]
-    list_title = 'Person with Social Media Profile'
-    show_title = 'Person Detail'
-    add_title = 'Add Person'
-    edit_title = 'Edit Person'
+    list_title = 'Organization with Social Media Profile'
+    show_title = 'Organization Detail'
+    add_title = 'Add Organization'
+    edit_title = 'Edit Organization'
     description_columns = {}
 
     list_fieldsets = [
-        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+        ('Summary', {'fields': ['id', 'name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
     ]
     
 
     show_fieldsets = [
-        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+        ('Summary', {'fields': ['id', 'name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
     ]
     
 
     add_fieldsets = [
-        ('Add Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+        ('Add Organization', {'fields': ['name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
     ]
     
 
     edit_fieldsets = [
-        ('Edit Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+        ('Edit Organization', {'fields': ['name', 'legal_name', 'org_type', 'org_cat', 'status', 'industry', 'website', 'is_verified', 'description', 'mission_statement', 'size', 'revenue', 'founded_date', 'country_of_operation_id_fk', 'logo', 'social_media_links', 'tax_id', 'registration_number', 'seeking_funding', 'providing_funding', 'authorized_representative', 'legal_structure', 'compliance_status', 'financial_year_end', 'last_audit_date', 'auditor_name', 'phone_number', 'email', 'address', 'city', 'state', 'country', 'postal_code', 'board_members', 'governance_structure', 'risk_assessment', 'insurance_coverage', 'compliance_certifications', 'ethics_policy', 'sustainability_policy', 'primary_funding_source', 'secondary_funding_source', 'main_areas_of_operation', 'key_programs', 'beneficiary_info', 'major_donors', 'partnerships_affiliations', 'onboarding_step', 'profile_completion', 'last_profile_update', 'associated_people_id_fk']})
     ]
     
 
@@ -16394,64 +15788,6 @@ class OrganizationTrainingMasterDetailView(MasterDetailView):
     # add_template = 'my_add_template.html'
     # edit_template = 'my_edit_template.html'
 
-class PersonUserChallengeMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('Person')
-    related_views = [UserChallengeView]
-    list_title = 'Person with User Challenge'
-    show_title = 'Person Detail'
-    add_title = 'Add Person'
-    edit_title = 'Edit Person'
-    description_columns = {}
-
-    list_fieldsets = [
-        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
-    ]
-    
-
-    show_fieldsets = [
-        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
-    ]
-    
-
-    add_fieldsets = [
-        ('Add Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
-    ]
-    
-
-    edit_fieldsets = [
-        ('Edit Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
-    ]
-    
-
-    # Base Order
-    # base_order = ('name', 'asc')
-
-    # Base Filters
-    # base_filters = [['name', FilterStartsWith, 'A']]
-
-    # Forms
-    # add_form = None
-    # edit_form = None
-
-    # Widgets
-    # show_widget = None
-    # add_widget = None
-    # edit_widget = None
-    # list_widget = None
-
-    # List Widgets
-    # list_template = 'appbuilder/general/model/list.html'
-    # list_widget = ListWidget
-
-    # Pagination
-    # page_size = 10
-
-    # Custom Templates
-    # list_template = 'my_list_template.html'
-    # show_template = 'my_show_template.html'
-    # add_template = 'my_add_template.html'
-    # edit_template = 'my_edit_template.html'
-
 class GamificationChallengeUserChallengeMasterDetailView(MasterDetailView):
     datamodel = SQLAInterface('GamificationChallenge')
     related_views = [UserChallengeView]
@@ -16510,10 +15846,10 @@ class GamificationChallengeUserChallengeMasterDetailView(MasterDetailView):
     # add_template = 'my_add_template.html'
     # edit_template = 'my_edit_template.html'
 
-class PersonVolunteerLogMasterDetailView(MasterDetailView):
+class PersonUserChallengeMasterDetailView(MasterDetailView):
     datamodel = SQLAInterface('Person')
-    related_views = [VolunteerLogView]
-    list_title = 'Person with Volunteer Log'
+    related_views = [UserChallengeView]
+    list_title = 'Person with User Challenge'
     show_title = 'Person Detail'
     add_title = 'Add Person'
     edit_title = 'Edit Person'
@@ -16626,32 +15962,32 @@ class OrganizationVolunteerLogMasterDetailView(MasterDetailView):
     # add_template = 'my_add_template.html'
     # edit_template = 'my_edit_template.html'
 
-class EventEventRegistrationMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('Event')
-    related_views = [EventRegistrationView]
-    list_title = 'Event with Event Registration'
-    show_title = 'Event Detail'
-    add_title = 'Add Event'
-    edit_title = 'Edit Event'
+class PersonVolunteerLogMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface('Person')
+    related_views = [VolunteerLogView]
+    list_title = 'Person with Volunteer Log'
+    show_title = 'Person Detail'
+    add_title = 'Add Person'
+    edit_title = 'Edit Person'
     description_columns = {}
 
     list_fieldsets = [
-        ('Summary', {'fields': ['id', 'organization_id_fk', 'name', 'description', 'start_datetime', 'end_datetime', 'location', 'is_virtual', 'max_participants']})
+        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
     show_fieldsets = [
-        ('Summary', {'fields': ['id', 'organization_id_fk', 'name', 'description', 'start_datetime', 'end_datetime', 'location', 'is_virtual', 'max_participants']})
+        ('Summary', {'fields': ['id', 'first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
     add_fieldsets = [
-        ('Add Event', {'fields': ['organization_id_fk', 'name', 'description', 'start_datetime', 'end_datetime', 'location', 'is_virtual', 'max_participants']})
+        ('Add Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
     edit_fieldsets = [
-        ('Edit Event', {'fields': ['organization_id_fk', 'name', 'description', 'start_datetime', 'end_datetime', 'location', 'is_virtual', 'max_participants']})
+        ('Edit Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
     ]
     
 
@@ -16710,6 +16046,64 @@ class PersonEventRegistrationMasterDetailView(MasterDetailView):
 
     edit_fieldsets = [
         ('Edit Person', {'fields': ['first_name', 'middle_name', 'last_name', 'full_name', 'nick_name', 'headline', 'location', 'summary', 'email', 'phone', 'date_of_birth', 'city', 'state_province', 'postal_code', 'country', 'bio', 'skills_description', 'interests', 'is_volunteer', 'is_staff', 'onboarding_step', 'profile_completion', 'last_profile_update', 'points', 'level', 'social_media_imported']})
+    ]
+    
+
+    # Base Order
+    # base_order = ('name', 'asc')
+
+    # Base Filters
+    # base_filters = [['name', FilterStartsWith, 'A']]
+
+    # Forms
+    # add_form = None
+    # edit_form = None
+
+    # Widgets
+    # show_widget = None
+    # add_widget = None
+    # edit_widget = None
+    # list_widget = None
+
+    # List Widgets
+    # list_template = 'appbuilder/general/model/list.html'
+    # list_widget = ListWidget
+
+    # Pagination
+    # page_size = 10
+
+    # Custom Templates
+    # list_template = 'my_list_template.html'
+    # show_template = 'my_show_template.html'
+    # add_template = 'my_add_template.html'
+    # edit_template = 'my_edit_template.html'
+
+class EventEventRegistrationMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface('Event')
+    related_views = [EventRegistrationView]
+    list_title = 'Event with Event Registration'
+    show_title = 'Event Detail'
+    add_title = 'Add Event'
+    edit_title = 'Edit Event'
+    description_columns = {}
+
+    list_fieldsets = [
+        ('Summary', {'fields': ['id', 'organization_id_fk', 'name', 'description', 'start_datetime', 'end_datetime', 'location', 'is_virtual', 'max_participants']})
+    ]
+    
+
+    show_fieldsets = [
+        ('Summary', {'fields': ['id', 'organization_id_fk', 'name', 'description', 'start_datetime', 'end_datetime', 'location', 'is_virtual', 'max_participants']})
+    ]
+    
+
+    add_fieldsets = [
+        ('Add Event', {'fields': ['organization_id_fk', 'name', 'description', 'start_datetime', 'end_datetime', 'location', 'is_virtual', 'max_participants']})
+    ]
+    
+
+    edit_fieldsets = [
+        ('Edit Event', {'fields': ['organization_id_fk', 'name', 'description', 'start_datetime', 'end_datetime', 'location', 'is_virtual', 'max_participants']})
     ]
     
 
@@ -17264,32 +16658,32 @@ class GeonameProjectLocationsMasterDetailView(MasterDetailView):
     # add_template = 'my_add_template.html'
     # edit_template = 'my_edit_template.html'
 
-class TagProjectTagMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('Tag')
+class ProjectProjectTagMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface('Project')
     related_views = [ProjectTagView]
-    list_title = 'Tag with Project Tag'
-    show_title = 'Tag Detail'
-    add_title = 'Add Tag'
-    edit_title = 'Edit Tag'
+    list_title = 'Project with Project Tag'
+    show_title = 'Project Detail'
+    add_title = 'Add Project'
+    edit_title = 'Edit Project'
     description_columns = {}
 
     list_fieldsets = [
-        ('Summary', {'fields': ['id', 'name']})
+        ('Summary', {'fields': ['id', 'organization_id_fk', 'name', 'description', 'start_date', 'end_date', 'budget', 'status', 'beneficiaries', 'outcomes']})
     ]
     
 
     show_fieldsets = [
-        ('Summary', {'fields': ['id', 'name']})
+        ('Summary', {'fields': ['id', 'organization_id_fk', 'name', 'description', 'start_date', 'end_date', 'budget', 'status', 'beneficiaries', 'outcomes']})
     ]
     
 
     add_fieldsets = [
-        ('Add Tag', {'fields': ['name']})
+        ('Add Project', {'fields': ['organization_id_fk', 'name', 'description', 'start_date', 'end_date', 'budget', 'status', 'beneficiaries', 'outcomes']})
     ]
     
 
     edit_fieldsets = [
-        ('Edit Tag', {'fields': ['name']})
+        ('Edit Project', {'fields': ['organization_id_fk', 'name', 'description', 'start_date', 'end_date', 'budget', 'status', 'beneficiaries', 'outcomes']})
     ]
     
 
@@ -17322,32 +16716,32 @@ class TagProjectTagMasterDetailView(MasterDetailView):
     # add_template = 'my_add_template.html'
     # edit_template = 'my_edit_template.html'
 
-class ProjectProjectTagMasterDetailView(MasterDetailView):
-    datamodel = SQLAInterface('Project')
+class TagProjectTagMasterDetailView(MasterDetailView):
+    datamodel = SQLAInterface('Tag')
     related_views = [ProjectTagView]
-    list_title = 'Project with Project Tag'
-    show_title = 'Project Detail'
-    add_title = 'Add Project'
-    edit_title = 'Edit Project'
+    list_title = 'Tag with Project Tag'
+    show_title = 'Tag Detail'
+    add_title = 'Add Tag'
+    edit_title = 'Edit Tag'
     description_columns = {}
 
     list_fieldsets = [
-        ('Summary', {'fields': ['id', 'organization_id_fk', 'name', 'description', 'start_date', 'end_date', 'budget', 'status', 'beneficiaries', 'outcomes']})
+        ('Summary', {'fields': ['id', 'name']})
     ]
     
 
     show_fieldsets = [
-        ('Summary', {'fields': ['id', 'organization_id_fk', 'name', 'description', 'start_date', 'end_date', 'budget', 'status', 'beneficiaries', 'outcomes']})
+        ('Summary', {'fields': ['id', 'name']})
     ]
     
 
     add_fieldsets = [
-        ('Add Project', {'fields': ['organization_id_fk', 'name', 'description', 'start_date', 'end_date', 'budget', 'status', 'beneficiaries', 'outcomes']})
+        ('Add Tag', {'fields': ['name']})
     ]
     
 
     edit_fieldsets = [
-        ('Edit Project', {'fields': ['organization_id_fk', 'name', 'description', 'start_date', 'end_date', 'budget', 'status', 'beneficiaries', 'outcomes']})
+        ('Edit Tag', {'fields': ['name']})
     ]
     
 
@@ -17496,43 +16890,9 @@ class ScrapingTasksScrapedRfpsMasterDetailView(MasterDetailView):
     # add_template = 'my_add_template.html'
     # edit_template = 'my_edit_template.html'
 
-class AbRoleMultipleView(MultipleView):
-    datamodel = SQLAInterface('AbRole')
-    views = [AbUserRoleView, AbPermissionViewRoleView]
-
-    # Base Order
-    # base_order = ('name', 'asc')
-
-    # List Widgets
-    # list_template = 'appbuilder/general/model/list.html'
-    # list_widget = ListWidget
-
-    # Pagination
-    # page_size = 10
-
-    # Custom Templates
-    # list_template = 'my_list_template.html'
-
-class AbUserMultipleView(MultipleView):
-    datamodel = SQLAInterface('AbUser')
-    views = [AbUserView, AbUserRoleView, ScrapingRulesView]
-
-    # Base Order
-    # base_order = ('name', 'asc')
-
-    # List Widgets
-    # list_template = 'appbuilder/general/model/list.html'
-    # list_widget = ListWidget
-
-    # Pagination
-    # page_size = 10
-
-    # Custom Templates
-    # list_template = 'my_list_template.html'
-
 class BadgeMultipleView(MultipleView):
     datamodel = SQLAInterface('Badge')
-    views = [OrganizationBadgeView, PersonBadgeView, GamificationChallengeView]
+    views = [OrganizationBadgeView, GamificationChallengeView, PersonBadgeView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -17549,7 +16909,7 @@ class BadgeMultipleView(MultipleView):
 
 class CountryMultipleView(MultipleView):
     datamodel = SQLAInterface('Country')
-    views = [Admin2codesView, Admin1codesView, TimezoneView, OrganizationView, GeonameView]
+    views = [TimezoneView, OrganizationView, Admin2codesView, GeonameView, Admin1codesView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -17566,7 +16926,7 @@ class CountryMultipleView(MultipleView):
 
 class GeonameMultipleView(MultipleView):
     datamodel = SQLAInterface('Geoname')
-    views = [Admin2codesView, ProjectLocationsView, Admin1codesView, AlternatenameView, CountryView]
+    views = [CountryView, Admin1codesView, AlternatenameView, Admin2codesView, ProjectLocationsView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -17583,7 +16943,7 @@ class GeonameMultipleView(MultipleView):
 
 class PersonMultipleView(MultipleView):
     datamodel = SQLAInterface('Person')
-    views = [OrganizationContactView, PersonVolunteerExperienceView, SocialMediaProfileView, PersonProjectView, OnboardingProgressView, OrganizationView, PersonTrainingView, ExecutivePositionView, PersonCourseView, MessageView, PersonPatentView, VolunteerLogView, UserChallengeView, PointEarningActivityView, PersonLanguageView, PersonPublicationView, PersonEducationView, PersonCertificationView, ContactApplicationView, PersonBadgeView, ContactView, UserGamificationView, NotificationView, PersonOrganizationClaimView, PersonHonorAwardView, UserActivityView, PersonOrganizationMembershipView, PersonSkillView, PersonExperienceView, BoardMemberView, EventRegistrationView, PjFeedbackView, LeaderboardView, ProfileUpdateReminderView]
+    views = [PersonOrganizationMembershipView, ExecutivePositionView, PersonOrganizationClaimView, EventRegistrationView, NotificationView, LeaderboardView, PersonEducationView, OnboardingProgressView, PersonTrainingView, PersonPatentView, PersonPublicationView, PersonCertificationView, PersonProjectView, BoardMemberView, PersonBadgeView, UserGamificationView, OrganizationContactView, VolunteerLogView, PersonExperienceView, PersonSkillView, SocialMediaProfileView, PointEarningActivityView, PersonCourseView, ProfileUpdateReminderView, UserChallengeView, PersonVolunteerExperienceView, PersonHonorAwardView, ContactApplicationView, ContactView, PjFeedbackView, OrganizationView, MessageView, PersonLanguageView, UserActivityView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -17632,43 +16992,9 @@ class TagMultipleView(MultipleView):
     # Custom Templates
     # list_template = 'my_list_template.html'
 
-class AbPermissionViewMultipleView(MultipleView):
-    datamodel = SQLAInterface('AbPermissionView')
-    views = [AbPermissionView, AbViewMenuView, AbPermissionViewRoleView]
-
-    # Base Order
-    # base_order = ('name', 'asc')
-
-    # List Widgets
-    # list_template = 'appbuilder/general/model/list.html'
-    # list_widget = ListWidget
-
-    # Pagination
-    # page_size = 10
-
-    # Custom Templates
-    # list_template = 'my_list_template.html'
-
-class AbUserRoleMultipleView(MultipleView):
-    datamodel = SQLAInterface('AbUserRole')
-    views = [AbUserView, AbRoleView]
-
-    # Base Order
-    # base_order = ('name', 'asc')
-
-    # List Widgets
-    # list_template = 'appbuilder/general/model/list.html'
-    # list_widget = ListWidget
-
-    # Pagination
-    # page_size = 10
-
-    # Custom Templates
-    # list_template = 'my_list_template.html'
-
 class Admin1codesMultipleView(MultipleView):
     datamodel = SQLAInterface('Admin1codes')
-    views = [CountryView, GeonameView]
+    views = [GeonameView, CountryView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -17685,7 +17011,7 @@ class Admin1codesMultipleView(MultipleView):
 
 class Admin2codesMultipleView(MultipleView):
     datamodel = SQLAInterface('Admin2codes')
-    views = [CountryView, GeonameView]
+    views = [GeonameView, CountryView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -17702,7 +17028,7 @@ class Admin2codesMultipleView(MultipleView):
 
 class ContactMultipleView(MultipleView):
     datamodel = SQLAInterface('Contact')
-    views = [PersonView, ContactTypeView]
+    views = [ContactTypeView, PersonView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -17736,7 +17062,7 @@ class GamificationChallengeMultipleView(MultipleView):
 
 class OrganizationMultipleView(MultipleView):
     datamodel = SQLAInterface('Organization')
-    views = [OrganizationContactView, SocialMediaProfileView, OrganizationClimateCategoriesView, OnboardingProgressView, ImpactView, GrantView, OrganizationTagView, ExecutivePositionView, PersonView, OrganizationProfileView, VolunteerLogView, OrganizationVerificationView, EventView, ProjectView, ContactApplicationView, CountryView, OrganizationBadgeView, TrainingView, PersonOrganizationClaimView, DocumentSubmissionView, OrganizationDocumentsView, OrganizationSdgsView, OrganizationHierarchyView, BoardMemberView, OrganizationAwardView, PjFeedbackView, ReportView, OrganizationProgramsView]
+    views = [OrganizationVerificationView, DocumentSubmissionView, ExecutivePositionView, PersonOrganizationClaimView, OnboardingProgressView, OrganizationBadgeView, PersonView, OrganizationHierarchyView, CountryView, OrganizationSdgsView, BoardMemberView, TrainingView, ReportView, OrganizationClimateCategoriesView, OrganizationDocumentsView, GrantView, OrganizationContactView, VolunteerLogView, SocialMediaProfileView, ImpactView, OrganizationProgramsView, ProjectView, ContactApplicationView, EventView, OrganizationAwardView, PjFeedbackView, OrganizationProfileView, OrganizationTagView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -17753,7 +17079,7 @@ class OrganizationMultipleView(MultipleView):
 
 class PersonBadgeMultipleView(MultipleView):
     datamodel = SQLAInterface('PersonBadge')
-    views = [PersonView, BadgeView]
+    views = [BadgeView, PersonView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -17770,7 +17096,7 @@ class PersonBadgeMultipleView(MultipleView):
 
 class ScrapingRulesMultipleView(MultipleView):
     datamodel = SQLAInterface('ScrapingRules')
-    views = [ScrapingTargetsView, AbUserView]
+    views = [AbUserView, ScrapingTargetsView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -17787,7 +17113,7 @@ class ScrapingRulesMultipleView(MultipleView):
 
 class ScrapingTasksMultipleView(MultipleView):
     datamodel = SQLAInterface('ScrapingTasks')
-    views = [ScrapingTargetsView, ScrapedRfpsView, RawScrapedDataView]
+    views = [ScrapedRfpsView, RawScrapedDataView, ScrapingTargetsView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -17804,24 +17130,7 @@ class ScrapingTasksMultipleView(MultipleView):
 
 class SkillMultipleView(MultipleView):
     datamodel = SQLAInterface('Skill')
-    views = [PersonSkillView, SkillCategoryView]
-
-    # Base Order
-    # base_order = ('name', 'asc')
-
-    # List Widgets
-    # list_template = 'appbuilder/general/model/list.html'
-    # list_widget = ListWidget
-
-    # Pagination
-    # page_size = 10
-
-    # Custom Templates
-    # list_template = 'my_list_template.html'
-
-class AbPermissionViewRoleMultipleView(MultipleView):
-    datamodel = SQLAInterface('AbPermissionViewRole')
-    views = [AbRoleView, AbPermissionViewView]
+    views = [SkillCategoryView, PersonSkillView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -17855,7 +17164,7 @@ class BoardMemberMultipleView(MultipleView):
 
 class ContactApplicationMultipleView(MultipleView):
     datamodel = SQLAInterface('ContactApplication')
-    views = [PersonView, OrganizationView]
+    views = [OrganizationView, PersonView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -17872,7 +17181,7 @@ class ContactApplicationMultipleView(MultipleView):
 
 class EventMultipleView(MultipleView):
     datamodel = SQLAInterface('Event')
-    views = [OrganizationView, EventRegistrationView]
+    views = [EventRegistrationView, OrganizationView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -17906,7 +17215,7 @@ class ExecutivePositionMultipleView(MultipleView):
 
 class OnboardingProgressMultipleView(MultipleView):
     datamodel = SQLAInterface('OnboardingProgress')
-    views = [PersonView, OrganizationView]
+    views = [OrganizationView, PersonView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -17923,7 +17232,7 @@ class OnboardingProgressMultipleView(MultipleView):
 
 class OrganizationBadgeMultipleView(MultipleView):
     datamodel = SQLAInterface('OrganizationBadge')
-    views = [OrganizationView, BadgeView]
+    views = [BadgeView, OrganizationView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -17957,7 +17266,7 @@ class OrganizationContactMultipleView(MultipleView):
 
 class OrganizationTagMultipleView(MultipleView):
     datamodel = SQLAInterface('OrganizationTag')
-    views = [TagView, OrganizationView]
+    views = [OrganizationView, TagView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -17974,7 +17283,7 @@ class OrganizationTagMultipleView(MultipleView):
 
 class PersonOrganizationClaimMultipleView(MultipleView):
     datamodel = SQLAInterface('PersonOrganizationClaim')
-    views = [PersonView, OrganizationView]
+    views = [OrganizationView, PersonView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -17991,7 +17300,7 @@ class PersonOrganizationClaimMultipleView(MultipleView):
 
 class PersonSkillMultipleView(MultipleView):
     datamodel = SQLAInterface('PersonSkill')
-    views = [PersonView, SkillView]
+    views = [SkillView, PersonView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -18008,7 +17317,7 @@ class PersonSkillMultipleView(MultipleView):
 
 class ProjectMultipleView(MultipleView):
     datamodel = SQLAInterface('Project')
-    views = [ProjectLocationsView, ProjectTagView, PjFeedbackView, ImpactView, OrganizationView]
+    views = [PjFeedbackView, ImpactView, OrganizationView, ProjectTagView, ProjectLocationsView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -18025,7 +17334,7 @@ class ProjectMultipleView(MultipleView):
 
 class RawScrapedDataMultipleView(MultipleView):
     datamodel = SQLAInterface('RawScrapedData')
-    views = [ScrapingTasksView, ScrapedRfpsView]
+    views = [ScrapedRfpsView, ScrapingTasksView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -18059,7 +17368,7 @@ class SocialMediaProfileMultipleView(MultipleView):
 
 class TrainingMultipleView(MultipleView):
     datamodel = SQLAInterface('Training')
-    views = [OrganizationView, PersonTrainingView]
+    views = [PersonTrainingView, OrganizationView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -18076,7 +17385,7 @@ class TrainingMultipleView(MultipleView):
 
 class UserChallengeMultipleView(MultipleView):
     datamodel = SQLAInterface('UserChallenge')
-    views = [PersonView, GamificationChallengeView]
+    views = [GamificationChallengeView, PersonView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -18093,7 +17402,7 @@ class UserChallengeMultipleView(MultipleView):
 
 class VolunteerLogMultipleView(MultipleView):
     datamodel = SQLAInterface('VolunteerLog')
-    views = [PersonView, OrganizationView]
+    views = [OrganizationView, PersonView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -18110,7 +17419,7 @@ class VolunteerLogMultipleView(MultipleView):
 
 class EventRegistrationMultipleView(MultipleView):
     datamodel = SQLAInterface('EventRegistration')
-    views = [PersonView, EventView]
+    views = [EventView, PersonView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -18127,7 +17436,7 @@ class EventRegistrationMultipleView(MultipleView):
 
 class ImpactMultipleView(MultipleView):
     datamodel = SQLAInterface('Impact')
-    views = [OrganizationView, ProjectView]
+    views = [ProjectView, OrganizationView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -18144,7 +17453,7 @@ class ImpactMultipleView(MultipleView):
 
 class PersonTrainingMultipleView(MultipleView):
     datamodel = SQLAInterface('PersonTraining')
-    views = [PersonView, TrainingView]
+    views = [TrainingView, PersonView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -18161,7 +17470,7 @@ class PersonTrainingMultipleView(MultipleView):
 
 class PjFeedbackMultipleView(MultipleView):
     datamodel = SQLAInterface('PjFeedback')
-    views = [OrganizationView, ProjectView, PersonView]
+    views = [ProjectView, OrganizationView, PersonView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -18195,7 +17504,7 @@ class ProjectLocationsMultipleView(MultipleView):
 
 class ProjectTagMultipleView(MultipleView):
     datamodel = SQLAInterface('ProjectTag')
-    views = [TagView, ProjectView]
+    views = [ProjectView, TagView]
 
     # Base Order
     # base_order = ('name', 'asc')
@@ -18212,7 +17521,7 @@ class ProjectTagMultipleView(MultipleView):
 
 class ScrapedRfpsMultipleView(MultipleView):
     datamodel = SQLAInterface('ScrapedRfps')
-    views = [ScrapingTasksView, RawScrapedDataView]
+    views = [RawScrapedDataView, ScrapingTasksView]
 
     # Base Order
     # base_order = ('name', 'asc')
