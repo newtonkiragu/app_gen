@@ -1,5 +1,6 @@
 # TODO: Process _img fields in views to make them uploadable
 # TODO: when it is all satisfactorily working, make into a python package
+# from your_sqlalchemy_module.models import YourTableModel # Adjust this according to your SQLAlchemy model class
 # Conventions: PostgreSQL Database
 #   - id fields should always be in id serial and called id
 #   - Foreign Keys should ALWAYS end in _id_fk
@@ -34,15 +35,30 @@ def gen_models(metadata, inspector):
     # Generate Domains
 
     def gen_domains(inspector):
+        # [{'name': 'topoelement',
+        # 'schema': 'topology',
+        # 'visible': True,
+        # 'type': 'integer[]',
+        # 'nullable': True,
+        # 'default': None,
+        # 'constraints': [{'name': 'dimensions', 'check': 'array_upper(VALUE, 2) IS NULL AND array_upper(VALUE, 1) = 2'},
+        # {'name': 'lower_dimension', 'check': 'array_lower(VALUE, 1) = 1'},
+        # {'name': 'type_range', 'check': '(VALUE)[2] > 0'}]},
+        # {'name': 'topoelementarray', 'schema': 'topology', 'visible': True, 'type': 'integer[]', 'nullable': True, 'default': None, 'constraints': [{'name': 'type_range', 'check': 'array_upper(VALUE, 2) = 2 AND array_upper(VALUE, 3) IS NULL'}]}]
+
         domain_code = []
         domain_code.append("# Domains defined in the database")
         # Retrieve information about domain types
         domains = inspector.get_domains()
+        print(domains)
 
         for domain in domains:
             domain_name = domain["name"]
-            base_type = domain["data_type"]
-            not_null = domain["not_null"]
+            base_type = domain["type"]
+            not_null = domain["nullable"]
+            visible = domain["visible"]
+            default = domain["default"]
+            constraints = domain["constraints"]
             BaseType = map_pgsql_datatypes(base_type.lower())
 
             domain_code.append(
@@ -86,18 +102,18 @@ def gen_models(metadata, inspector):
     for t in metadata.sorted_tables:
         table = t.name
         cols = inspector.get_columns(table)
-        for col in cols:
-            if isinstance(col["type"], Enum):
-                enum_vals = list(col["type"].enums)
-                # enum_name = f"{table}{col['name'].capitalize()}Enum"
-                enum_name = f"{col['name'].capitalize()}"
-
-                if enum_name not in enum_names:
-                    model_code.append(f"class {enum_name}(enum.Enum):")
-                    for en_val in enum_vals:
-                        model_code.append(f"   {en_val.upper()} = '{en_val}'")
-                enum_names.append(enum_name)
-                model_code.append("\n\n")
+        # for col in cols:
+        #     if isinstance(col["type"], Enum):
+        #         # enum_vals = list(col["type"].enums)
+        #         # enum_name = f"{table}{col['name'].capitalize()}Enum"
+        #         enum_name = f"{col['name'].capitalize()}"
+        #
+        #         if enum_name not in enum_names:
+        #             model_code.append(f"class {enum_name}(enum.Enum):")
+        #             for en_val in enum_vals:
+        #                 model_code.append(f"   {en_val.upper()} = '{en_val}'")
+        #         enum_names.append(enum_name)
+        #         model_code.append("\n\n")
 
     # Now generate Models
     for t in metadata.sorted_tables:
@@ -120,11 +136,9 @@ def gen_models(metadata, inspector):
         model_code.append(f'    __tablename__ = "{table}"')
         model_code.append(f'    # __table_args__ = ( ) # tuple')
         if t_comment['text']:
-            model_code.append(f'    __doc__ = "{t_comment["text"]}"')  # Use the table comment in the docstring
+            model_code.append(f'    __doc__ = """{t_comment["text"]}"""')  # Use the table comment in the docstring
 
         model_code.append(f'    # class_permission_name = "view"')
-        # Put check constraints
-        # __table_args__ = ( )
 
         for col in cols:
             # String parts to compose a column definition
@@ -148,9 +162,6 @@ def gen_models(metadata, inspector):
             # check if the column is an enum type
             if isinstance(col["type"], Enum):
                 enum_name = col["type"].name
-                enum_vals = list(col["type"].enums)
-                # enum_name = f"{table}{col['name'].capitalize()}Enum"
-                # enum_name = f"{col['name'].capitalize()}"
                 model_code.append(
                     f"    {col['name']} = Column(Enum({enum_name}), nullable=False)"
                 )
@@ -196,7 +207,7 @@ def gen_models(metadata, inspector):
                     c_autoincrement = ", autoincrement=True"
 
                 if col["comment"] != None:
-                    c_comment = '\n\t\t, comment="' + col["comment"] + '"'
+                    c_comment = '\n\t\t, comment="""' + col["comment"] + '"""'
 
                 if col['default'] != None:
                     c_default = f", default = {col['default']}"  # Might include sqltext, so we process further
@@ -215,8 +226,10 @@ def gen_models(metadata, inspector):
                         c_default = ''
                 # Address the case of a photo/doc/image
                 if col["name"].endswith('_img') or col["name"].endswith('_photo'):
-                    model_code.append(
-                        f"    {col['name']} = Column(ImageColumn(size=(300, 300, True), thumbnail_size=(30, 30, True)))")
+                    model_code.append(headers.gen_photo_column(col["name"], table_class))
+                        # f"    {col['name']} = Column(ImageColumn(size=(300, 300, True), thumbnail_size=(30, 30, True)))")
+                elif col["name"].endswith('_file') or col["name"].endswith('_doc'):
+                    model_code.append(headers.gen_file_colum(col["name"], table_class))
                 else:
                     model_code.append(
                         f"    {col['name']} = Column({ctype}{c_fk}{c_pk}{c_unique}{c_autoincrement}{c_default}{c_nullable}{c_comment})"
@@ -260,7 +273,7 @@ def gen_models(metadata, inspector):
                 sql_expression = cc['sqltext']
 
                 model_code.append(
-                    f"    CheckConstraint('{sql_expression}', name={constraint_name})"
+                    f"    CheckConstraint('{sql_expression}', name='{constraint_name}')"
                 )
         model_code.append("\n    def __repr__(self):")
         model_code.append("       return self." + get_display_column(column_names_list))
@@ -358,15 +371,17 @@ def gen_views(metadata, inspector):
     # Generate ModelViews for all tables
     for table in metadata.sorted_tables:
         model_name = snake_to_pascal(table.name)  # .capitalize()
+        # Ignore flask-appbuilder system tables
         if model_name.lower().startswith('ab_'):
             continue
-        views.append(f'class {model_name}ModelView(ModelView):')
+        view_class = model_name+'ModelView'
+        views.append(f'class {view_class}(ModelView):')
         views.append(f'    datamodel = SQLAInterface({model_name})')
         c = gen_col_names(table)
         views.extend(gen_titles(table))
         views.append(f'#    list_columns = [{c}]')
         view_regs.append(
-            f'appbuilder.add_view({model_name}ModelView, "{pascal_to_words(model_name)}", icon="fa-folder-open-o", category="Setup")\n')
+            f'appbuilder.add_view({view_class}, "{pascal_to_words(model_name)}", icon="fa-folder-open-o", category="Setup")\n')
 
     # Generate MasterDetailView for tables with foreign keys
     for table in metadata.sorted_tables:
@@ -483,6 +498,99 @@ def gen_dbml(metadata, inspector):
 
 def gen_kivy(metadata, inspector):
     kivy_code = []
+    kv_screen = []
+    python_class = []
+
+    kivy_code.append(f"#:kivy 1.9.0")
+    kivy_code.append(f"#:import fa_icon kivymd.icon_definitions.md_icons ")
+
+
+    for t in metadata.sorted_tables:
+        table_name = t.name.strip().lower().replace(" ", "_")
+
+        cols = inspector.get_columns(table_name)
+        column_names_list = []
+        cols = inspector.get_columns(table_name)
+        pks = inspector.get_pk_constraint(table_name)
+        fks = inspector.get_foreign_keys(table_name)
+        uqs = inspector.get_unique_constraints(table_name)
+        cck = inspector.get_check_constraints(table_name)
+        t_comment = inspector.get_table_comment(table_name)  # Table Comment
+
+        kivy_code.append(f"<{snake_to_pascal(table_name)}Screen>:")
+        kivy_code.append(f"    id: {table_name}")
+        kivy_code.append(f"    name: '{table_name}'")
+        kivy_code.append(f"    title: '{snake_to_pascal(table_name)}'")
+        kivy_code.append(f"         MDBoxLayout:")
+        kivy_code.append(f"             id: {table_name}_main_layout")
+        kivy_code.append(f"             orientation:'vertical'")
+        kivy_code.append(f"             MDTopAppBar:")
+        kivy_code.append(f"                 title: 'Navigate {table_name}'")
+        kivy_code.append(f"                 elevation: 10")
+        kivy_code.append(f"                 left_action_items: [['arrow-left', lambda x: app.switch_to_screen('home')]]")
+        kivy_code.append(f"                 right_action_items: [['home', lambda x: app.switch_to_screen('dashboard')]]")
+        kivy_code.append(f"             MDBoxLayout:")
+        kivy_code.append(f"                 id: {table_name}_table_layout")
+        kivy_code.append(f"                 orientation:'vertical'")
+        kivy_code.append(f"                 size_hint_y: None")
+        kivy_code.append(f"                 height: self.minimum_height")
+        kivy_code.append(f"                 padding: dp(10)")
+        kivy_code.append(f"                 spacing: dp(10)")
+        kivy_code.append(f"                     MDLabel:")
+        kivy_code.append(f"                         text: ''")
+        kivy_code.append(f"                     MDTextInput:")
+
+
+
+        python_class.append(f"class {snake_to_pascal(table_name)}Screen(MDScreen):")
+        python_class.append(f"    def __init__(self, **kwargs):")
+        python_class.append(f"        super().__init__(**kwargs)")
+        python_class.append(f"        self.app = App.get_running_app()")
+        python_class.append(f"        self.app.root.ids.main_screen_manager.add_widget(self)")
+        python_class.append(f"        self.app.root.ids.main_screen_manager.current = '{table_name}'")
+        python_class.append(f"        self.app.root.ids.main_screen_manager.ids.{table_name}.ids.table.data = []")
+        python_class.append(
+            f"        self.app.root.ids.main_screen_manager.ids.{table_name}.ids.table.refresh_from_data_and_headers()")
+        python_class.append(
+            f"        self.app.root.ids.main_screen_manager.ids.{table_name}.ids.table.bind(on_row_press=self.on_row_press)")
+        python_class.append(
+            f"        self.app.root.ids.main_screen_manager.ids.{table_name}.ids.table.bind(on_row_release=self.on_row_release)")
+        python_class.append(
+            f"        self.app.root.ids.main_screen_manager.ids.{table_name}.ids.table.bind(on_row_double_tap=self.on_row_double_tap)")
+        python_class.append(
+            f"        self.app.root.ids.main_screen_manager.ids.{table_name}.ids.table.bind(on_row_long_press=self.on_row_long_press)")
+        python_class.append(
+            f"        self.app.root.ids.main_screen_manager.ids.{table_name}.ids.table.bind(on_row_release=self.on_row_release)")
+        python_class.append(f"    def on_row_press(self, table, row):\n")
+        python_class.append(f"        print('on_row_press', row.text)")
+        python_class.append(f"")
+        python_class.append(f"    def on_row_release(self, table, row):\n")
+        python_class.append(f"        print('on_row_release', row.text)")
+        python_class.append(f"")
+        python_class.append(f"    def on_row_double_tap(self, table, row):\n")
+        python_class.append(f"        print('on_row_double_tap', row.text)")
+        python_class.append(f"")
+        python_class.append(f"    def on_row_long_press(self, table, row):\n")
+        python_class.append(f"        print('on_row_long_press', row.text)")
+        python_class.append(f"")
+        python_class.append(f"    def submit(self):\n")
+        python_class.append(f"        # Implement submission logic here\n")
+        python_class.append(f"        print('submit')")
+        python_class.append(f"        pass")
+        python_class.append(f"")
+        python_class.append(f"")
+        python_class.append(f"")
+
+
+
+
+
+
+
+
+
+
+
 
     for table_name, table in metadata.tables.items():
         form_code = f"# Form for {table_name}\n"
@@ -503,7 +611,7 @@ def gen_kivy(metadata, inspector):
 
 if __name__ == '__main__':
     # DATABASE_URI = 'postgresql://username:password@localhost:5432/mydatabase'
-    DATABASE_URI = "postgresql:///wakala"
+    DATABASE_URI = "postgresql:///bbtmp"
     metadata, inspector = inspect_metadata(DATABASE_URI)
 
     # m = gen_models(metadata, inspector)

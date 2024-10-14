@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/appgen.iml" filepath="$PROJECT_DIR$/.idea/appgen.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../wakala/src/mob/.idea/mob.iml" filepath="$PROJECT_DIR$/../wakala/src/mob/.idea/mob.iml" />
     </modules>
   </component>
 </project>
