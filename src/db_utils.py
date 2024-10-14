@@ -10,14 +10,14 @@ from sqlalchemy import (
     INTEGER, TEXT, VARCHAR,
     NUMERIC, BOOLEAN, Time, DECIMAL, Column
 )
-from sqlalchemy.dialects.postgresql import (
-    ARRAY, BIGINT, BIT, BOOLEAN, BYTEA, CHAR, CIDR, CITEXT, DATE, DATEMULTIRANGE,
-    DATERANGE, DOMAIN, DOUBLE_PRECISION, ENUM, FLOAT, HSTORE, INET, INT4MULTIRANGE,
-    INT4RANGE, INT8MULTIRANGE, INT8RANGE, INTEGER, INTERVAL, JSON, JSONB, JSONPATH,
-    MACADDR, MACADDR8, MONEY, NUMERIC, NUMMULTIRANGE, NUMRANGE, OID, REAL, REGCLASS,
-    REGCONFIG, SMALLINT, TEXT, TIME, TIMESTAMP, TSMULTIRANGE, TSQUERY, TSRANGE,
-    TSTZMULTIRANGE, TSTZRANGE, TSVECTOR, UUID, VARCHAR,
-)
+# from sqlalchemy.dialects.postgresql import (
+#     ARRAY, BIGINT, BIT, BOOLEAN, BYTEA, CHAR, CIDR, CITEXT, DATE, DATEMULTIRANGE,
+#     DATERANGE, DOMAIN, DOUBLE_PRECISION, ENUM, FLOAT, HSTORE, INET, INT4MULTIRANGE,
+#     INT4RANGE, INT8MULTIRANGE, INT8RANGE, INTEGER, INTERVAL, JSON, JSONB, JSONPATH,
+#     MACADDR, MACADDR8, MONEY, NUMERIC, NUMMULTIRANGE, NUMRANGE, OID, REAL, REGCLASS,
+#     REGCONFIG, SMALLINT, TEXT, TIME, TIMESTAMP, TSMULTIRANGE, TSQUERY, TSRANGE,
+#     TSTZMULTIRANGE, TSTZRANGE, TSVECTOR, UUID, VARCHAR,
+# )
 
 
 def map_dbml_datatypes(datatype: str):
@@ -56,7 +56,7 @@ def map_pgsql_datatypes(pg_type: str):
         return 'SmallInteger'
     elif pg_type in ('bigint', 'bigserial'):
         return 'BigInteger'
-    elif pg_type.startswith('varchar'):
+    elif pg_type.startswith('varchar')or pg_type.startswith('char') :
         return 'String'
     elif pg_type in ('text', 'citext'):
         return 'Text'
@@ -91,8 +91,9 @@ def map_pgsql_datatypes(pg_type: str):
         return 'UUID'
     elif pg_type == 'inet':
         return 'IPAddressType()'
-    elif pg_type == 'json':
-        return 'JSONType()'
+    elif pg_type == 'json' or pg_type == 'jsonb' :
+        return 'String'
+        # return 'JSONType()'
     elif pg_type == 'email':
         return 'EmailType()'
     elif pg_type == 'url':

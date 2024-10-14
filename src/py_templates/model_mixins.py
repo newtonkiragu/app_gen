@@ -176,29 +176,29 @@ class RefTypeMixin(BaseModelMixin):
 ##############################
 # How to create a Two Table Mixin
 ##############################
-# class CreateTwoTablesMixin:
-#     @classmethod
-#     def __init_subclass__(cls):
-#         super().__init_subclass__()
-#         cls.create_tables()
-#
-#     @classmethod
-#     def create_tables(cls):
-#         class Table1(Model):
-#             __tablename__ = f"{cls.__tablename__}_table1"
-#             id = Column(Integer, primary_key=True)
-#             field1 = Column(String(50), nullable=False)
-#             field2 = Column(String(50), nullable=False)
-#
-#         class Table2(Model):
-#             __tablename__ = f"{cls.__tablename__}_table2"
-#             id = Column(Integer, primary_key=True)
-#             table1_id = Column(Integer, ForeignKey(f"{Table1.__tablename__}.id"))
-#             field3 = Column(String(50), nullable=False)
-#             field4 = Column(String(50), nullable=False)
-#
-#         cls.Table1 = Table1
-#         cls.Table2 = Table2
+ # class CreateTwoTablesMixin:
+ #     @classmethod
+ #     def __init_subclass__(cls):
+ #         super().__init_subclass__()
+ #         cls.create_tables()
+
+ #     @classmethod
+ #     def create_tables(cls):
+ #         class Table1(Model):
+ #             __tablename__ = f"{cls.__tablename__}_table1"
+ #             id = Column(Integer, primary_key=True)
+ #             field1 = Column(String(50), nullable=False)
+ #             field2 = Column(String(50), nullable=False)
+
+ #         class Table2(Model):
+ #             __tablename__ = f"{cls.__tablename__}_table2"
+ #             id = Column(Integer, primary_key=True)
+ #             table1_id = Column(Integer, ForeignKey(f"{Table1.__tablename__}.id"))
+ #             field3 = Column(String(50), nullable=False)
+ #             field4 = Column(String(50), nullable=False)
+
+ #         cls.Table1 = Table1
+ #         cls.Table2 = Table2
 
 
 
@@ -259,7 +259,7 @@ class ProjectMixin(BaseModelMixin):
     @classmethod
     def create_tables(cls):
         class ProjectModel(Model):
-            __tablename__ = f"{cls.__tablename__}_project"
+            __tablename__ = f"nx_pj_{cls.__tablename__}_project"
 
             pj_id = Column(Integer, primary_key=True)
             project_name = Column(String(50), nullable=False)
